@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.openurp.edu.course</groupId>
+    <artifactId>openurp-edu-course-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.openurp.edu.course</groupId>
+  <artifactId>openurp-edu-course-webapp</artifactId>
+  <packaging>war</packaging>
+  <name>OpenURP Edu Course Webapp</name>
+
+  <properties>
+    <bundle.symbolicName>org.openurp.edu.course.webapp</bundle.symbolicName>
+    <bundle.namespace>org.openurp.edu.course</bundle.namespace>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.openurp.edu.course</groupId>
+      <artifactId>openurp-edu-course-web</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+    </dependency>
+  </dependencies>
+</project>
