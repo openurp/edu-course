@@ -1,45 +1,40 @@
-[#ftl/]
+[#ftl]
 [@b.head/]
-[@b.toolbar title="课程简介"/]
-<div class="container">
-<table class="infoTable">
-  <tr>
-    <td class="title"  width="20%">代码:</td>
-    <td class="content">${course.code}</td>
-    <td class="title"  width="20%">名称:</td>
-    <td class="content">${course.name}</td>
-  </tr>
-  <tr>
-    <td class="title">学分:</td>
-    <td class="content">${course.credits!}</td>
-    <td class="title">学时:</td>
-    <td class="content">${course.creditHours!}</td>
-  </tr>
-  <tr>
-    <td class="title">开课院系:</td>
-    <td class="content">${(course.department.name)!}</td>
-    <td class="title">建议课程类别:</td>
-    <td class="content">${(course.courseType.name)!}</td>
-  </tr>
-   <tr>
-    <td class="title">课程种类:</td>
-    <td class="content">${(course.category.name)!}</td>
-    <td class="title">考试方式:</td>
-    <td class="content">${(course.examMode.name)!}</td>
-  </tr>
-   <tr>
-    <td class="title">中文简介:</td>
-    <td class="content" colspan="3"><pre>${(profile.description)!}</pre></td>
-  </tr>
-   <tr>
-    <td class="title">英文简介:</td>
-    <td class="content" colspan="3"><pre>${(profile.enDescription)!}</pre></td>
-  </tr>
-</table>
+[#include "info_macros.ftl"/]
+[@info_header title="课程资料"/]
+<div class="container-fluid">
+  <div class="row">
+     <div class="col-3" id="accordion">
 
-<div style="text-align:center">
-  [@b.a class="btn btn-primary" href="!edit?id=" +course.id role="button"]修改[/@]
-</div>
+       <div class="card card-info card-primary card-outline">
+         <div class="card-header" id="stat_header_2">
+          <h5 class="mb-0">
+              <button class="btn btn-link" data-toggle="collapse" data-target="#stat_body_2" aria-expanded="true" aria-controls="stat_body_2" style="padding: 0;">
+                我的课程
+              </button>
+            </h5>
+         </div>
+         <div id="stat_body_2" class="collapse show" aria-labelledby="stat_header_2" data-parent="#accordion">
+           <div class="card-body" style="padding-top: 0px;">
+             <table class="table table-hover table-sm">
+               <tbody>
+               [#list courses as course]
+                <tr>
+                 <td width="80%">[@b.a href="!info?id="+course.id target="course_list"]${course.name}[/@]</td>
+                </tr>
+                [/#list]
+               </tbody>
+             </table>
+           </div>
+         </div>
+       </div>
 
-</div>
+     </div><!--end col-3-->
+     [#if courses?size>0]
+     [@b.div class="col-9" id="course_list" href="!info?id="+courses?first.id/]
+     [#else]
+     <div>你还没有代课</div>
+     [/#if]
+  </div><!--end row-->
+</div><!--end container-->
 [@b.foot/]

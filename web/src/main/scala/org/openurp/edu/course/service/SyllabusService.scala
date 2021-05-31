@@ -16,11 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openurp.edu.course.web.action
+package org.openurp.edu.course.service
 
-import org.beangle.webmvc.entity.action.RestfulAction
+import org.openurp.base.edu.model.Course
+import org.openurp.base.model.User
 import org.openurp.edu.course.model.Syllabus
 
-class SyllabusAction extends RestfulAction[Syllabus]{
+import java.io.InputStream
+import java.time.Instant
+import java.util.Locale
 
+trait SyllabusService {
+
+  def upload(course: Course, author: User, data: InputStream, fileName: String, locale: Locale, updatedAt: Instant): Syllabus
 }

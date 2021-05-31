@@ -19,13 +19,14 @@
 package org.openurp.edu.course.web.action
 
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.EmsApp
 import org.beangle.webmvc.api.action.ActionSupport
 import org.beangle.webmvc.api.annotation.{mapping, param}
-import org.beangle.webmvc.api.view.View
+import org.beangle.webmvc.api.view.{Status, View}
 import org.beangle.webmvc.entity.action.EntityAction
 import org.openurp.base.edu.model.{Course, Teacher}
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusStatus}
+import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
 import org.openurp.edu.course.web.helper.ClazzInfo
 import org.openurp.starter.edu.helper.ProjectSupport
 
@@ -100,5 +101,17 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
 
   private def collectTeachers(clazzes: Iterable[Clazz]): Iterable[Teacher] = {
     clazzes.map(_.teachers).flatten.toSet
+  }
+
+  /**下载下载发布的大纲*/
+  def attachment(): View = {
+    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
+    if (file.syllabus.status == SyllabusStatus.Published) {
+      val path = EmsApp.getBlobRepository(true).url(file.filePath)
+      response.sendRedirect(path.get.toString)
+      null
+    } else {
+      Status.NotFound
+    }
   }
 }

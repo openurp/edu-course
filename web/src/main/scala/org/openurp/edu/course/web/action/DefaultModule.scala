@@ -19,11 +19,14 @@
 package org.openurp.edu.course.web.action
 
 import org.beangle.cdi.bind.BindModule
+import org.openurp.base.edu.service.impl.SemesterServiceImpl
+import org.openurp.edu.course.service.impl.SyllabusServiceImpl
 
 class DefaultModule extends BindModule {
   override protected def binding(): Unit = {
-    bind(classOf[ReviseAction], classOf[ProfileAction])
+    bind(classOf[ReviseAction])
 
-    bind(classOf[DepartAction],classOf[InfoAction])
+    bind(classOf[DepartAction], classOf[InfoAction])
+    bind(classOf[SyllabusServiceImpl], classOf[SemesterServiceImpl])
   }
 }

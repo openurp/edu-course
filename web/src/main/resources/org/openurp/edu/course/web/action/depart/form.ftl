@@ -1,11 +1,7 @@
 [#ftl]
 [@b.head/]
-<div class="container">
-  <div class="card card-info card-primary card-outline">
-    <div class="card-header">
-      <h4 class="card-title">基本信息</h4>
-    </div>
-    [@b.form action=sa theme="list" action=b.rest.save(profile)]
+[@b.toolbar title="课程资料维护"]bar.addBack();[/@]
+    [@b.form action=sa theme="list" action=b.rest.save(course)]
       [@b.field label="课程"]${course.code} ${course.name} ${course.credits}学分[/@]
       [@b.field label="课程类别"]${(course.courseType.name)!'--'}[/@]
       [@b.field label="开课院系"]${(course.department.name)!'--'}[/@]
@@ -18,15 +14,10 @@
         [/#list]
         [#else]尚无[/#if]
       [/@]
-      [@b.field label="课程大纲作者"]
-        <input name="syllabus.author.id" value="${author.id}" type="hidden">${author.name} <span style="color: red;">请上传已经审核通过的课程大纲附件</span>
-      [/@]
+      [@b.select label="课程大纲作者" name="syllabus.author.id" href=Ems.api+"/base/users.json?isTeacher=true&pageSize=10000" option="id,name+' '+data.department.name"  comment="请上传已经审核通过的附件，并选择作者"/]
       [@b.file label="大纲附件" name="attachment"/]
       [@b.formfoot]
-        <input type="hidden" name="profile.course.id" value="${course.id}"/>
         [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
       [/@]
     [/@]
-  </div>
-</div>
 [@b.foot/]

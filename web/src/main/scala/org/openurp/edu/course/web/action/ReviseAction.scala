@@ -18,24 +18,46 @@
  */
 package org.openurp.edu.course.web.action
 
-import java.time.Instant
-
+import jakarta.servlet.http.Part
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
+import org.beangle.webmvc.api.action.ServletSupport
 import org.beangle.webmvc.api.annotation.{mapping, param}
 import org.beangle.webmvc.api.view.View
 import org.beangle.webmvc.entity.action.EntityAction
-import org.openurp.base.model.User
 import org.openurp.base.edu.model.Course
-import org.openurp.edu.course.model.CourseProfile
+import org.openurp.base.model.User
+import org.openurp.edu.clazz.model.Clazz
+import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.edu.course.service.SyllabusService
 
-class ReviseAction extends EntityAction[CourseProfile] {
+import java.time.Instant
+import java.util.Locale
+
+class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
+
+  var syllabusService: SyllabusService = _
+
+  def index(): View = {
+    val query = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
+    query.join("c.teachers", "t")
+    query.where("t.user.code=:me",  Securities.user)
+    query.select("distinct c.course")
+    val courses = entityDao.search(query)
+    put("courses", courses)
+    forward()
+  }
 
   @mapping("{id}")
-  def index(@param("id") id: String): View = {
+  def info(@param("id") id: String): View = {
     val course = entityDao.get(classOf[Course], id.toLong)
     put("profile", getProfile(course))
     put("course", course)
+    val syllabusQuery = OqlBuilder.from(classOf[Syllabus], "s")
+    syllabusQuery.where("s.course = :course", course)
+    syllabusQuery.orderBy("s.semester.beginOn desc")
+    put("syllabuses", entityDao.search(syllabusQuery))
     forward()
   }
 
@@ -56,6 +78,14 @@ class ReviseAction extends EntityAction[CourseProfile] {
     }
     put("profile", profile)
     put("course", course)
+    val syllabusQuery = OqlBuilder.from(classOf[Syllabus], "s")
+    syllabusQuery.where("s.course = :course", course)
+    syllabusQuery.orderBy("s.semester.beginOn desc")
+    syllabusQuery.limit(1, 1)
+    val author = entityDao.findBy(classOf[User], "code", List(Securities.user)).headOption
+    put("author",author)
+    put("syllabuses", entityDao.search(syllabusQuery))
+    put("Ems", Ems)
     forward()
   }
 
@@ -74,10 +104,29 @@ class ReviseAction extends EntityAction[CourseProfile] {
     "profile"
   }
 
+  def attachment(): View = {
+    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
+    val path = EmsApp.getBlobRepository(true).url(file.filePath)
+    response.sendRedirect(path.get.toString)
+    null
+  }
+
   def persist(profile: CourseProfile): View = {
     profile.updatedAt = Instant.now
-    profile.updatedBy = entityDao.findBy(classOf[User], "code", List(Securities.user)).headOption
+    val user = entityDao.findBy(classOf[User], "code", List(Securities.user)).headOption
+    profile.updatedBy = user
     entityDao.saveOrUpdate(profile)
+    val course = entityDao.get(classOf[Course], profile.course.id)
+    val parts = getAll("attachment", classOf[Part])
+    val authorId = getLong("syllabus.author.id")
+    if (parts.size > 0 && parts.head.getSize > 0 && authorId.nonEmpty) {
+      val part = parts.head
+      val author = entityDao.get(classOf[User], authorId.get)
+      val syllabus = syllabusService.upload(course, author, part.getInputStream, part.getSubmittedFileName,
+        Locale.SIMPLIFIED_CHINESE, Instant.now)
+      syllabus.status = SyllabusStatus.Published
+      entityDao.saveOrUpdate(syllabus)
+    }
     redirect("index", "id=" + profile.course.id, "info.save.success")
   }
 }
