@@ -38,7 +38,7 @@
 </table>
 
 <div style="text-align:center">
-	[@b.a class="btn btn-primary" href="!edit?id=" +course.id role="button"]修改[/@]
+  [@b.a class="btn btn-primary" href="!edit?id=" +course.id role="button"]修改[/@]
 </div>
 
 </div>

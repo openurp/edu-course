@@ -18,12 +18,9 @@
  */
 package org.openurp.edu.course.web.action
 
-import org.beangle.cdi.bind.BindModule
+import org.beangle.webmvc.entity.action.EntityAction
+import org.openurp.base.edu.model.Course
 
-class DefaultModule extends BindModule {
-  override protected def binding(): Unit = {
-    bind(classOf[ReviseAction], classOf[ProfileAction])
+class DepartAction extends EntityAction[Course] {
 
-    bind(classOf[DepartAction],classOf[InfoAction])
-  }
 }

@@ -26,7 +26,7 @@ import org.beangle.webmvc.api.annotation.{mapping, param}
 import org.beangle.webmvc.api.view.View
 import org.beangle.webmvc.entity.action.EntityAction
 import org.openurp.base.model.User
-import org.openurp.edu.base.model.Course
+import org.openurp.base.edu.model.Course
 import org.openurp.edu.course.model.CourseProfile
 
 class ReviseAction extends EntityAction[CourseProfile] {

@@ -3,7 +3,7 @@
   <container name="web">
     <module class="org.openurp.edu.course.web.action.DefaultModule"/>
     <module class="org.openurp.edu.course.web.ws.DefaultModule"/>
-    <module class="org.openurp.edu.boot.web.ProjectModule" />
+    <module class="org.openurp.starter.edu.action.ProjectModule" />
   </container>
   <container>
     <module class="org.beangle.serializer.text.DefaultModule"/>

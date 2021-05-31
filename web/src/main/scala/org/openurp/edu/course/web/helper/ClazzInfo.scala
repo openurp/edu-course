@@ -16,14 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.openurp.edu.course.web.action
+package org.openurp.edu.course.web.helper
 
-import org.beangle.cdi.bind.BindModule
+import org.openurp.base.edu.model.{Course, Semester, Teacher}
+import org.openurp.base.model.Department
 
-class DefaultModule extends BindModule {
-  override protected def binding(): Unit = {
-    bind(classOf[ReviseAction], classOf[ProfileAction])
+case class ClazzInfo(course: Course, semester: Semester, department: Department,
+                     teachers: Iterable[Teacher], clazzCount: Int) {
 
-    bind(classOf[DepartAction],classOf[InfoAction])
-  }
 }
