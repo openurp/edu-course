@@ -31,6 +31,7 @@ import org.openurp.base.model.User
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
 import org.openurp.edu.course.service.SyllabusService
+import org.openurp.edu.course.web.helper.StatHelper
 
 import java.time.Instant
 import java.util.Locale
@@ -42,9 +43,13 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
   def index(): View = {
     val query = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
     query.join("c.teachers", "t")
-    query.where("t.user.code=:me",  Securities.user)
+    query.where("t.user.code=:me", Securities.user)
     query.select("distinct c.course")
+    query.orderBy("c.course.code")
     val courses = entityDao.search(query)
+    val statHelper = new StatHelper(entityDao)
+    put("hasProfileCourses", statHelper.hasSyllabus(courses))
+    put("hasSyllabusCourses", statHelper.hasProfile(courses))
     put("courses", courses)
     forward()
   }
@@ -58,6 +63,9 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     syllabusQuery.where("s.course = :course", course)
     syllabusQuery.orderBy("s.semester.beginOn desc")
     put("syllabuses", entityDao.search(syllabusQuery))
+
+    val statHelper = new StatHelper(entityDao)
+    put("clazzInfos", statHelper.statClazzInfo(course))
     forward()
   }
 
@@ -83,7 +91,7 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     syllabusQuery.orderBy("s.semester.beginOn desc")
     syllabusQuery.limit(1, 1)
     val author = entityDao.findBy(classOf[User], "code", List(Securities.user)).headOption
-    put("author",author)
+    put("author", author)
     put("syllabuses", entityDao.search(syllabusQuery))
     put("Ems", Ems)
     forward()

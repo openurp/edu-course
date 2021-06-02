@@ -19,8 +19,19 @@
              <table class="table table-hover table-sm">
                <tbody>
                [#list courses as course]
-                <tr>
-                 <td width="80%">[@b.a href="!info?id="+course.id target="course_list"]${course.name}[/@]</td>
+                  [#assign error_msg=""/]
+                  [#if !hasProfileCourses?seq_contains(course.id)] [#assign error_msg="缺少简介"/][/#if]
+                  [#if !hasSyllabusCourses?seq_contains(course.id)] [#assign error_msg= error_msg + " 缺少大纲"/][/#if]
+                <tr title="${error_msg}">
+                 <td>
+                   <span style="color:#6c757d;font-size:0.8em">${course.code}</span>
+                   [@b.a href="!info?id="+course.id target="course_list"]<span>${course.name}</span>[/@]
+                 </td>
+                 <td>
+                  [#if hasProfileCourses?seq_contains(course.id)]<i class="fas fa-list-ul"></i>[/#if]
+                  [#if hasSyllabusCourses?seq_contains(course.id)]<i class="fas fa-paperclip"></i>
+                  [#else]<span style="color:red;font-size:0.6em"><i class="fas fa-circle"></i></span>[/#if]
+                 </td>
                 </tr>
                 [/#list]
                </tbody>

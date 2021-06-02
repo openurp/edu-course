@@ -19,7 +19,7 @@
         [#else]尚无[/#if]
       [/@]
       [@b.field label="课程大纲作者"]
-        <input name="syllabus.author.id" value="${author.id}" type="hidden">${author.name} <span style="color: red;">请上传已经审核通过的课程大纲附件</span>
+        <input name="syllabus.author.id" value="${author.id}" type="hidden">${author.name} <span style="color: red;">请确认大纲已经教研室、学院审核，上传后将直接发布给全校师生查看。</span>
       [/@]
       [@b.file label="大纲附件" name="attachment"/]
       [@b.formfoot]

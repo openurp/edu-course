@@ -33,6 +33,7 @@ import org.openurp.code.edu.model.CourseNature
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
 import org.openurp.edu.course.service.SyllabusService
+import org.openurp.edu.course.web.helper.StatHelper
 import org.openurp.starter.edu.helper.ProjectSupport
 
 import java.time.{Instant, LocalDate}
@@ -55,7 +56,7 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     val builder = super.getQueryBuilder
     builder.where("course.department in(:departs)", getDeparts)
     builder.where(simpleEntityName + ".project = :project", getProject)
-    addTemporalOn(builder,Some(true))
+    addTemporalOn(builder, Some(true))
     getBoolean("hasClazz") foreach {
       case true => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
       case false => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
@@ -74,18 +75,9 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
   def search(): View = {
     val query = getQueryBuilder
     val courses = entityDao.search(query)
-    val pQuery = OqlBuilder.from[Long](classOf[CourseProfile].getName, "cp")
-    pQuery.where("cp.course in(:course)", courses)
-    pQuery.select("cp.course.id")
-    val hasProfileCourses = entityDao.search(pQuery).toSet
-    put("hasProfileCourses", hasProfileCourses)
-
-    val sQuery = OqlBuilder.from[Long](classOf[Syllabus].getName, "s")
-    sQuery.where("s.course in(:course)", courses)
-    sQuery.select("s.course.id")
-    val hasSyllabusCourses = entityDao.search(sQuery).toSet
-    put("hasSyllabusCourses", hasSyllabusCourses)
-
+    val statHelper = new StatHelper(entityDao)
+    put("hasProfileCourses", statHelper.hasSyllabus(courses))
+    put("hasSyllabusCourses", statHelper.hasProfile(courses))
     put("courses", courses)
     forward()
   }

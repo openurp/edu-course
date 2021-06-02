@@ -42,7 +42,7 @@
       <tr>
         <td class="title">院系:</td>
         <td class="content">${(course.department.name)!}</td>
-        <td class="title">建议课程类别:</td>
+        <td class="title">课程类别:</td>
         <td class="content">${(course.courseType.name)!}</td>
       </tr>
       <tr>
@@ -150,7 +150,7 @@
     [#if clazzInfos?size>0]
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
-      <h3 class="card-title">开课信息</h3><span class="badge badge-primary">近五年</span>
+      <h3 class="card-title">近五年开课信息</h3>
     </div>
       <table class="table table-hover table-sm table-striped" style="font-size:13px">
        <thead>
@@ -166,6 +166,35 @@
         <td>${clazzInfo.department.name}</td>
         <td>[#list clazzInfo.teachers as t]${t.user.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
         <td>${clazzInfo.clazzCount}</td>
+      </tr>
+      [/#list]
+    </table>
+  </div>
+    [/#if]
+
+[#if planCourseInfos?size>0]
+  <div class="card card-info card-primary card-outline">
+    <div class="card-header">
+      <h3 class="card-title">计划开课信息</h3>
+    </div>
+      <table class="table table-hover table-sm table-striped" style="font-size:13px">
+       <thead>
+         <th>年级</th>
+         <th>学历层次</th>
+         <th>专业</th>
+         <th>课程类型</th>
+         <th>开课学期</th>
+         <th>门次数</th>
+      </thead>
+      <tbody >
+      [#list planCourseInfos as planCourseInfo]
+      <tr>
+        <td>${planCourseInfo.grade}</td>
+        <td>[#list planCourseInfo.levels as t]${t.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
+        <td>[#list planCourseInfo.majors as t]${t.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
+        <td>${planCourseInfo.courseType.name}</td>
+        <td>${planCourseInfo.terms}</td>
+        <td>${planCourseInfo.count}</td>
       </tr>
       [/#list]
     </table>

@@ -24,10 +24,11 @@ import org.beangle.webmvc.api.action.ActionSupport
 import org.beangle.webmvc.api.annotation.{mapping, param}
 import org.beangle.webmvc.api.view.{Status, View}
 import org.beangle.webmvc.entity.action.EntityAction
-import org.openurp.base.edu.model.{Course, Teacher}
+import org.openurp.base.edu.model.{Course, Terms}
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
-import org.openurp.edu.course.web.helper.ClazzInfo
+import org.openurp.edu.course.web.helper.{PlanCourseInfo, StatHelper}
+import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
 import org.openurp.starter.edu.helper.ProjectSupport
 
 import java.time.LocalDate
@@ -89,21 +90,13 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
     syllabusQuery.orderBy("s.semester.beginOn desc")
     put("syllabuses", entityDao.search(syllabusQuery))
 
-    val clazzQuery = OqlBuilder.from(classOf[Clazz], "c")
-    clazzQuery.where("c.course=:course", course)
-    clazzQuery.where("c.semester.beginOn > :yearBefore", LocalDate.now().plusYears(-5))
-    val clazzes = entityDao.search(clazzQuery)
-    val clazzInfos = clazzes.groupBy(x => (x.course, x.semester, x.teachDepart))
-      .map(x => ClazzInfo(x._1._1, x._1._2, x._1._3, collectTeachers(x._2), x._2.size))
-    put("clazzInfos", clazzInfos.toList.sortBy(x => x.semester.beginOn.toString)(Ordering.String.reverse))
+    val statHelper = new StatHelper(entityDao)
+    put("clazzInfos", statHelper.statClazzInfo(course))
+    put("planCourseInfos",statHelper.statPlanCourseInfo(course))
     forward()
   }
 
-  private def collectTeachers(clazzes: Iterable[Clazz]): Iterable[Teacher] = {
-    clazzes.map(_.teachers).flatten.toSet
-  }
-
-  /**下载下载发布的大纲*/
+  /** 下载下载发布的大纲 */
   def attachment(): View = {
     val file = entityDao.get(classOf[SyllabusFile], longId("file"))
     if (file.syllabus.status == SyllabusStatus.Published) {
