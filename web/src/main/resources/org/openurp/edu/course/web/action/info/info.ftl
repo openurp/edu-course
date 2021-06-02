@@ -181,7 +181,7 @@
        <thead>
          <th>年级</th>
          <th>学历层次</th>
-         <th>专业</th>
+         <th style="width:55%">专业</th>
          <th>课程类型</th>
          <th>开课学期</th>
          <th>门次数</th>

@@ -41,12 +41,16 @@ class StatHelper(entityDao: EntityDao) {
   def statPlanCourseInfo(course: Course): Iterable[PlanCourseInfo] = {
     val pQuery = OqlBuilder.from(classOf[ExecutionPlanCourse], "pc")
     pQuery.where("pc.course=:course", course)
+    val today = LocalDate.now
+    pQuery.where(":today < pc.group.plan.endOn", today)
     val pcs = entityDao.search(pQuery)
     val pcis = pcs.groupBy(x => (x.course, x.group.courseType, x.group.plan.program.grade))
       .map { x =>
-        val levels = pcs.map(_.group.plan.program.level).toSet
-        val majors = pcs.map(_.group.plan.program.major).toSet
-        PlanCourseInfo(x._1._1, x._1._2, x._1._3, levels, majors, collectTerms(x._2), x._2.size)
+        val levels = x._2.map(_.group.plan.program.level).toSet
+        val levelsList= levels.toList.sortBy(_.code)
+        val majors = x._2.map(_.group.plan.program.major).toSet
+        val majorList = majors.toList.sortBy(x => x.code)
+        PlanCourseInfo(x._1._1, x._1._2, x._1._3, levelsList, majorList, collectTerms(x._2), x._2.size)
       }
     pcis.toList.sortBy(x => x.grade)(Ordering.String.reverse)
   }
@@ -72,7 +76,8 @@ class StatHelper(entityDao: EntityDao) {
   }
 
   private def collectTeachers(clazzes: Iterable[Clazz]): Iterable[Teacher] = {
-    clazzes.map(_.teachers).flatten.toSet
+    val teachers = clazzes.map(_.teachers).flatten.toSet
+    teachers.toList.sortBy(x => x.user.code)
   }
 
 }
