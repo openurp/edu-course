@@ -31,30 +31,6 @@
        </div>
 
        <div class="card card-info card-primary card-outline">
-         <div class="card-header" id="stat_header_1">
-          <h5 class="mb-0">
-              <button class="btn btn-link" data-toggle="collapse" data-target="#stat_body_1" aria-expanded="true" aria-controls="stat_body_1" style="padding: 0;">
-                课程性质统计
-              </button>
-            </h5>
-         </div>
-         <div id="stat_body_1" class="collapse" aria-labelledby="stat_header_1" data-parent="#accordion">
-           <div class="card-body" style="padding-top: 0px;">
-             <table class="table table-hover table-sm">
-              <tbody>
-              [#list natureStat as stat]
-               <tr>
-                <td>[@b.a href="!search?course.nature.id="+stat[0] target="course_list"]${stat[1]}[/@]</td>
-                <td>${stat[2]}</td>
-               </tr>
-               [/#list]
-              </tbody>
-            </table>
-           </div>
-         </div>
-       </div>
-
-       <div class="card card-info card-primary card-outline">
          <div class="card-header" id="stat_header_3">
           <h5 class="mb-0">
               <button class="btn btn-link" data-toggle="collapse" data-target="#stat_body_3" aria-expanded="true" aria-controls="stat_body_3" style="padding: 0;">
@@ -69,6 +45,30 @@
               [#list typeStat as stat]
                <tr>
                 <td>[@b.a href="!search?course.courseType.id="+stat[0] target="course_list"]${stat[1]}[/@]</td>
+                <td>${stat[2]}</td>
+               </tr>
+               [/#list]
+              </tbody>
+            </table>
+           </div>
+         </div>
+       </div>
+
+       <div class="card card-info card-primary card-outline">
+         <div class="card-header" id="stat_header_1">
+          <h5 class="mb-0">
+              <button class="btn btn-link" data-toggle="collapse" data-target="#stat_body_1" aria-expanded="true" aria-controls="stat_body_1" style="padding: 0;">
+                课程性质统计
+              </button>
+            </h5>
+         </div>
+         <div id="stat_body_1" class="collapse" aria-labelledby="stat_header_1" data-parent="#accordion">
+           <div class="card-body" style="padding-top: 0px;">
+             <table class="table table-hover table-sm">
+              <tbody>
+              [#list natureStat as stat]
+               <tr>
+                <td>[@b.a href="!search?course.nature.id="+stat[0] target="course_list"]${stat[1]}[/@]</td>
                 <td>${stat[2]}</td>
                </tr>
                [/#list]

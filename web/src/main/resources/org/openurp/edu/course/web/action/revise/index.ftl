@@ -26,11 +26,12 @@
                  <td>
                    <span style="color:#6c757d;font-size:0.8em">${course.code}</span>
                    [@b.a href="!info?id="+course.id target="course_list"]<span>${course.name}</span>[/@]
-                 </td>
-                 <td>
-                  [#if hasProfileCourses?seq_contains(course.id)]<i class="fas fa-list-ul"></i>[/#if]
-                  [#if hasSyllabusCourses?seq_contains(course.id)]<i class="fas fa-paperclip"></i>
-                  [#else]<span style="color:red;font-size:0.6em"><i class="fas fa-circle"></i></span>[/#if]
+                  [#if error_msg?length>0]<span style="color:orange;font-size:0.8em"><i class="fas fa-exclamation"></i></span>[/#if]
+
+                  [#--
+                  [#if !hasProfileCourses?seq_contains(course.id)]<span style="color:#6c757d;"><i class="fas fa-list-ul"></i></span>[/#if]
+                  [#if !hasSyllabusCourses?seq_contains(course.id)]<span style="color:#6c757d;"><i class="fas fa-paperclip"></span></i>[/#if]
+                  --]
                  </td>
                 </tr>
                 [/#list]
