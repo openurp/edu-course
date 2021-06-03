@@ -130,17 +130,19 @@
       <h3 class="card-title">教学大纲</h3>
     </div>
       <table class="table table-hover table-sm table-striped" style="font-size:13px">
-       <thead>
+       <thead style="text-align:center">
          <th>作者</th>
          <th>附件</th>
          <th>更新学期</th>
+         <th>更新日期</th>
       </thead>
       <tbody >
       [#list syllabuses as syllabus]
-      <tr>
+      <tr style="text-align:center">
         <td>${syllabus.author.name}</td>
-        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]下载&nbsp;[/@][/#list]</td>
+        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]<span style="color:#6c757d">${a.fileSize/1024.0}K</span>下载&nbsp;[/@][/#list]</td>
         <td>${syllabus.semester.schoolYear} 学年 ${syllabus.semester.name} 学期</td>
+        <td>${syllabus.updatedAt?string("yyyy-MM-dd HH:mm")}</td>
       </tr>
       [/#list]
     </table>
@@ -159,15 +161,15 @@
       <span class="badge badge-primary">${semesters?size}个学期，共计${totalClazzCount}个班次</span>
     </div>
       <table class="table table-hover table-sm table-striped" style="font-size:13px">
-       <thead>
+       <thead style="text-align:center">
          <th>学年学期</th>
          <th>开课院系</th>
          <th>授课教师</th>
          <th>开班次数</th>
       </thead>
-      <tbody >
+      <tbody>
       [#list clazzInfos as clazzInfo]
-      <tr>
+      <tr style="text-align:center">
         <td>${clazzInfo.semester.schoolYear} 学年 ${clazzInfo.semester.name} 学期</td>
         <td>${clazzInfo.department.name}</td>
         <td>[#list clazzInfo.teachers as t]${t.user.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>

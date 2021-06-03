@@ -98,17 +98,19 @@
     </div>
       [#if syllabuses?size>0]
       <table class="table table-hover table-sm table-striped" style="font-size:13px">
-       <thead>
+       <thead style="text-align:center">
          <th>作者</th>
          <th>附件</th>
          <th>更新学期</th>
+         <th>更新日期</th>
       </thead>
       <tbody >
       [#list syllabuses as syllabus]
-      <tr>
+      <tr style="text-align:center">
         <td>${syllabus.author.name}</td>
-        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]下载&nbsp;[/@][/#list]</td>
+        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]<span style="color:#6c757d">${a.fileSize/1024.0}K</span>下载&nbsp;[/@][/#list]</td>
         <td>${syllabus.semester.schoolYear} 学年 ${syllabus.semester.name} 学期</td>
+        <td>${syllabus.updatedAt?string("yyyy-MM-dd HH:mm")}</td>
       </tr>
       [/#list]
     </table>

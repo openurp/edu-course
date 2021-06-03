@@ -19,6 +19,7 @@
 package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
+import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
@@ -130,7 +131,8 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     if (parts.size > 0 && parts.head.getSize > 0 && authorId.nonEmpty) {
       val part = parts.head
       val author = entityDao.get(classOf[User], authorId.get)
-      val syllabus = syllabusService.upload(course, author, part.getInputStream, part.getSubmittedFileName,
+      val syllabus = syllabusService.upload(course, author, part.getInputStream,
+        Strings.substringAfterLast(part.getSubmittedFileName, "."),
         Locale.SIMPLIFIED_CHINESE, Instant.now)
       syllabus.status = SyllabusStatus.Published
       entityDao.saveOrUpdate(syllabus)

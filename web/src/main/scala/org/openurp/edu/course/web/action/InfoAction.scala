@@ -87,7 +87,7 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
     val syllabusQuery = OqlBuilder.from(classOf[Syllabus], "s")
     syllabusQuery.where("s.course = :course", course)
     syllabusQuery.where("s.status=:publishsed", SyllabusStatus.Published)
-    syllabusQuery.orderBy("s.semester.beginOn desc")
+    syllabusQuery.orderBy("s.updatedAt desc")
     put("syllabuses", entityDao.search(syllabusQuery))
 
     val statHelper = new StatHelper(entityDao)

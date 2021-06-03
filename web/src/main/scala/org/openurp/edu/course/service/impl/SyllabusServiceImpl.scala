@@ -23,11 +23,11 @@ import org.beangle.ems.app.EmsApp
 import org.openurp.base.edu.model.Course
 import org.openurp.base.edu.service.SemesterService
 import org.openurp.base.model.User
-import org.openurp.edu.course.model.{Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.edu.course.model.{Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
 
 import java.io.InputStream
-import java.time.{Instant, LocalDate, ZoneId}
+import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 class SyllabusServiceImpl extends SyllabusService {
@@ -36,7 +36,7 @@ class SyllabusServiceImpl extends SyllabusService {
 
   var validateYears = 4
 
-  override def upload(course: Course, author: User, data: InputStream, fileName: String, locale: Locale, updatedAt: Instant): Syllabus = {
+  override def upload(course: Course, author: User, data: InputStream, extension: String, locale: Locale, updatedAt: Instant): Syllabus = {
     val blob = EmsApp.getBlobRepository(true)
 
     val today = updatedAt.atZone(ZoneId.systemDefault()).toLocalDate
@@ -47,7 +47,6 @@ class SyllabusServiceImpl extends SyllabusService {
     syllabus.author = author
     syllabus.department = course.department
     syllabus.semester = semesterService.get(course.project, today).get
-    syllabus.status = SyllabusStatus.Draft
     if (syllabus.beginOn == null) {
       syllabus.beginOn = today
     }
@@ -61,6 +60,7 @@ class SyllabusServiceImpl extends SyllabusService {
       }
     }
 
+    val fileName = course.name + "大纲." + extension
     val meta = blob.upload(s"/${course.id}/syllabus/${author.id}_${today.toString}/",
       data, fileName, author.code + " " + author.name)
 
