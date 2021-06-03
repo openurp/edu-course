@@ -26,7 +26,7 @@
       [@b.file label="更新大纲" name="attachment" extensions="doc,docx,pdf" maxSize="10M"/]
       [@b.formfoot]
         <input type="hidden" name="profile.course.id" value="${course.id}"/>
-        [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
+        [@b.submit value="action.submit"/]
       [/@]
     [/@]
   </div>
