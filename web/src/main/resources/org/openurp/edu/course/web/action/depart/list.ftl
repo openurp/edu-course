@@ -20,7 +20,7 @@
     [@b.col width="20%" property="courseType.name" title="课程类型"/]
     [@b.col width="10%" property="examMode.name" title="考核方式"/]
     [@b.col width="15%" title="简介/大纲"]
-      [@b.a href="!edit?id="+course.id][#if hasProfileCourses?seq_contains(course.id)]有[#else]--[/#if]/[#if hasSyllabusCourses?seq_contains(course.id)]有[#else]--[/#if][/@]
+      [@b.a href="!edit?id="+course.id title="点击可以维护课程简介与大纲"][#if hasProfileCourses?seq_contains(course.id)]有[#else]--[/#if]/[#if hasSyllabusCourses?seq_contains(course.id)]有[#else]--[/#if][/@]
     [/@]
   [/@]
   [/@]

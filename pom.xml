@@ -20,6 +20,7 @@
   <properties>
     <openurp.starter.version>0.0.7</openurp.starter.version>
     <openurp.api.version>0.23.0</openurp.api.version>
+    <openurp.base.version>0.1.18</openurp.base.version>
   </properties>
 
 </project>

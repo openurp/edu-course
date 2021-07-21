@@ -19,7 +19,9 @@
 package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
+import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
+import org.beangle.commons.net.http.HttpUtils
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
@@ -34,7 +36,8 @@ import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, Syll
 import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 
-import java.time.Instant
+import java.net.URL
+import java.time.{Instant, LocalDate}
 import java.util.Locale
 
 class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
@@ -42,17 +45,44 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
   var syllabusService: SyllabusService = _
 
   def index(): View = {
+    val today = LocalDate.now
     val query = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
     query.join("c.teachers", "t")
+    query.where("c.semester.endOn > :today", today)
     query.where("t.user.code=:me", Securities.user)
     query.select("distinct c.course")
     query.orderBy("c.course.code")
-    val courses = entityDao.search(query)
+    val activeCourses = entityDao.search(query)
+
+    val query2 = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
+    query2.join("c.teachers", "t")
+    query2.where("c.semester.endOn <= :today", today)
+    query2.where("t.user.code=:me", Securities.user)
+    query2.select("distinct c.course")
+    query2.orderBy("c.course.code")
+    val hisCourses = Collections.newBuffer(entityDao.search(query2))
+    hisCourses.subtractAll(activeCourses)
+
     val statHelper = new StatHelper(entityDao)
+    val courses = activeCourses ++ hisCourses
     put("hasProfileCourses", statHelper.hasSyllabus(courses))
     put("hasSyllabusCourses", statHelper.hasProfile(courses))
+    put("activeCourses", activeCourses)
+    put("hisCourses", hisCourses)
     put("courses", courses)
+    put("zh_template_url", getTemplateFile("zh.docx"))
+    put("en_template_url", getTemplateFile("en.docx"))
     forward()
+  }
+
+  def getTemplateFile(name: String): Option[URL] = {
+    val url = new URL(s"${Ems.api}/platform/config/files/${EmsApp.name}/syllabus/template/$name")
+    val status = HttpUtils.access(url)
+    if (status.isOk) {
+      Some(url)
+    } else {
+      None
+    }
   }
 
   @mapping("{id}")

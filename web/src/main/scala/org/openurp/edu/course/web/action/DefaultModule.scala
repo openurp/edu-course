@@ -27,6 +27,7 @@ class DefaultModule extends BindModule {
     bind(classOf[ReviseAction])
 
     bind(classOf[DepartAction], classOf[InfoAction])
+
     bind(classOf[SyllabusServiceImpl], classOf[SemesterServiceImpl])
   }
 }

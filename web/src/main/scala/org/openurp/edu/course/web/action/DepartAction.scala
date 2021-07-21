@@ -37,7 +37,6 @@ import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 import org.openurp.starter.edu.helper.ProjectSupport
 
-import java.io.{File, FileInputStream}
 import java.time.{Instant, LocalDate}
 import java.util.Locale
 
@@ -51,6 +50,7 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     put("courseNatures", getCodes(classOf[CourseNature]))
     put("teachingGroups", entityDao.getAll(classOf[TeachingGroup])) //FIXME for teachingGroup missing project
     put("departments", getDeparts)
+    put("project", getProject)
     forward()
   }
 
@@ -59,9 +59,19 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     builder.where("course.department in(:departs)", getDeparts)
     builder.where(simpleEntityName + ".project = :project", getProject)
     addTemporalOn(builder, Some(true))
-    getBoolean("hasClazz") foreach {
-      case true => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
-      case false => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+    val hasClazz = getBoolean("hasClazz")
+    val semesterId = getInt("semester.id")
+    hasClazz foreach {
+      case true =>
+        semesterId match {
+          case Some(sid) => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
+          case None => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+        }
+      case false =>
+        semesterId match {
+          case Some(sid) => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
+          case None => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+        }
     }
     getBoolean("hasProfile") foreach {
       case true => builder.where("exists(from " + classOf[CourseProfile].getName + " clz where clz.course=course)")
