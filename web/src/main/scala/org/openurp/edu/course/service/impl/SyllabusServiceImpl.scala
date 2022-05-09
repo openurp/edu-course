@@ -1,33 +1,32 @@
 /*
- * OpenURP, Agile University Resource Planning Solution.
- *
- * Copyright © 2014, The OpenURP Software.
+ * Copyright (C) 2014, The OpenURP Software.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful.
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.openurp.edu.course.service.impl
 
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.EmsApp
 import org.openurp.base.edu.model.Course
-import org.openurp.base.edu.service.SemesterService
 import org.openurp.base.model.User
-import org.openurp.edu.course.model.{Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.base.service.SemesterService
+import org.openurp.edu.course.model.{Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
 
 import java.io.InputStream
-import java.time.{Instant, LocalDate, ZoneId}
+import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 class SyllabusServiceImpl extends SyllabusService {
@@ -36,7 +35,7 @@ class SyllabusServiceImpl extends SyllabusService {
 
   var validateYears = 4
 
-  override def upload(course: Course, author: User, data: InputStream, fileName: String, locale: Locale, updatedAt: Instant): Syllabus = {
+  override def upload(course: Course, author: User, data: InputStream, extension: String, locale: Locale, updatedAt: Instant): Syllabus = {
     val blob = EmsApp.getBlobRepository(true)
 
     val today = updatedAt.atZone(ZoneId.systemDefault()).toLocalDate
@@ -47,7 +46,6 @@ class SyllabusServiceImpl extends SyllabusService {
     syllabus.author = author
     syllabus.department = course.department
     syllabus.semester = semesterService.get(course.project, today).get
-    syllabus.status = SyllabusStatus.Draft
     if (syllabus.beginOn == null) {
       syllabus.beginOn = today
     }
@@ -61,6 +59,7 @@ class SyllabusServiceImpl extends SyllabusService {
       }
     }
 
+    val fileName = course.name + "大纲." + extension
     val meta = blob.upload(s"/${course.id}/syllabus/${author.id}_${today.toString}/",
       data, fileName, author.code + " " + author.name)
 

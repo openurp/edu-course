@@ -1,6 +1,6 @@
 [#ftl/]
 [@b.head/]
-<div class="container">
+[#if !(request.getHeader('x-requested-with')??) && !Parameters['x-requested-with']??]<div class="container">[/#if]
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">${course.code} ${course.name}</h4>
@@ -22,11 +22,11 @@
       <tr>
         <td class="title">开课院系:</td>
         <td class="content">${(course.department.name)!}</td>
-        <td class="title">建议课程类别:</td>
+        <td class="title">课程类别:</td>
         <td class="content">${(course.courseType.name)!}</td>
       </tr>
        <tr>
-        <td class="title">课程种类:</td>
+        <td class="title">评教分类:</td>
         <td class="content">${(course.category.name)!}</td>
         <td class="title">考试方式:</td>
         <td class="content">${(course.examMode.name)!}</td>
@@ -34,11 +34,11 @@
     </table>
   </div>
 
-    [#if profile??]
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h3 class="card-title">课程介绍</h3>
     </div>
+    [#if profile??]
       <table class="infoTable">
       <tr>
         <td class="title" width="20%">课程简介:</td>
@@ -85,30 +85,72 @@
       </tr>
       [/#if]
     </table>
-  </div>
+    [#else]
+      <div class="alert alert-default-warning" role="alert">
+       缺少简介
+      </div>
     [/#if]
+  </div>
 
-  [#if syllabuses?size>0]
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h3 class="card-title">教学大纲</h3>
     </div>
+      [#if syllabuses?size>0]
       <table class="table table-hover table-sm table-striped" style="font-size:13px">
-       <thead>
+       <thead style="text-align:center">
          <th>作者</th>
          <th>附件</th>
          <th>更新学期</th>
+         <th>更新日期</th>
       </thead>
       <tbody >
       [#list syllabuses as syllabus]
-      <tr>
+      <tr style="text-align:center">
         <td>${syllabus.author.name}</td>
-        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]下载&nbsp;[/@][/#list]</td>
+        <td>[#list syllabus.attachments as a][@b.a href="!attachment?file.id="+a.id target="_blank"]<span style="color:#6c757d">${a.fileSize/1024.0}K</span>下载&nbsp;[/@][/#list]</td>
         <td>${syllabus.semester.schoolYear} 学年 ${syllabus.semester.name} 学期</td>
+        <td>${syllabus.updatedAt?string("yyyy-MM-dd HH:mm")}</td>
+      </tr>
+      [/#list]
+    </table>
+    [#else]
+      <div class="alert alert-default-warning" role="alert">
+       缺少教学大纲
+      </div>
+    [/#if]
+  </div>
+
+    [#if clazzInfos?size>0]
+  <div class="card card-info card-primary card-outline">
+    <div class="card-header">
+      [#assign semesters=[]/][#assign totalClazzCount=0/]
+      [#list clazzInfos as clazzInfo]
+        [#if !semesters?seq_contains(clazzInfo.semester)][#assign semesters=semesters+[clazzInfo.semester]/] [/#if]
+        [#assign totalClazzCount=totalClazzCount + clazzInfo.clazzCount/]
+      [/#list]
+      <h3 class="card-title">近五年开课信息</h3>
+      <span class="badge badge-primary">${semesters?size}个学期，共计${totalClazzCount}个班次</span>
+    </div>
+      <table class="table table-hover table-sm table-striped" style="font-size:13px">
+       <thead>
+         <th>学年学期</th>
+         <th>开课院系</th>
+         <th>授课教师</th>
+         <th>开班次数</th>
+      </thead>
+      <tbody >
+      [#list clazzInfos as clazzInfo]
+      <tr>
+        <td>${clazzInfo.semester.schoolYear} 学年 ${clazzInfo.semester.name} 学期</td>
+        <td>${clazzInfo.department.name}</td>
+        <td>[#list clazzInfo.teachers as t]${t.user.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
+        <td>${clazzInfo.clazzCount}</td>
       </tr>
       [/#list]
     </table>
   </div>
     [/#if]
-</div>
+
+[#if !(request.getHeader('x-requested-with')??) && !Parameters['x-requested-with']??]</div>[/#if]
 [@b.foot/]

@@ -1,38 +1,39 @@
 /*
- * OpenURP, Agile University Resource Planning Solution.
- *
- * Copyright © 2014, The OpenURP Software.
+ * Copyright (C) 2014, The OpenURP Software.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful.
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
+import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.data.model.Entity
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
-import org.beangle.webmvc.api.annotation.{mapping, param}
-import org.beangle.webmvc.api.view.View
-import org.beangle.webmvc.entity.action.EntityAction
-import org.openurp.base.edu.code.model.{CourseAssessCategory, CourseType}
-import org.openurp.base.edu.model.{Course, TeachingGroup}
-import org.openurp.base.model.User
+import org.beangle.web.action.annotation.{mapping, param}
+import org.beangle.web.action.view.View
+import org.beangle.webmvc.support.action.EntityAction
+import org.openurp.base.edu.code.model.{CourseCategory, CourseType}
+import org.openurp.base.edu.model.{Course, TeachingOffice}
+import org.openurp.base.model.{AuditStatus, User}
 import org.openurp.code.edu.model.CourseNature
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
+import org.openurp.edu.course.web.helper.StatHelper
 import org.openurp.starter.edu.helper.ProjectSupport
 
 import java.time.{Instant, LocalDate}
@@ -44,10 +45,21 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
 
   def index: View = {
     put("courseTypes", getCodes(classOf[CourseType]))
-    put("courseCategories", getCodes(classOf[CourseAssessCategory]))
+    put("courseCategories", getCodes(classOf[CourseCategory]))
     put("courseNatures", getCodes(classOf[CourseNature]))
-    put("teachingGroups", entityDao.getAll(classOf[TeachingGroup])) //FIXME for teachingGroup missing project
+    put("teachingOffices", entityDao.getAll(classOf[TeachingOffice])) //FIXME for teachingGroup missing project
     put("departments", getDeparts)
+    put("project", getProject)
+    forward()
+  }
+
+  def search(): View = {
+    val query = getQueryBuilder
+    val courses = entityDao.search(query)
+    val statHelper = new StatHelper(entityDao)
+    put("hasProfileCourses", statHelper.hasSyllabus(courses))
+    put("hasSyllabusCourses", statHelper.hasProfile(courses))
+    put("courses", courses)
     forward()
   }
 
@@ -55,10 +67,20 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     val builder = super.getQueryBuilder
     builder.where("course.department in(:departs)", getDeparts)
     builder.where(simpleEntityName + ".project = :project", getProject)
-    addTemporalOn(builder,Some(true))
-    getBoolean("hasClazz") foreach {
-      case true => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
-      case false => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+    addTemporalOn(builder, Some(true))
+    val hasClazz = getBoolean("hasClazz")
+    val semesterId = getInt("semester.id")
+    hasClazz foreach {
+      case true =>
+        semesterId match {
+          case Some(sid) => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
+          case None => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+        }
+      case false =>
+        semesterId match {
+          case Some(sid) => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
+          case None => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
+        }
     }
     getBoolean("hasProfile") foreach {
       case true => builder.where("exists(from " + classOf[CourseProfile].getName + " clz where clz.course=course)")
@@ -69,25 +91,6 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
       case false => builder.where("not exists(from " + classOf[Syllabus].getName + " clz where clz.course=course)")
     }
     builder
-  }
-
-  def search(): View = {
-    val query = getQueryBuilder
-    val courses = entityDao.search(query)
-    val pQuery = OqlBuilder.from[Long](classOf[CourseProfile].getName, "cp")
-    pQuery.where("cp.course in(:course)", courses)
-    pQuery.select("cp.course.id")
-    val hasProfileCourses = entityDao.search(pQuery).toSet
-    put("hasProfileCourses", hasProfileCourses)
-
-    val sQuery = OqlBuilder.from[Long](classOf[Syllabus].getName, "s")
-    sQuery.where("s.course in(:course)", courses)
-    sQuery.select("s.course.id")
-    val hasSyllabusCourses = entityDao.search(sQuery).toSet
-    put("hasSyllabusCourses", hasSyllabusCourses)
-
-    put("courses", courses)
-    forward()
   }
 
   private def addTemporalOn[T <: Entity[_]](builder: OqlBuilder[T], active: Option[Boolean]): OqlBuilder[T] = {
@@ -141,12 +144,19 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     if (parts.size > 0 && parts.head.getSize > 0 && authorId.nonEmpty) {
       val part = parts.head
       val author = entityDao.get(classOf[User], authorId.get)
-      val syllabus = syllabusService.upload(course, author, part.getInputStream, part.getSubmittedFileName,
+      val syllabus = syllabusService.upload(course, author, part.getInputStream,
+        Strings.substringAfterLast(part.getSubmittedFileName, "."),
         Locale.SIMPLIFIED_CHINESE, Instant.now)
-      syllabus.status = SyllabusStatus.Published
+      syllabus.status = AuditStatus.Published
       entityDao.saveOrUpdate(syllabus)
     }
     redirect("search", "info.save.success")
+  }
+
+  private def getProfile(course: Course): Option[CourseProfile] = {
+    val query = OqlBuilder.from(classOf[CourseProfile], "cp")
+    query.where("cp.course = :course", course)
+    entityDao.search(query).headOption
   }
 
   def attachment(): View = {
@@ -154,12 +164,6 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
     val path = EmsApp.getBlobRepository(true).url(file.filePath)
     response.sendRedirect(path.get.toString)
     null
-  }
-
-  private def getProfile(course: Course): Option[CourseProfile] = {
-    val query = OqlBuilder.from(classOf[CourseProfile], "cp")
-    query.where("cp.course = :course", course)
-    entityDao.search(query).headOption
   }
 
 }

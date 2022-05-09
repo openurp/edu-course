@@ -15,23 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.ws
+package org.openurp.edu.course.web.helper
 
-import org.beangle.commons.collection.Properties
-import org.beangle.data.dao.OqlBuilder
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.edu.course.model.CourseProfile
+import org.openurp.base.edu.code.model.CourseType
+import org.openurp.base.edu.model.{Course, Major, Terms}
+import org.openurp.code.edu.model.EducationLevel
 
-class ProfileWS extends EntityAction[CourseProfile] {
+case class PlanCourseInfo(course: Course, courseType: CourseType, grade: String,
+                          levels: Iterable[EducationLevel], majors: Iterable[Major], terms: Terms, count: Int) {
 
-  @mapping("{id}")
-  def index(@param("id") id: String): Properties = {
-    val builder = OqlBuilder.from(classOf[CourseProfile], "tp")
-    builder.where("tp.course.id=:courseId", id.toLong)
-    entityDao.search(builder).headOption match {
-      case Some(e) => new Properties(e, "id", "description","enDescription")
-      case None => new Properties()
-    }
-  }
 }
