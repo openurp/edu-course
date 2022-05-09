@@ -1,32 +1,32 @@
 /*
- * OpenURP, Agile University Resource Planning Solution.
- *
- * Copyright © 2014, The OpenURP Software.
+ * Copyright (C) 2014, The OpenURP Software.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful.
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.openurp.edu.course.web.action
 
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.EmsApp
-import org.beangle.webmvc.api.action.ActionSupport
-import org.beangle.webmvc.api.annotation.{mapping, param}
-import org.beangle.webmvc.api.view.{Status, View}
-import org.beangle.webmvc.entity.action.EntityAction
+import org.beangle.web.action.annotation.{mapping, param}
+import org.beangle.web.action.support.ActionSupport
+import org.beangle.web.action.view.{Status, View}
+import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, Terms}
+import org.openurp.base.model.AuditStatus
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
 import org.openurp.edu.course.web.helper.{PlanCourseInfo, StatHelper}
 import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
 import org.openurp.starter.edu.helper.ProjectSupport
@@ -86,20 +86,20 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
 
     val syllabusQuery = OqlBuilder.from(classOf[Syllabus], "s")
     syllabusQuery.where("s.course = :course", course)
-    syllabusQuery.where("s.status=:publishsed", SyllabusStatus.Published)
+    syllabusQuery.where("s.status=:publishsed", AuditStatus.Published)
     syllabusQuery.orderBy("s.updatedAt desc")
     put("syllabuses", entityDao.search(syllabusQuery))
 
     val statHelper = new StatHelper(entityDao)
     put("clazzInfos", statHelper.statClazzInfo(course))
-    put("planCourseInfos",statHelper.statPlanCourseInfo(course))
+    put("planCourseInfos", statHelper.statPlanCourseInfo(course))
     forward()
   }
 
   /** 下载下载发布的大纲 */
   def attachment(): View = {
     val file = entityDao.get(classOf[SyllabusFile], longId("file"))
-    if (file.syllabus.status == SyllabusStatus.Published) {
+    if (file.syllabus.status == AuditStatus.Published) {
       val path = EmsApp.getBlobRepository(true).url(file.filePath)
       response.sendRedirect(path.get.toString)
       null

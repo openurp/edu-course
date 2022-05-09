@@ -17,8 +17,8 @@
             [@b.select style="width:100px" name="hasClazz" label="是否开课" items={"1":"是", "0":"否"} empty="..." /]
             [@b.select style="width:100px" name="hasProfile" label="课程简介" items={"1":"有", "0":"无"} empty="..." /]
             [@b.select style="width:100px" name="hasSyllabus" label="教学大纲" items={"1":"有", "0":"无"} empty="..." /]
-            [#if teachingGroups?size>0]
-            [@b.select style="width:100px" name="course.teachingGroup.id" label="教研室" items=teachingGroups option="id,name" empty="..." /]
+            [#if teachingOffices?size>0]
+            [@b.select style="width:100px" name="course.teachingOffice.id" label="教研室" items=teachingOffices option="id,name" empty="..." /]
             [/#if]
             <input type="hidden" name="orderBy" value="course.code"/>
         [/@]

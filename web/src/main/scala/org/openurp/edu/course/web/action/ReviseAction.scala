@@ -1,21 +1,20 @@
 /*
- * OpenURP, Agile University Resource Planning Solution.
- *
- * Copyright © 2014, The OpenURP Software.
+ * Copyright (C) 2014, The OpenURP Software.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful.
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
@@ -25,14 +24,14 @@ import org.beangle.commons.net.http.HttpUtils
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
-import org.beangle.webmvc.api.action.ServletSupport
-import org.beangle.webmvc.api.annotation.{mapping, param}
-import org.beangle.webmvc.api.view.View
-import org.beangle.webmvc.entity.action.EntityAction
+import org.beangle.web.action.annotation.{mapping, param}
+import org.beangle.web.action.support.ServletSupport
+import org.beangle.web.action.view.View
+import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.Course
-import org.openurp.base.model.User
+import org.openurp.base.model.{AuditStatus, User}
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile, SyllabusStatus}
+import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 
@@ -100,12 +99,6 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     forward()
   }
 
-  private def getProfile(course: Course): Option[CourseProfile] = {
-    val query = OqlBuilder.from(classOf[CourseProfile], "cp")
-    query.where("cp.course = :course", course)
-    entityDao.search(query).headOption
-  }
-
   @mapping(value = "{id}/edit")
   def edit(@param("id") id: String): View = {
     val course = entityDao.get(classOf[Course], id.toLong)
@@ -128,26 +121,20 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     forward()
   }
 
+  private def getProfile(course: Course): Option[CourseProfile] = {
+    val query = OqlBuilder.from(classOf[CourseProfile], "cp")
+    query.where("cp.course = :course", course)
+    entityDao.search(query).headOption
+  }
+
   @mapping(value = "{id}", method = "put")
   def update(@param("id") id: String): View = {
     val entity = populate(getModel(id), entityName, simpleEntityName)
     persist(entity)
   }
 
-  @mapping(method = "post")
-  def save(): View = {
-    persist(populateEntity())
-  }
-
   override protected def simpleEntityName: String = {
     "profile"
-  }
-
-  def attachment(): View = {
-    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
-    val path = EmsApp.getBlobRepository(true).url(file.filePath)
-    response.sendRedirect(path.get.toString)
-    null
   }
 
   def persist(profile: CourseProfile): View = {
@@ -164,9 +151,21 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
       val syllabus = syllabusService.upload(course, author, part.getInputStream,
         Strings.substringAfterLast(part.getSubmittedFileName, "."),
         Locale.SIMPLIFIED_CHINESE, Instant.now)
-      syllabus.status = SyllabusStatus.Published
+      syllabus.status = AuditStatus.Published
       entityDao.saveOrUpdate(syllabus)
     }
     redirect("index", "id=" + profile.course.id, "info.save.success")
+  }
+
+  @mapping(method = "post")
+  def save(): View = {
+    persist(populateEntity())
+  }
+
+  def attachment(): View = {
+    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
+    val path = EmsApp.getBlobRepository(true).url(file.filePath)
+    response.sendRedirect(path.get.toString)
+    null
   }
 }
