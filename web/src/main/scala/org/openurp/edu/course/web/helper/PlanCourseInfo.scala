@@ -17,7 +17,7 @@
 
 package org.openurp.edu.course.web.helper
 
-import org.openurp.base.edu.code.model.CourseType
+import org.openurp.base.edu.code.CourseType
 import org.openurp.base.edu.model.{Course, Major, Terms}
 import org.openurp.code.edu.model.EducationLevel
 

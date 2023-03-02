@@ -21,7 +21,7 @@ import jakarta.servlet.http.Part
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.commons.net.http.HttpUtils
-import org.beangle.data.dao.OqlBuilder
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
@@ -41,6 +41,8 @@ import java.util.Locale
 
 class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
 
+  var entityDao: EntityDao = _
+
   var syllabusService: SyllabusService = _
 
   def index(): View = {
@@ -48,7 +50,7 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     val query = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
     query.join("c.teachers", "t")
     query.where("c.semester.endOn > :today", today)
-    query.where("t.user.code=:me", Securities.user)
+    query.where("t.staff.code=:me", Securities.user)
     query.select("distinct c.course")
     query.orderBy("c.course.code")
     val activeCourses = entityDao.search(query)
@@ -56,7 +58,7 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
     val query2 = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
     query2.join("c.teachers", "t")
     query2.where("c.semester.endOn <= :today", today)
-    query2.where("t.user.code=:me", Securities.user)
+    query2.where("t.staff.code=:me", Securities.user)
     query2.select("distinct c.course")
     query2.orderBy("c.course.code")
     val hisCourses = Collections.newBuffer(entityDao.search(query2))
@@ -129,7 +131,7 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
 
   @mapping(value = "{id}", method = "put")
   def update(@param("id") id: String): View = {
-    val entity = populate(getModel(id), entityName, simpleEntityName)
+    val entity = populate(getModel(id), simpleEntityName)
     persist(entity)
   }
 

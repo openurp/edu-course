@@ -20,6 +20,7 @@ package org.openurp.edu.course.service.impl
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.EmsApp
 import org.openurp.base.edu.model.Course
+import org.openurp.base.service.SemesterService
 import org.openurp.base.model.User
 import org.openurp.base.service.SemesterService
 import org.openurp.edu.course.model.{Syllabus, SyllabusFile}
@@ -45,7 +46,7 @@ class SyllabusServiceImpl extends SyllabusService {
     syllabus.updatedAt = updatedAt
     syllabus.author = author
     syllabus.department = course.department
-    syllabus.semester = semesterService.get(course.project, today).get
+    syllabus.semester = semesterService.get(course.project, today)
     if (syllabus.beginOn == null) {
       syllabus.beginOn = today
     }
@@ -60,7 +61,7 @@ class SyllabusServiceImpl extends SyllabusService {
     }
 
     val fileName = course.name + "大纲." + extension
-    val meta = blob.upload(s"/${course.id}/syllabus/${author.id}_${today.toString}/",
+    val meta = blob.upload(s"/course/${course.id}/syllabus/${author.id}_${today.toString}/",
       data, fileName, author.code + " " + author.name)
 
     val attachment = new SyllabusFile

@@ -8,7 +8,7 @@
     [@b.boxcol /]
     [@b.col width="10%" property="code" title="代码"/]
     [@b.col width="20%" property="name" title="名称"][@b.a href="info!info?id=${course.id}" target="_blank"]${course.name}[/@][/@]
-    [@b.col width="5%" property="credits" title="学分"/]
+    [@b.col width="5%" property="defaultCredits" title="学分"/]
     [@b.col width="10%" property="creditHours" title="学时"]
       ${course.creditHours}
       [#if course.hours?size>1]

@@ -15,7 +15,7 @@
       </tr>
       <tr>
         <td class="title">学分:</td>
-        <td class="content">${course.credits!}</td>
+        <td class="content">${course.defaultCredits!}</td>
         <td class="title">学时:</td>
         <td class="content">${course.creditHours!}</td>
       </tr>
@@ -144,7 +144,7 @@
       <tr>
         <td>${clazzInfo.semester.schoolYear} 学年 ${clazzInfo.semester.name} 学期</td>
         <td>${clazzInfo.department.name}</td>
-        <td>[#list clazzInfo.teachers as t]${t.user.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
+        <td>[#list clazzInfo.teachers as t]${t.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
         <td>${clazzInfo.clazzCount}</td>
       </tr>
       [/#list]

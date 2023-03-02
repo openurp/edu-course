@@ -22,14 +22,14 @@
         <td class="title">培养层次:</td>
         <td class="content">
           [#list course.levels as level]
-            ${level.name}
+            ${level.level.name}
             [#if level_has_next],[/#if]
           [/#list]
         </td>
       </tr>
       <tr>
         <td class="title">学分:</td>
-        <td class="content">${course.credits!}</td>
+        <td class="content">${course.defaultCredits!}</td>
         <td class="title">学时:</td>
         <td class="content">${course.creditHours!}</td>
       </tr>
@@ -129,7 +129,7 @@
     <div class="card-header">
       <h3 class="card-title">教学大纲</h3>
     </div>
-      <table class="table table-hover table-sm table-striped" style="font-size:13px">
+      <table class="table table-hover table-sm table-striped">
        <thead style="text-align:center">
          <th>作者</th>
          <th>附件</th>
@@ -160,7 +160,7 @@
       <h3 class="card-title">近五年开课信息</h3>
       <span class="badge badge-primary">${semesters?size}个学期，共计${totalClazzCount}个班次</span>
     </div>
-      <table class="table table-hover table-sm table-striped" style="font-size:13px">
+      <table class="table table-hover table-sm table-striped">
        <thead style="text-align:center">
          <th>学年学期</th>
          <th>开课院系</th>
@@ -172,7 +172,7 @@
       <tr style="text-align:center">
         <td>${clazzInfo.semester.schoolYear} 学年 ${clazzInfo.semester.name} 学期</td>
         <td>${clazzInfo.department.name}</td>
-        <td>[#list clazzInfo.teachers as t]${t.user.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
+        <td>[#list clazzInfo.teachers as t]${t.name}[#if t_has_next]&nbsp;[/#if][/#list]</td>
         <td>${clazzInfo.clazzCount}</td>
       </tr>
       [/#list]

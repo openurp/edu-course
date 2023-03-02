@@ -18,7 +18,6 @@
 package org.openurp.edu.course.web.action
 
 import org.beangle.cdi.bind.BindModule
-import org.openurp.base.service.impl.SemesterServiceImpl
 import org.openurp.edu.course.service.impl.SyllabusServiceImpl
 
 class DefaultModule extends BindModule {
@@ -27,6 +26,6 @@ class DefaultModule extends BindModule {
 
     bind(classOf[DepartAction], classOf[InfoAction])
 
-    bind(classOf[SyllabusServiceImpl], classOf[SemesterServiceImpl])
+    bind(classOf[SyllabusServiceImpl])
   }
 }

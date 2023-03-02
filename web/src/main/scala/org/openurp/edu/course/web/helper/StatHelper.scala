@@ -49,7 +49,7 @@ class StatHelper(entityDao: EntityDao) {
         val levelsList= levels.toList.sortBy(_.code)
         val majors = x._2.map(_.group.plan.program.major).toSet
         val majorList = majors.toList.sortBy(x => x.code)
-        PlanCourseInfo(x._1._1, x._1._2, x._1._3, levelsList, majorList, collectTerms(x._2), x._2.size)
+        PlanCourseInfo(x._1._1, x._1._2, x._1._3.code, levelsList, majorList, collectTerms(x._2), x._2.size)
       }
     pcis.toList.sortBy(x => x.grade)(Ordering.String.reverse)
   }
@@ -76,7 +76,7 @@ class StatHelper(entityDao: EntityDao) {
 
   private def collectTeachers(clazzes: Iterable[Clazz]): Iterable[Teacher] = {
     val teachers = clazzes.map(_.teachers).flatten.toSet
-    teachers.toList.sortBy(x => x.user.code)
+    teachers.toList.sortBy(x => x.staff.code)
   }
 
 }

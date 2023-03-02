@@ -17,7 +17,7 @@
 
 package org.openurp.edu.course.web.action
 
-import org.beangle.data.dao.OqlBuilder
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.EmsApp
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.support.ActionSupport
@@ -29,11 +29,13 @@ import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
 import org.openurp.edu.course.web.helper.{PlanCourseInfo, StatHelper}
 import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
-import org.openurp.starter.edu.helper.ProjectSupport
+import org.openurp.starter.web.support.ProjectSupport
 
 import java.time.LocalDate
 
 class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSupport {
+
+  var entityDao: EntityDao = _
 
   def index(): View = {
     val dQuery = OqlBuilder.from(classOf[Course].getName, "c")
@@ -77,7 +79,7 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
 
   @mapping(value = "{id}")
   def info(@param("id") id: String): View = {
-    val course = getModel[Course](entityName, convertId(id))
+    val course = entityDao.get(classOf[Course], id.toLong)
     put(simpleEntityName, course)
 
     val profileQuery = OqlBuilder.from(classOf[CourseProfile], "cp")

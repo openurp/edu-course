@@ -18,19 +18,21 @@
 package org.openurp.edu.course.web.ws
 
 import org.beangle.commons.collection.Properties
-import org.beangle.data.dao.OqlBuilder
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.edu.course.model.CourseProfile
 
 class ProfileWS extends EntityAction[CourseProfile] {
 
+  var entityDao: EntityDao = _
+
   @mapping("{id}")
   def index(@param("id") id: String): Properties = {
     val builder = OqlBuilder.from(classOf[CourseProfile], "tp")
     builder.where("tp.course.id=:courseId", id.toLong)
     entityDao.search(builder).headOption match {
-      case Some(e) => new Properties(e, "id", "description","enDescription")
+      case Some(e) => new Properties(e, "id", "description", "enDescription")
       case None => new Properties()
     }
   }

@@ -19,31 +19,33 @@ package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
 import org.beangle.commons.lang.Strings
-import org.beangle.data.dao.OqlBuilder
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.data.model.Entity
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.base.edu.code.model.{CourseCategory, CourseType}
+import org.openurp.base.edu.code.{CourseCategory, CourseType}
 import org.openurp.base.edu.model.{Course, TeachingOffice}
-import org.openurp.base.model.{AuditStatus, User}
+import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.CourseNature
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
-import org.openurp.starter.edu.helper.ProjectSupport
+import org.openurp.starter.web.support.ProjectSupport
 
 import java.time.{Instant, LocalDate}
 import java.util.Locale
 
 class DepartAction extends EntityAction[Course] with ProjectSupport {
-
+  var entityDao: EntityDao = _
   var syllabusService: SyllabusService = _
 
-  def index: View = {
+  def index(): View = {
+    given project: Project = getProject
+
     put("courseTypes", getCodes(classOf[CourseType]))
     put("courseCategories", getCodes(classOf[CourseCategory]))
     put("courseNatures", getCodes(classOf[CourseNature]))
@@ -64,6 +66,8 @@ class DepartAction extends EntityAction[Course] with ProjectSupport {
   }
 
   protected override def getQueryBuilder: OqlBuilder[Course] = {
+    given project: Project = getProject
+
     val builder = super.getQueryBuilder
     builder.where("course.department in(:departs)", getDeparts)
     builder.where(simpleEntityName + ".project = :project", getProject)

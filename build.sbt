@@ -1,5 +1,5 @@
-import org.openurp.parent.Dependencies._
 import org.openurp.parent.Settings._
+import org.openurp.parent.Dependencies._
 
 ThisBuild / organization := "org.openurp.edu.course"
 ThisBuild / version := "0.0.2-SNAPSHOT"
@@ -20,12 +20,14 @@ ThisBuild / developers := List(
   )
 )
 
-ThisBuild / description := "OpenURP Edu Course"
+ThisBuild / description := "The OpenURP Edu Course"
 ThisBuild / homepage := Some(url("http://openurp.github.io/edu-course/index.html"))
+ThisBuild / resolvers += Resolver.mavenLocal
 
-val apiVer = "0.25.0"
-val starterVer = "0.0.2-SNAPSHOT9"
-val baseVer = "0.1.27"
+val apiVer = "0.31.0.Beta3-SNAPSHOT"
+val starterVer = "0.2.11-SNAPSHOT"
+val baseVer = "0.3.4-SNAPSHOT"
+val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer
 val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer
 val openurp_stater_web = "org.openurp.starter" % "openurp-starter-web" % starterVer
 val openurp_base_tag = "org.openurp.base" % "openurp-base-tag" % baseVer
@@ -38,14 +40,16 @@ lazy val web = (project in file("web"))
   .settings(
     name := "openurp-edu-course-web",
     common,
-    libraryDependencies ++= Seq(openurp_edu_api,beangle_ems_app,openurp_stater_web,openurp_base_tag)
+    libraryDependencies ++= Seq(beangle_webmvc_support,beangle_data_orm,beangle_ems_app),
+    libraryDependencies ++= Seq(openurp_base_api,openurp_edu_api,openurp_stater_web),
+    libraryDependencies ++= Seq(beangle_serializer_text,openurp_base_tag)
   )
-
 lazy val webapp = (project in file("webapp"))
-  .enablePlugins(WarPlugin,TomcatPlugin)
+  .enablePlugins(WarPlugin,UndertowPlugin,TomcatPlugin)
   .settings(
     name := "openurp-edu-course-webapp",
-    common
+    common,
+    libraryDependencies ++= Seq(logback_classic,hibernate_jcache)
   ).dependsOn(web)
 
 publish / skip := true
