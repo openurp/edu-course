@@ -25,13 +25,14 @@ import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.support.ServletSupport
+import org.beangle.web.action.support.{ActionSupport, ServletSupport}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.Course
 import org.openurp.base.model.{AuditStatus, User}
+import org.openurp.base.profile.model.CourseProfile
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
+import org.openurp.edu.course.model.{Syllabus, SyllabusFile}
 import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 
@@ -39,7 +40,7 @@ import java.net.URL
 import java.time.{Instant, LocalDate}
 import java.util.Locale
 
-class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
+class ReviseAction extends ActionSupport, EntityAction[CourseProfile], ServletSupport {
 
   var entityDao: EntityDao = _
 
@@ -165,7 +166,7 @@ class ReviseAction extends EntityAction[CourseProfile] with ServletSupport {
   }
 
   def attachment(): View = {
-    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
+    val file = entityDao.get(classOf[SyllabusFile], getLongId("file"))
     val path = EmsApp.getBlobRepository(true).url(file.filePath)
     response.sendRedirect(path.get.toString)
     null

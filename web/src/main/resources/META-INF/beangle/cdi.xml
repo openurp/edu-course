@@ -2,7 +2,6 @@
 <cdi>
   <container>
     <module class="org.openurp.edu.course.web.action.DefaultModule"/>
-    <module class="org.openurp.edu.course.web.ws.DefaultModule"/>
     <module class="org.openurp.starter.web.ProjectModule" />
 
     <module class="org.beangle.serializer.text.DefaultModule"/>

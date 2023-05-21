@@ -19,8 +19,9 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.openurp.base.edu.model.{Course, Teacher, Terms}
+import org.openurp.base.profile.model.CourseProfile
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus}
+import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
 
 import java.time.LocalDate

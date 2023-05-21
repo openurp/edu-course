@@ -25,8 +25,9 @@ import org.beangle.web.action.view.{Status, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, Terms}
 import org.openurp.base.model.AuditStatus
+import org.openurp.base.profile.model.CourseProfile
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseProfile, Syllabus, SyllabusFile}
+import org.openurp.edu.course.model.{Syllabus, SyllabusFile}
 import org.openurp.edu.course.web.helper.{PlanCourseInfo, StatHelper}
 import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
 import org.openurp.starter.web.support.ProjectSupport
@@ -100,7 +101,7 @@ class InfoAction extends ActionSupport with EntityAction[Course] with ProjectSup
 
   /** 下载下载发布的大纲 */
   def attachment(): View = {
-    val file = entityDao.get(classOf[SyllabusFile], longId("file"))
+    val file = entityDao.get(classOf[SyllabusFile], getLongId("file"))
     if (file.syllabus.status == AuditStatus.Published) {
       val path = EmsApp.getBlobRepository(true).url(file.filePath)
       response.sendRedirect(path.get.toString)
