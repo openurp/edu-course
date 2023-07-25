@@ -31,6 +31,7 @@ val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer
 val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer
 val openurp_stater_web = "org.openurp.starter" % "openurp-starter-web" % starterVer
 val openurp_base_tag = "org.openurp.base" % "openurp-base-tag" % baseVer
+val beangle_webmvc_view = "org.beangle.webmvc" % "beangle-webmvc-view_3" % "0.9.5-SNAPSHOT"
 
 lazy val root = (project in file("."))
   .settings()
@@ -42,7 +43,7 @@ lazy val web = (project in file("web"))
     common,
     libraryDependencies ++= Seq(beangle_webmvc_support,beangle_data_orm,beangle_ems_app),
     libraryDependencies ++= Seq(openurp_base_api,openurp_edu_api,openurp_stater_web),
-    libraryDependencies ++= Seq(beangle_serializer_text,openurp_base_tag)
+    libraryDependencies ++= Seq(beangle_serializer_text,openurp_base_tag,beangle_webmvc_view)
   )
 lazy val webapp = (project in file("webapp"))
   .enablePlugins(WarPlugin,UndertowPlugin,TomcatPlugin)

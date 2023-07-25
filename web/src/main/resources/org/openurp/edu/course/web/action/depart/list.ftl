@@ -3,6 +3,7 @@
 [@b.grid items=courses var="course"]
   [@b.gridbar]
     bar.addItem("${b.text("action.modify")}",action.edit());
+    bar.addItem("批量下载",action.multi('batchDownload','下载大纲数量较多时，等待时间较长，确定下载?',null,false));
   [/@]
   [@b.row]
     [@b.boxcol /]

@@ -18,14 +18,17 @@
 package org.openurp.edu.course.web.action
 
 import jakarta.servlet.http.Part
+import org.beangle.commons.file.zip.Zipper
+import org.beangle.commons.io.{Files, IOs}
 import org.beangle.commons.lang.Strings
+import org.beangle.commons.net.http.HttpUtils.followRedirect
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.data.model.Entity
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.support.ActionSupport
-import org.beangle.web.action.view.View
+import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.code.{CourseCategory, CourseType}
 import org.openurp.base.edu.model.{Course, TeachingOffice}
@@ -38,6 +41,8 @@ import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 import org.openurp.starter.web.support.ProjectSupport
 
+import java.io.{File, FileOutputStream, InputStream, OutputStream}
+import java.net.URLConnection
 import java.time.{Instant, LocalDate}
 import java.util.Locale
 
@@ -172,4 +177,65 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport {
     null
   }
 
+  def batchDownload(): View = {
+    val courseIds = getLongIds("course")
+    val query = OqlBuilder.from(classOf[Syllabus], "s")
+    query.where("s.course.id in(:courseIds)", courseIds)
+    query.where("not exists(from " + classOf[Syllabus].getName + " s2 where s2.course=s.course and s2.updatedAt>s.updatedAt)")
+    val syllabuses = entityDao.search(query)
+    val departs = syllabuses.map(_.course.department).distinct
+    val dir = new File(System.getProperty("java.io.tmpdir") + "syllabus" + Files./ + System.currentTimeMillis())
+    if (dir.exists()) Files.travel(dir, f => f.delete())
+    dir.mkdirs()
+
+    var paperCount = 0
+    val blob = EmsApp.getBlobRepository(true)
+    syllabuses.foreach { syllabus =>
+      syllabus.attachments.headOption foreach { attachment =>
+        blob.url(attachment.filePath) foreach { url =>
+          val courseName = syllabus.course.code + " " + syllabus.course.name
+          val fileName = dir.getAbsolutePath+Files./ + courseName + "." + Strings.substringAfterLast(attachment.filePath, ".")
+          downloading(url.openConnection(), new File(fileName))
+          paperCount += 1
+        }
+      }
+    }
+    val targetZip = new File(System.getProperty("java.io.tmpdir") + "syllabus" + Files./ + "batch.zip")
+    Zipper.zip(dir, targetZip)
+    val fileName = (if (departs.size == 1) then departs.head.name else departs.head.name + "等院系") + s"课程大纲(${paperCount}).zip"
+    Stream(targetZip, "application/zip", fileName).cleanup(() => {
+      Files.travel(dir, f => f.delete())
+      dir.delete()
+      targetZip.delete()
+    })
+  }
+
+  private def downloading(c: URLConnection, location: File): Unit = {
+    val conn = followRedirect(c, "GET")
+    var input: InputStream = null
+    var output: OutputStream = null
+    try {
+      val file = new File(location.toString + ".part")
+      file.delete()
+      val buffer = Array.ofDim[Byte](1024 * 4)
+      input = conn.getInputStream
+      output = new FileOutputStream(file)
+      var n = input.read(buffer)
+      while (-1 != n) {
+        output.write(buffer, 0, n)
+        n = input.read(buffer)
+      }
+      //先关闭文件读写，再改名
+      IOs.close(input, output)
+      input = null
+      output = null
+      file.renameTo(location)
+    } catch {
+      case e: Throwable =>
+        logger.warn(s"Cannot download file ${location}")
+    }
+    finally {
+      IOs.close(input, output)
+    }
+  }
 }
