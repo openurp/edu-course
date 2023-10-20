@@ -60,7 +60,7 @@ class SyllabusServiceImpl extends SyllabusService {
       }
     }
 
-    val fileName = course.name + "大纲." + extension
+    val fileName = course.code + "大纲." + extension
     val meta = blob.upload(s"/course/${course.id}/syllabus/${author.id}_${today.toString}/",
       data, fileName, author.code + " " + author.name)
 

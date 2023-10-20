@@ -148,7 +148,7 @@ class ReviseAction extends ActionSupport, EntityAction[CourseProfile], ServletSu
     val course = entityDao.get(classOf[Course], profile.course.id)
     val parts = getAll("attachment", classOf[Part])
     val authorId = getLong("syllabus.author.id")
-    if (parts.size > 0 && parts.head.getSize > 0 && authorId.nonEmpty) {
+    if (parts.nonEmpty && parts.head.getSize > 0 && authorId.nonEmpty) {
       val part = parts.head
       val author = entityDao.get(classOf[User], authorId.get)
       val syllabus = syllabusService.upload(course, author, part.getInputStream,
