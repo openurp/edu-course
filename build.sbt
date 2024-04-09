@@ -1,5 +1,6 @@
-import org.openurp.parent.Settings._
-import org.openurp.parent.Dependencies._
+import org.openurp.parent.Dependencies.*
+import org.openurp.parent.Settings.*
+import sbt.Keys.libraryDependencies
 
 ThisBuild / organization := "org.openurp.edu.course"
 ThisBuild / version := "0.0.3-SNAPSHOT"
@@ -24,32 +25,25 @@ ThisBuild / description := "The OpenURP Edu Course"
 ThisBuild / homepage := Some(url("http://openurp.github.io/edu-course/index.html"))
 ThisBuild / resolvers += Resolver.mavenLocal
 
-val apiVer = "0.34.3"
-val starterVer = "0.3.10"
-val baseVer = "0.4.8"
+val apiVer = "0.38.1-SNAPSHOT"
+val starterVer = "0.3.30"
+val baseVer = "0.4.22"
+val eduCoreVer = "0.2.1"
+
 val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer
 val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer
+val openurp_edu_core = "org.openurp.edu" % "openurp-edu-core" % eduCoreVer
 val openurp_stater_web = "org.openurp.starter" % "openurp-starter-web" % starterVer
 val openurp_base_tag = "org.openurp.base" % "openurp-base-tag" % baseVer
 
-lazy val root = (project in file("."))
-  .settings()
-  .aggregate(web,webapp)
 
-lazy val web = (project in file("web"))
-  .settings(
-    name := "openurp-edu-course-web",
-    common,
-    libraryDependencies ++= Seq(beangle_webmvc_support,beangle_data_orm,beangle_ems_app),
-    libraryDependencies ++= Seq(openurp_base_api,openurp_edu_api,openurp_stater_web),
-    libraryDependencies ++= Seq(beangle_serializer_text,openurp_base_tag,beangle_webmvc_view)
-  )
-lazy val webapp = (project in file("webapp"))
+lazy val root = (project in file("."))
   .enablePlugins(WarPlugin,UndertowPlugin,TomcatPlugin)
   .settings(
     name := "openurp-edu-course-webapp",
     common,
-    libraryDependencies ++= Seq(logback_classic,hibernate_jcache)
-  ).dependsOn(web)
-
-publish / skip := true
+    libraryDependencies ++= Seq(beangle_ems_app),
+    libraryDependencies ++= Seq(openurp_base_api,openurp_edu_api,openurp_stater_web),
+    libraryDependencies ++= Seq(openurp_base_tag),
+    libraryDependencies ++= Seq(logback_classic,openurp_edu_core)
+  )
