@@ -96,3 +96,5 @@ ol {
     </ol>
   </div>
   [/#macro]
+
+[#assign tips={'syllabus.description':'必须含课程的德育描述','values':'经世济民、诚信服务等职业素养，课程根据思政教育和课程思政的安排，在本课程中融入的课程思政教学内容。'}/]

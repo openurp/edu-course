@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
+import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
@@ -83,6 +84,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("gradingModes", getCodes(classOf[GradingMode]))
     put("courseModules", getCodes(classOf[CourseModule]))
     put("courseRanks", getCodes(classOf[CourseRank]))
+    put("experimentTypes", getCodes(classOf[ExperimentType]))
 
     val s = OqlBuilder.from(classOf[CalendarStage], "s")
     s.where("s.school=:school and s.vacation=false", project.school)
@@ -289,30 +291,100 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     syllabus.updatedAt = Instant.now
     entityDao.saveOrUpdate(syllabus, topic)
-    redirect("topicInfo", s"&topic.id=${topic.id}", "保存成功")
+    redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")
   }
 
+  def removeTopic(): View = {
+    val topic = entityDao.get(classOf[SyllabusTopic], getLongId("topic"))
+    val syllabus = topic.syllabus
+    syllabus.topics -= topic
+    syllabus.updatedAt = Instant.now
+    entityDao.saveOrUpdate(syllabus)
+    redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")
+  }
+
+  @deprecated
   def topicInfo(): View = {
     val topic = entityDao.get(classOf[SyllabusTopic], getLongId("topic"))
     put("topic", topic)
     forward(s"${topic.syllabus.locale}/topicInfo")
   }
 
+  def editDesign(): View = {
+    val design = entityDao.get(classOf[SyllabusMethodDesign], getLongId("design"))
+    put("design", design)
+    put("syllabus", design.syllabus)
+
+    given project: Project = design.syllabus.course.project
+
+    put("experimentTypes", getCodes(classOf[ExperimentType]))
+    forward(s"${design.syllabus.locale}/editDesign")
+  }
+
   def saveDesign(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     syllabus.updatedAt = Instant.now()
-    syllabus.getText("design") match
-      case Some(t) => t.contents = get("design", "--")
-      case None =>
-        val v = new SyllabusText(syllabus, "2", "design", get("design", "--"))
-        syllabus.texts.addOne(v)
+    val design = populateEntity(classOf[SyllabusMethodDesign], "design")
+    if (!design.persisted) {
+      design.syllabus = syllabus
+      syllabus.designs += design
+    }
+    val caseAndExps = getAll("caseAndExperiments", classOf[String]).toSet
+    if (caseAndExps.contains("hasCase")) {
+      val cases = syllabus.cases.map(x => (x.idx, x)).toMap
+      (0 to 9) foreach { i =>
+        val name = get(s"case${i}.name", "")
+        cases.get(i) match
+          case None =>
+            if (Strings.isNotBlank(name)) {
+              syllabus.cases += new SyllabusCase(syllabus, i, name)
+            }
+          case Some(c) =>
+            if Strings.isBlank(name) then syllabus.cases -= c else c.name = name
+      }
+      design.hasCase = true
+    } else {
+      design.hasCase = false
+    }
+    if (caseAndExps.contains("hasExperiment")) {
+      val experiments = syllabus.experiments.map(x => (x.idx, x)).toMap
+      (0 to 9) foreach { i =>
+        val name = get(s"experiment${i}.name", "")
+        experiments.get(i) match
+          case None =>
+            if (Strings.isNotBlank(name)) {
+              val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
+              val online = getBoolean(s"experiment${i}.online", false)
+              syllabus.experiments += new SyllabusExperiment(syllabus, i, name, experimentType, online)
+            }
+          case Some(c) =>
+            if Strings.isBlank(name) then syllabus.experiments -= c else c.name = name
+      }
+      design.hasExperiment = true
+    } else {
+      design.hasExperiment = false
+    }
+    if (!syllabus.designs.exists(_.hasCase)) {
+      syllabus.cases.clear()
+    }
+    if (!syllabus.designs.exists(_.hasExperiment)) {
+      syllabus.experiments.clear()
+    }
 
     entityDao.saveOrUpdate(syllabus)
-    toStep(syllabus)
-    redirect("editAssess", s"syllabus.id=${syllabus.id}", "info.save.success")
+    redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
   }
 
-  def editAssess(): View = {
+  def removeDesign(): View = {
+    val design = entityDao.get(classOf[SyllabusMethodDesign], getLongId("design"))
+    val syllabus = design.syllabus
+    syllabus.designs -= design
+    syllabus.updatedAt = Instant.now
+    entityDao.saveOrUpdate(syllabus)
+    redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
+  }
+
+  def assesses(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
 
     given project: Project = syllabus.course.project
@@ -320,7 +392,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
     put("endType", entityDao.get(classOf[GradeType], GradeType.End))
     put("syllabus", syllabus)
-    forward(s"${syllabus.locale}/assess")
+    forward(s"${syllabus.locale}/assesses")
   }
 
   def saveAssess(): View = {
@@ -342,15 +414,60 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     toStep(syllabus)
   }
 
+  def removeAssess(): View = {
+    val assessment = entityDao.get(classOf[SyllabusAssessment], getLongId("assessment"))
+    val syllabus = assessment.syllabus
+    syllabus.assessments -= assessment
+    entityDao.saveOrUpdate(syllabus)
+    redirect("assesses", s"syllabus.id=${syllabus.id}", "info.remove.success")
+  }
+
+  /** 将评价标准移动到指定位置
+   *
+   * @return
+   */
+  def moveAssess(): View = {
+    val assessment = entityDao.get(classOf[SyllabusAssessment], getLongId("assessment"))
+    val syllabus = assessment.syllabus
+    val idx = getInt("idx", 1) - 1
+    assessment.idx = idx
+    syllabus.assessments foreach { a =>
+      if (a.component.nonEmpty) {
+        if (a.idx >= idx && a != assessment) {
+          a.idx += 1
+        }
+      }
+    }
+    entityDao.saveOrUpdate(syllabus)
+    redirect("assesses", s"syllabus.id=${syllabus.id}", "info.save.success")
+  }
+
   private def popluateAssessment(syllabus: Syllabus, gradeType: GradeType, index: Int, componentName: Option[String]): SyllabusAssessment = {
     val assessment = syllabus.getAssessment(gradeType, componentName.orNull).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
     if (!assessment.persisted) {
       syllabus.assessments += assessment
     }
+    assessment.idx = index
     val prefix = componentName match
       case None => "grade" + gradeType.id
       case Some(n) => "grade" + gradeType.id + "_" + index
     populate(assessment, prefix)
+    val percents = Collections.newMap[String, Int]
+    syllabus.objectives foreach { co =>
+      val p = getInt(s"usual_${index}_co${co.id}", 0)
+      if p > 0 then percents.put(co.code, p)
+    }
+    assessment.updateObjectivePercents(percents.toMap)
+
+    assessment.component foreach { n =>
+      var name = Strings.replace(n, "\r", "")
+      name = Strings.replace(n, "\n", "")
+      name = Strings.replace(n, " ", "")
+      assessment.component = Some(name)
+    }
+    //    assessment.scoreTable foreach { table =>
+    //      assessment.scoreTable = Some(HtmlTableHelper.cleanup(table))
+    //    }
     assessment
   }
 
@@ -389,7 +506,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def info(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     put("syllabus", syllabus)
+    put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
+    put("endType", entityDao.get(classOf[GradeType], GradeType.End))
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.id}/report_${syllabus.locale}")
+    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
   }
 }

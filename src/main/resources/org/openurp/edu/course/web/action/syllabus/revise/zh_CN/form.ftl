@@ -18,7 +18,7 @@
     [@b.radios name="syllabus.module.id" label="课程模块" value=syllabus.module! items=courseModules empty="..." required="true"/]
     [@b.radios label="必修选修" name="syllabus.rank.id" value=syllabus.rank! items=courseRanks required="true"/]
     [@b.radios name="syllabus.nature.id" label="课程性质" value=syllabus.nature! items=courseNatures empty="..." required="true"/]
-    [@b.checkboxes name="teachingMethod.id" label="教学方式" value1=syllabus.methods! required="true" items=teachingMethods /]
+    [@b.checkboxes name="teachingMethod.id" label="教学方式" values=syllabus.methods! required="true" items=teachingMethods /]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
     [#if teachingNatures?size>0]
