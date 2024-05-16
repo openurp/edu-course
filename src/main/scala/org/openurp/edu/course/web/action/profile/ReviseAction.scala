@@ -32,7 +32,7 @@ import org.openurp.base.edu.model.{Course, CourseProfile}
 import org.openurp.base.model.{AuditStatus, User}
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{Syllabus, SyllabusDoc}
-import org.openurp.edu.course.service.SyllabusDocService
+import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 
 import java.net.URL
@@ -46,7 +46,7 @@ class ReviseAction extends ActionSupport, EntityAction[CourseProfile], ServletSu
 
   var entityDao: EntityDao = _
 
-  var syllabusService: SyllabusDocService = _
+  var syllabusService: SyllabusService = _
 
   def index(): View = {
     val today = LocalDate.now

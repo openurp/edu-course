@@ -19,17 +19,18 @@ package org.openurp.edu.course.service.impl
 
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.EmsApp
-import org.openurp.base.edu.model.Course
-import org.openurp.base.model.User
+import org.openurp.base.edu.model.{Course, CourseDirector, TeachingOffice}
+import org.openurp.base.hr.model.Teacher
+import org.openurp.base.model.{Department, Semester, User}
 import org.openurp.base.service.SemesterService
-import org.openurp.edu.course.model.{Syllabus, SyllabusDoc}
-import org.openurp.edu.course.service.SyllabusDocService
+import org.openurp.edu.course.model.{CourseTask, SyllabusDoc}
+import org.openurp.edu.course.service.SyllabusService
 
 import java.io.InputStream
 import java.time.{Instant, ZoneId}
 import java.util.Locale
 
-class SyllabusDocServiceImpl extends SyllabusDocService {
+class SyllabusServiceImpl extends SyllabusService {
   var semesterService: SemesterService = _
   var entityDao: EntityDao = _
 

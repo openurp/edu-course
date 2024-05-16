@@ -17,15 +17,16 @@
 
 package org.openurp.edu.course.service
 
-import org.openurp.base.edu.model.Course
-import org.openurp.base.model.User
-import org.openurp.edu.course.model.{Syllabus, SyllabusDoc}
+import org.openurp.base.edu.model.{Course, TeachingOffice}
+import org.openurp.base.hr.model.Teacher
+import org.openurp.base.model.{Department, Semester, User}
+import org.openurp.edu.course.model.SyllabusDoc
 
 import java.io.InputStream
 import java.time.Instant
 import java.util.Locale
 
-trait SyllabusDocService {
+trait SyllabusService {
 
   def upload(course: Course, writer: User, data: InputStream, extension: String, locale: Locale, updatedAt: Instant): SyllabusDoc
 }

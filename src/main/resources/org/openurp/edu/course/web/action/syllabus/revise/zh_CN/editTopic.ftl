@@ -5,7 +5,7 @@
     [#list topicLabels as label]
       [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" value=(topic.getElement(label).contents)! required="true"/]
     [/#list]
-    [@b.checkboxes label="教学方法" name="teachingMethod.id" items=teachingMethods values=topic.methods required="true"/]
+    [@b.checkboxes label="教学方法" name="teachingMethod" items=teachingMethods values=topic.teachingMethods! required="true"/]
     [@b.field label="课时分布"]
       [#assign hours={}/]
       [#list topic.hours as h]
@@ -16,7 +16,7 @@
         <label for="teachingNature${ht.id}_p">${ht_index+1}.${ht.name}</label>
         <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}">课时
         [#if ((syllabus.getHour(ht).weeks)!0)>0]
-        <input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="${(hours[ht.id?string].weeks)!}">实践周
+        <input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="${(hours[ht.id?string].weeks)!}">周
         [/#if]
       [/#list]
        <label for="learning_p">自主学习</label>

@@ -24,11 +24,15 @@ import org.beangle.security.Securities
 import org.beangle.web.action.annotation.mapping
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.base.edu.model.{Course, Textbook}
+import org.openurp.base.edu.model.{Course, Major, Textbook}
 import org.openurp.base.hr.model.Teacher
-import org.openurp.base.model.{CalendarStage, Project, Semester, User}
+import org.openurp.base.model.*
+import org.openurp.base.model.AuditStatus.{PassedByDirector, Submited}
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.model.*
+import org.openurp.edu.course.service.CourseTaskService
+import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
 
 import java.time.Instant
@@ -38,6 +42,8 @@ import java.util.Locale
  * 教师修订教学大纲
  */
 class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
+
+  var courseTaskService: CourseTaskService = _
 
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
     val q = OqlBuilder.from(classOf[CourseTask], "c")
@@ -62,9 +68,24 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     //textbook item
     if (get("step").contains("textbook")) {
       put("textbooks", entityDao.getAll(classOf[Textbook]))
+      if (syllabus.textbooks.isEmpty) {
+        val materials = entityDao.findBy(classOf[ClazzMaterial], "clazz.course" -> syllabus.course, "clazz.semester" -> syllabus.semester)
+        val books = materials.flatMap(_.books).distinct
+        syllabus.textbooks.addAll(books)
+      }
+      put("director", courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester))
+      put("me", Securities.user)
     }
     if (get("step").contains("outcomes")) {
       put("graduateObjectives", entityDao.getAll(classOf[GraduateObjective]))
+    }
+    if (get("step").contains("topics")) {
+      put("validateHourMessages", validateHours(syllabus))
+    }
+    if (get("step").isEmpty) {
+      val majors = entityDao.findBy(classOf[Major], "project" -> syllabus.course.project)
+      val courseMajors = majors.filter(m => m.active && m.journals.exists(_.depart == syllabus.department))
+      put("majors", courseMajors)
     }
     val locale = syllabus.locale
     get("step") match
@@ -78,7 +99,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("project", project)
     put("departments", List(course.department))
     put("teachingNatures", getCodes(classOf[TeachingNature]))
-    put("teachingMethods", getCodes(classOf[TeachingMethod]))
     put("courseNatures", getCodes(classOf[CourseNature]))
     put("examModes", getCodes(classOf[ExamMode]))
     put("gradingModes", getCodes(classOf[GradingMode]))
@@ -91,7 +111,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     s.orderBy("s.startWeek").cacheable()
     put("calendarStages", entityDao.search(s))
 
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(new Locale("zh", "CN") -> "中文大纲", new Locale("en", "US") -> "English Syllabus"))
   }
 
   @mapping(value = "new", view = "new,form")
@@ -129,19 +149,17 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val me = entityDao.findBy(classOf[User], "code", Securities.user).head
     val syllabus = populateEntity()
-    if (!syllabus.persisted) {
+    if (null == syllabus.beginOn) {
       syllabus.beginOn = entityDao.get(classOf[Semester], syllabus.semester.id).beginOn
+    }
+    if (!syllabus.persisted) {
       syllabus.course = course
     }
-    if (null == syllabus.description) {
-      syllabus.description = "--"
-    }
-    val methods = entityDao.find(classOf[TeachingMethod], getIntIds("teachingMethod"))
-    syllabus.methods.clear()
-    syllabus.methods.addAll(methods)
+    if null == syllabus.description then syllabus.description = "--"
     populateHours(syllabus)
     syllabus.writer = me
     syllabus.updatedAt = Instant.now
+
     entityDao.saveOrUpdate(syllabus)
     toStep(syllabus)
   }
@@ -165,6 +183,26 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
           }
       }
     }
+    val deprecated = syllabus.hours.filter(x => !teachingNatures.contains(x.nature))
+    syllabus.hours.subtractAll(deprecated)
+
+    teachingNatures foreach { ht =>
+      val creditHour = getInt("examHour" + ht.id)
+      syllabus.examHours find (h => h.nature == ht) match {
+        case Some(hour) =>
+          if (creditHour.isEmpty) {
+            syllabus.examHours -= hour
+          } else {
+            hour.creditHours = creditHour.getOrElse(0)
+          }
+        case None =>
+          if (creditHour.isDefined) {
+            syllabus.examHours += new SyllabusExamHour(syllabus, ht, creditHour.getOrElse(0))
+          }
+      }
+    }
+    val deprecated2 = syllabus.examHours.filter(x => !teachingNatures.contains(x.nature))
+    syllabus.examHours.subtractAll(deprecated2)
   }
 
   def saveObjectives(): View = {
@@ -228,9 +266,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     given project: Project = topic.syllabus.course.project
 
     put("teachingNatures", getCodes(classOf[TeachingNature]))
-    put("teachingMethods", getCodes(classOf[TeachingMethod]))
     put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
     put("topic", topic)
+    put("teachingMethods", topic.syllabus.teachingMethods.map(x => (x, x)).toMap)
     put("syllabus", topic.syllabus)
 
     forward(s"${topic.syllabus.locale}/editTopic")
@@ -262,9 +300,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
           else
             e.contents = elm
     }
-    val methods = entityDao.find(classOf[TeachingMethod], getIntIds("teachingMethod"))
-    topic.methods.clear()
-    topic.methods.addAll(methods)
 
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
@@ -284,11 +319,18 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
           }
       }
     }
+    val deprecated = topic.hours.filter(x => !teachingNatures.contains(x.nature))
+    topic.hours.subtractAll(deprecated)
+
     val objectives = entityDao.find(classOf[SyllabusObjective], getLongIds("objective"))
     topic.objectives = None
     if (objectives.nonEmpty) {
       topic.objectives = Some(objectives.map(_.code).mkString(","))
     }
+    val methods = getAll("teachingMethod", classOf[String])
+    topic.methods = None
+    val sep = if syllabus.locale == Locale.SIMPLIFIED_CHINESE then "、" else ","
+    topic.methods = Some(methods.mkString(sep))
     syllabus.updatedAt = Instant.now
     entityDao.saveOrUpdate(syllabus, topic)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")
@@ -443,7 +485,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   }
 
   private def popluateAssessment(syllabus: Syllabus, gradeType: GradeType, index: Int, componentName: Option[String]): SyllabusAssessment = {
-    val assessment = syllabus.getAssessment(gradeType, componentName.orNull).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
+    val assessment =
+      if componentName.isEmpty then syllabus.getAssessment(gradeType, null).getOrElse(new SyllabusAssessment(syllabus, gradeType, None))
+      else syllabus.getUsualAssessment(index).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
+
     if (!assessment.persisted) {
       syllabus.assessments += assessment
     }
@@ -453,9 +498,13 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case Some(n) => "grade" + gradeType.id + "_" + index
     populate(assessment, prefix)
     val percents = Collections.newMap[String, Int]
-    syllabus.objectives foreach { co =>
-      val p = getInt(s"usual_${index}_co${co.id}", 0)
-      if p > 0 then percents.put(co.code, p)
+    if (assessment.scorePercent >= 0 && !(gradeType.id == GradeType.Usual && index == 0 && componentName.isEmpty)) {
+      syllabus.objectives foreach { co =>
+        val p =
+          if gradeType.id == GradeType.Usual then getInt(s"usual_${index}_co${co.id}", 0)
+          else getInt(s"end_co${co.id}", 0)
+        if p > 0 then percents.put(co.code, p)
+      }
     }
     assessment.updateObjectivePercents(percents.toMap)
 
@@ -465,9 +514,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       name = Strings.replace(n, " ", "")
       assessment.component = Some(name)
     }
-    //    assessment.scoreTable foreach { table =>
-    //      assessment.scoreTable = Some(HtmlTableHelper.cleanup(table))
-    //    }
     assessment
   }
 
@@ -480,6 +526,20 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.bibliography = get("syllabus.bibliography")
     syllabus.website = get("syllabus.website")
     entityDao.saveOrUpdate(syllabus)
+    getBoolean("submit") foreach { s =>
+      syllabus.office = courseTaskService.getOffice(syllabus.course, syllabus.department, syllabus.semester)
+      syllabus.office foreach { o =>
+        syllabus.auditor = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
+      }
+      syllabus.auditor foreach { d =>
+        if (d.code == Securities.user) {
+          syllabus.status = PassedByDirector
+        } else {
+          syllabus.status = Submited
+        }
+      }
+      entityDao.saveOrUpdate(syllabus)
+    }
     redirect("info", s"&syllabus.id=${syllabus.id}", "info.save.success")
   }
 
@@ -500,15 +560,46 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val syllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
     put("syllabuses", syllabuses)
+    put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
     forward()
   }
 
   def info(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
-    put("syllabus", syllabus)
-    put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
-    put("endType", entityDao.get(classOf[GradeType], GradeType.End))
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+  }
+
+  private def validateHours(syllabus: Syllabus): Seq[String] = {
+    val messages = Collections.newBuffer[String]
+    var total = 0
+    syllabus.hours foreach { h =>
+      total += h.creditHours
+    }
+    if total != syllabus.course.creditHours then
+      messages += s"课程要求${syllabus.course.creditHours}课时，分项累计${total}课时，请检查。"
+
+    val totalExamHours = syllabus.examHours.map(_.creditHours).sum
+    if totalExamHours != syllabus.examCreditHours then
+      messages += s"大纲考核要求${syllabus.examCreditHours}课时，分项累计${totalExamHours}课时，请检查。"
+
+    syllabus.hours foreach { h =>
+      var t = 0;
+      syllabus.topics foreach { p =>
+        t += p.getHour(h.nature).map(_.creditHours).getOrElse(0)
+      }
+      t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0)
+      if (t != h.creditHours) {
+        messages += s"课程要求${h.nature.name}${h.creditHours}课时，教学内容累计${t}课时，请检查。"
+      }
+    }
+    var totalLearningHours = 0
+    syllabus.topics foreach { t =>
+      totalLearningHours += t.learningHours
+    }
+    if (totalLearningHours != syllabus.learningHours) {
+      messages += s"自主学习要求${syllabus.learningHours}课时，教学内容累计${totalLearningHours}课时，请检查。"
+    }
+    messages.toSeq
   }
 }

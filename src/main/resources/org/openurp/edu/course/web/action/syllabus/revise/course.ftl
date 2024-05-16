@@ -54,9 +54,13 @@
            <td>${syllabus.writer.name}</td>
            <td>${syllabus.status}</td>
            <td>${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
-           <td>[@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]</td>
+           <td>
+             [#if editables?seq_contains(syllabus.status)]
+             [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
+             [/#if]
+           </td>
            <td>[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]</td>
-           <td>生成PDF</td>
+           [#--<td>生成PDF</td>--]
          </tr>
            [/#list]
        </table>

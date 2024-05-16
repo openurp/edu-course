@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.plan
+package org.openurp.edu.course.web.helper
 
-import org.beangle.data.dao.EntityDao
-import org.beangle.web.action.support.ActionSupport
-import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.starter.web.support.ProjectSupport
+import org.beangle.commons.bean.DefaultPropertyExtractor
+import org.openurp.edu.course.model.CourseTask
 
-/** 教学进度表
- */
-class EditAction extends ActionSupport, EntityAction[TeachingPlan], ProjectSupport {
+class CourseTaskPropertyExtractor extends DefaultPropertyExtractor {
 
-  var entityDao: EntityDao = _
+  override def get(target: Object, property: String): Any = {
+    property match
+      case "teachers" =>
+        target.asInstanceOf[CourseTask].teachers.map(x => x.code + " " + x.name).mkString(",")
+      case _ => super.get(target, property)
+  }
 }

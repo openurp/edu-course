@@ -45,7 +45,7 @@
 
           [#list graduateObjectives as go]
             <tr>
-              <td style="width:100px">【${go.name}】</td>
+              <td style="width:100px">${go.code}【${go.name}】</td>
               [#list orderedCourseObjectieves as co]
               <td onMouseOver="overCell(this)" onMouseOut="outCell(this)" onclick="toggleCell(this)" id="${go.id}_${co.code}"  title="点击选中或取消">[#if syllabus.getOutcome(go)?? && syllabus.getOutcome(go).support(co)]&#10004;[/#if]</td>
               [/#list]

@@ -22,46 +22,60 @@ import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
+import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
-/** 教学副院长审核
+/** 课程大纲教研室审核
  */
-class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
+class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
 
     given project: Project = getProject
 
-    val departs = getDeparts
-    put("departs", departs)
     put("project", project)
     put("semester", getSemester)
-    put("statuses", List(AuditStatus.Draft, AuditStatus.Submited,
-      AuditStatus.RejectedByDirector, AuditStatus.PassedByDirector,
-      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart,
-      AuditStatus.Rejected, AuditStatus.Passed))
+    put("offices", getOffices(project))
     forward()
   }
 
+  private def getOffices(project: Project): Seq[TeachingOffice] = {
+    val q = OqlBuilder.from(classOf[TeachingOffice], "o")
+    q.where("o.project = :project", project)
+    q.where("o.director.staff.code = :me", Securities.user)
+    entityDao.search(q)
+  }
+
   override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
+    val project = getProject
+    val offices = getOffices(project)
+    val query = super.getQueryBuilder
+    query.where("syllabus.course.project=:project", project)
+    if (offices.isEmpty) {
+      query.where("syllabus.id<0")
+    } else {
+      query.where("syllabus.office in(:offices)", offices)
+    }
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
-    super.getQueryBuilder
+    query
   }
 
   def audit(): View = {
-    val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
+    val statuses = Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.Rejected)
+    val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus")).filter(x => statuses.contains(x.status))
     val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
-      val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
+      val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
       syllabuses foreach { s =>
         s.status = status
-        s.dean = user
+        s.auditor = user
       }
     }
     entityDao.saveOrUpdate(syllabuses)
@@ -74,4 +88,5 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
   }
+
 }

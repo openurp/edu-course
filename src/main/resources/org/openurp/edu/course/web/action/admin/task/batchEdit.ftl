@@ -10,6 +10,7 @@
         [/#list]
       </div>
     [/@]
+    [@b.select style="width:100px" name="office.id" label="教研室" items=offices option="id,name" empty="..." /]
     [@base.teacher name="teacher.id" label="负责人" required="false" value=""/]
     [@b.formfoot]
       [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]

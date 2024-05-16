@@ -15,17 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.plan
+package org.openurp.edu.course.web.helper
 
+import org.beangle.commons.collection.Collections
 import org.beangle.data.dao.EntityDao
-import org.beangle.web.action.support.ActionSupport
-import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.starter.web.support.ProjectSupport
+import org.openurp.code.edu.model.GradeType
+import org.openurp.edu.course.model.Syllabus
 
-/** 教学进度表
- */
-class EditAction extends ActionSupport, EntityAction[TeachingPlan], ProjectSupport {
+import java.util.Locale
 
-  var entityDao: EntityDao = _
+class SyllabusHelper(entityDao: EntityDao) {
+
+  def collectDatas(syllabus: Syllabus): collection.Map[String, Any] = {
+    val datas = Collections.newMap[String, Any]
+    datas.put("syllabus", syllabus)
+    datas.put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
+    datas.put("endType", entityDao.get(classOf[GradeType], GradeType.End))
+    datas.put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    datas
+  }
 }

@@ -15,24 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.syllabus
+package org.openurp.edu.course.web.action.plan
 
 import org.beangle.data.dao.OqlBuilder
-import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
-import org.openurp.base.model.{AuditStatus, Project, User}
-import org.openurp.edu.course.model.Syllabus
-import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.base.model.{AuditStatus, Project}
+import org.openurp.edu.course.model.TeachingPlan
+import org.openurp.edu.course.web.helper.TeachingPlanHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
-/** 教学副院长审核
+/** 学院查询教学大纲
  */
-class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
-
+class DepartAction extends RestfulAction[TeachingPlan], ProjectSupport {
   override protected def indexSetting(): Unit = {
     super.indexSetting()
 
@@ -49,20 +47,16 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
     forward()
   }
 
-  override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
+  override protected def getQueryBuilder: OqlBuilder[TeachingPlan] = {
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     super.getQueryBuilder
   }
 
   def audit(): View = {
-    val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
-    val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
+    val syllabuses = entityDao.find(classOf[TeachingPlan], getLongIds("syllabus"))
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
-      syllabuses foreach { s =>
-        s.status = status
-        s.dean = user
-      }
+      syllabuses foreach { s => s.status = status }
     }
     entityDao.saveOrUpdate(syllabuses)
     redirect("search", "审核成功")
@@ -70,8 +64,8 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
-    val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
-    new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val plan = entityDao.get(classOf[TeachingPlan], id.toLong)
+    new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
+    forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
   }
 }

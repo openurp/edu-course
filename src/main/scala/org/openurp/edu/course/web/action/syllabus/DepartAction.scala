@@ -17,22 +17,22 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
-import org.beangle.data.dao.OqlBuilder
-import org.beangle.security.Securities
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.web.action.annotation.{mapping, param}
+import org.beangle.web.action.support.ActionSupport
 import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.RestfulAction
-import org.openurp.base.model.{AuditStatus, Project, User}
+import org.beangle.webmvc.support.action.{EntityAction, RestfulAction}
+import org.openurp.base.model.{AuditStatus, Project}
+import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
-/** 教学副院长审核
+/** 学院查询教学大纲
  */
-class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
-
+class DepartAction extends RestfulAction[Syllabus], ProjectSupport {
   override protected def indexSetting(): Unit = {
     super.indexSetting()
 
@@ -56,13 +56,9 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
 
   def audit(): View = {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
-    val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
-      syllabuses foreach { s =>
-        s.status = status
-        s.dean = user
-      }
+      syllabuses foreach { s => s.status = status }
     }
     entityDao.saveOrUpdate(syllabuses)
     redirect("search", "审核成功")

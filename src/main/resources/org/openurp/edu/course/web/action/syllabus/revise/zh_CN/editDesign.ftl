@@ -18,7 +18,7 @@
       </ul>
     [/@]
     [#assign expStyle][#if syllabus.experiments?size==0]display:none[/#if][/#assign]
-    [@b.field label="实验" id="hasExperiment_field" style=expStyle]
+    [@b.field label="实验项目" id="hasExperiment_field" style=expStyle]
       [#assign exps = {}/]
       [#list syllabus.experiments?sort_by("idx") as c]
         [#assign exps=exps+{'${c.idx}':c}/]
@@ -26,7 +26,7 @@
       <ul style="margin-left: 6.25rem;padding-left: 1rem;">
       [#list 0..9 as i]
         <ol>
-        <label>${i+1}：</label><input type="text" placeholder="实验${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
+        <label>${i+1}：</label><input type="text" placeholder="实验项目${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
         <select name="experiment${i}.experimentType.id" >
           [#list experimentTypes as et]
           <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]checked="checked"[/#if]>${et.name}</option>
@@ -34,10 +34,10 @@
         </select>
         <div class="btn-group btn-group-toggle" data-toggle="buttons" style="height: 1.5625rem;">
             <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if !((exps[i?string].online)!false)]active[/#if]">
-            <input type="radio" name="experiment${i}.online" id="exp${i}_online_0" empty="..." value="0" [#if !((exps[i?string].online)!false)]checked=""[/#if]>线下实验
+            <input type="radio" name="experiment${i}.online" id="exp${i}_online_0" empty="..." value="0" [#if !((exps[i?string].online)!false)]checked=""[/#if]>线下课堂教学实验
           </label>
             <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if ((exps[i?string].online)!false)]active[/#if]">
-            <input type="radio" name="experiment${i}.online" id="exp${i}_online_1" empty="..." value="1" [#if ((exps[i?string].online)!false)]checked=""[/#if]>线上实验
+            <input type="radio" name="experiment${i}.online" id="exp${i}_online_1" empty="..." value="1" [#if ((exps[i?string].online)!false)]checked=""[/#if]>线上虚拟仿真实验
           </label>
         </div>
         </ol>

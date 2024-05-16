@@ -5,7 +5,7 @@
           <span class="text-muted text-sm">
           [#list topic.hours as h]${h.nature.name}[#if h.creditHours>0]${h.creditHours}学时[#else]${h.weeks}周[/#if][#sep]&nbsp;[/#list]&nbsp;
           [#if topic.learningHours>0]自主学习${topic.learningHours}学时&nbsp;[/#if]
-          [#list topic.methods as method]${method.name}[#sep]&nbsp;[/#list]&nbsp;
+          ${topic.methods!}&nbsp;
           [#if topic.objectives??]对应课程目标:${topic.objectives?replace(",","&nbsp;")}[/#if]
           </span>
         </div>

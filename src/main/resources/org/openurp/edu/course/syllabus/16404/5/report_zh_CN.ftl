@@ -25,6 +25,17 @@
   .info-table td,th{
     border:0.5px solid black;
   }
+  .score-table {
+    width:100%;
+    border: solid 0.5px black;
+  }
+  .score-table td,th{
+    border:0.5px solid black;
+  }
+  .score-table tr:nth-child(1) {
+    font-weight: bold;
+    text-align: center;
+  }
   .center{
     text-align:center;
   }
@@ -105,11 +116,14 @@
         <td colspan="3" style="text-align:left;">${course.enName!'----'}</td>
       </tr>
       <tr>
-        <td rowspan="2">课程学分：</td>
-        <td rowspan="2">${course.defaultCredits}</td>
-        <td rowspan="2">课程学时或实践周</td>
-        <td>①总学时：<br>（其中，理论与实践学时）</td>
+        <td rowspan="3">课程学分：</td>
+        <td rowspan="3">${course.defaultCredits}</td>
+        <td rowspan="3">课程学时或实践周</td>
+        <td rowspan="2">①总学时：<br>（其中，理论与实践学时）</td>
         <td>${course.creditHours}学时</td>
+      </tr>
+      <tr>
+        <td>其中：[#list syllabus.hours?sort_by(['nature','code']) as h]${h.nature.name}${h.creditHours}[#sep]，[/#list]</td>
       </tr>
       <tr>
         <td>②总实践周：</td>
@@ -123,9 +137,7 @@
       </tr>
       <tr>
         <td>教学方式：</td>
-        <td colspan="4">
-          [#list syllabus.methods as m]${m.name}[#sep]、[/#list]
-        </td>
+        <td colspan="4">${syllabus.methods!}</td>
       </tr>
       <tr>
         <td>开课院系：</td>
@@ -197,7 +209,7 @@
       <thead>
         <tr style="text-align:center;">
           <th style="width:21mm">教学主题</th><th>教学内容（实践项目）和学习成效</th>
-          <th style="width:21mm">教学方法</th><th style="width:21mm">对应课程教学目标</th>
+          <th style="width:21mm">教学方法</th>
         </tr>
       </thead>
       [#list syllabus.topics as topic]
@@ -209,8 +221,7 @@
           <br/><span style="font-weight:bold;">${elem.label.name}：</span>${elem.contents}
           [/#list]
           </td>
-          <td>[#list topic.methods as m]${m.name}[#sep]<br/>[/#list]</td>
-          <td>${(topic.objectives?replace(","," "))!}</td>
+          <td>${topic.methods!}</td>
         </tr>
       [/#list]
     </table>
@@ -223,7 +234,7 @@
       <thead>
         <tr style="text-align:center;">
           <th rowspan="3">教学主题</th><th style="width:${22*teachingNatures?size+1}mm" colspan="${teachingNatures?size+1}">课堂学时或实践周分布</th>
-          <th style="width:22mm" rowspan="3">自主学习</th>
+          <th style="width:22mm" rowspan="3">自主学习</th><th style="width:22mm" rowspan="3">对应课程教学目标</th>
         </tr>
         <tr>
           <th rowspan="2" style="width:22mm">小计</th><th style="width:${21*teachingNatures?size}mm" colspan="${teachingNatures?size}">其中：</th>
@@ -248,16 +259,30 @@
           [#list teachingNatures as nature]<td>${(topic.getHour(nature).creditHours)!}</td>[/#list]
           <td>[#if topic.learningHours>0]${topic.learningHours}[/#if]</td>
           [#assign totalLearningHours=totalLearningHours + topic.learningHours/]
+          <td>${(topic.objectives?replace(","," "))!}</td>
         </tr>
       [/#list]
+      [#if syllabus.examCreditHours>0]
+       [#assign totalCreditHours=totalCreditHours + syllabus.examCreditHours/]
       <tr>
-        <td>课堂教学学时合计/实践周合计</td>
+        <td style="text-align:left;">课程考核</td>
+        <td>${syllabus.examCreditHours}</td>
+        [#list teachingNatures as nature]
+          <td>[#list syllabus.examHours as eh][#if eh.nature==nature && eh.creditHours>0]${eh.creditHours}[#break/][/#if][/#list]</td>
+        [/#list]
+        <td></td>
+        <td>——</td>
+      </tr>
+      [/#if]
+      <tr>
+        <td>合计</td>
         <td>${totalCreditHours}</td>
-        [#list teachingNatures as nature]<td>[#assign h = syllabus.getTopicCreditHours(nature) /][#if h>0]${h}[/#if]</td>[/#list]
+        [#list teachingNatures as nature]<td>[#assign h = syllabus.getCreditHours(nature) /][#if h>0]${h}[/#if]</td>[/#list]
         <td>[#if totalLearningHours>0]${totalLearningHours}[/#if]</td>
+        <td>——</td>
       </tr>
       <tr>
-        <td colspan="${3+teachingNatures?size}" style="text-align: left;">注：①在专业人才培养大纲中，学习方式为自主学习的课程，在“自主学习学时”栏填写学生根据教学主题需完成的学时；经学校批准进行线上线下混合式教学的课程，可设置自主学习学时。②理论学时或实践学时含考试周统一组织考试，或者根据教学安排需由教师自行组织的期末考核，一般为一个教学周与学分数相当的学时。</td>
+        <td colspan="${4+teachingNatures?size}" style="text-align: left;">注：①在专业人才培养大纲中，学习方式为自主学习的课程，在“自主学习学时”栏填写学生根据教学主题需完成的学时；经学校批准进行线上线下混合式教学的课程，可设置自主学习学时。②理论学时或实践学时含考试周统一组织考试，或者根据教学安排需由教师自行组织的期末考核，一般为一个教学周与学分数相当的学时。</td>
       </tr>
     </table>
   </div>
@@ -356,12 +381,13 @@
         </tr>
       </thead>
     </table>
-    <p>
       平时成绩考核评定依据如下:
+      <ul style="list-style: none;">
       [#list usualAssessments as a]
-        （${a_index+1}）${a.component}${a.scorePercent}%，${a.assessCount}次。
+        <li>（${a_index+1}）${a.component}${a.scorePercent}%，${a.assessCount}次。</li>
       [/#list]
-    </p>
+      </ul>
+
     [@header_title "（二）主要考核方式的评分标准"/]
     [#assign assessIdx=0/]
     [#list usualAssessments as a]
@@ -373,7 +399,7 @@
       [#if a.scoreTable??]
         [#assign caption]<caption style="caption-side: top;text-align: center;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
         [#assign tableIndex = tableIndex+1 /]
-        [#assign scoreTable=a.updateScoreTable("<table class='info-table' style='text-align: left;'>",caption)/]
+        [#assign scoreTable=a.updateScoreTable("<table class='score-table' style='text-align: left;'>",caption)/]
         ${scoreTable}
       [/#if]
     [/#list]

@@ -72,7 +72,7 @@
             [#if assessment.scoreTable??]
             [#assign editorstyle="width:650px;height:300px;"/]
             [/#if]
-            [@b.editor theme="course" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style=editorstyle maxlength="20000" value=assessment.scoreTable!/]
+            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style=editorstyle maxlength="20000" value=assessment.scoreTable!/]
           </div>
         </div>
       [/#list]
@@ -95,7 +95,7 @@
             [/@]
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" /]
             [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"/]
-            [@b.editor theme="course" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style="width:650px;heigth:300px;display:none" maxlength="20000" value="" /]
+            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style="width:650px;heigth:300px;display:none" maxlength="20000" value="" /]
           </div>
         </div>
       [/#list]

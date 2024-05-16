@@ -17,21 +17,32 @@
 
 package org.openurp.edu.course.web.action.admin
 
+import org.beangle.commons.activation.MediaTypes
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
-import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.doc.excel.schema.ExcelSchema
+import org.beangle.doc.transfer.exporter.ExportContext
+import org.beangle.doc.transfer.importer.ImportSetting
+import org.beangle.doc.transfer.importer.listener.ForeignerListener
+import org.beangle.web.action.annotation.response
+import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
 import org.openurp.base.edu.model.{CourseDirector, TeachingOffice}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Department, Project, Semester}
+import org.openurp.code.edu.model.{CourseCategory, CourseNature}
 import org.openurp.edu.course.model.CourseTask
 import org.openurp.edu.course.service.CourseTaskService
+import org.openurp.edu.course.web.helper.{CourseTaskImportListener, CourseTaskPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.time.LocalDate
 
 /** 课程任务
  */
-class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
+class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSupport[CourseTask], ExportSupport[CourseTask] {
 
   var courseTaskService: CourseTaskService = _
 
@@ -79,6 +90,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
 
     val departs = getDeparts
     put("departments", departs)
+    put("offices", entityDao.findBy(classOf[TeachingOffice], "project" -> project, "department" -> task.department))
     //课程负责人和上课老师作为该学期负责人的候选人
     val director = entityDao.findBy(classOf[CourseDirector], "course", task.course).headOption
     put("director", director)
@@ -97,7 +109,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
 
     val semester = entityDao.get(classOf[Semester], getIntId("courseTask.semester"))
     courseTaskService.statTask(project, semester)
-    redirect("search", "自动建组成功")
+    redirect("search", "初始化成功")
   }
 
   def autoAssign(): View = {
@@ -121,6 +133,8 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
 
   def batchEdit(): View = {
     val tasks = entityDao.find(classOf[CourseTask], getLongIds("courseTask"))
+    val task = tasks.head
+    put("offices", entityDao.findBy(classOf[TeachingOffice], "project" -> task.course.project, "department" -> task.department))
     put("courseTasks", tasks)
     put("project", getProject)
     forward()
@@ -128,12 +142,13 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
 
   def batchSave(): View = {
     val tasks = entityDao.find(classOf[CourseTask], getLongIds("courseTask"))
-    val directorId = getLong("teacher.id")
-    directorId match {
-      case None => tasks foreach (_.director = None)
-      case Some(id) =>
-        val t = entityDao.get(classOf[Teacher], id)
-        tasks foreach (_.director = Some(t))
+    getLong("teacher.id") foreach { id =>
+      val t = entityDao.get(classOf[Teacher], id)
+      tasks foreach (_.director = Some(t))
+    }
+    getLong("office.id") foreach { officeId =>
+      val office = entityDao.get(classOf[TeachingOffice], officeId)
+      tasks foreach (_.office = Some(office))
     }
     entityDao.saveOrUpdate(tasks)
     redirect("search", "批量成功")
@@ -145,5 +160,46 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport {
     query.where("o.department in(:departs)", departs)
     query.orderBy("o.name")
     entityDao.search(query)
+  }
+
+  @response
+  def downloadTemplate(): Any = {
+    given project: Project = getProject
+
+    val school = project.school
+    val departs = getDeparts
+    val departNames = entityDao.search(OqlBuilder.from(classOf[Department], "bt").where("bt.school=:school", school)
+      .orderBy("bt.name")).map(x => x.code + " " + x.name)
+
+    val offices = entityDao.search(OqlBuilder.from(classOf[TeachingOffice], "t").where("t.project=:project", project)
+      .where("t.endOn is null or t.endOn > :today", LocalDate.now)
+      .where("t.department in(:departs)", departs)
+      .orderBy("t.code")).map(x => x.code + " " + x.name)
+
+    val natures = codeService.get(classOf[CourseNature]).map(x => x.code + " " + x.name)
+    val categories = codeService.get(classOf[CourseCategory]).map(x => x.code + " " + x.name)
+
+    val schema = new ExcelSchema()
+    val sheet = schema.createScheet("数据模板")
+    sheet.title("课程负责人信息模板")
+    sheet.remark("特别说明：\n1、不可改变本表格的行列结构以及批注，否则将会导入失败！\n2、必须按照规格说明的格式填写。\n3、可以多次导入，重复的信息会被新数据更新覆盖。\n4、保存的excel文件名称可以自定。")
+    sheet.add("课程代码", "course.code").length(10).required().remark("≤10位")
+    sheet.add("开课院系", "department.code").ref(departNames).required()
+    sheet.add("教研室", "courseTask.office.code").ref(offices).required()
+    sheet.add("课程负责人工号或姓名", "teacher.code").required()
+
+    val os = new ByteArrayOutputStream()
+    schema.generate(os)
+    Stream(new ByteArrayInputStream(os.toByteArray), MediaTypes.ApplicationXlsx.toString, "课程负责人.xlsx")
+  }
+
+  protected override def configExport(context: ExportContext): Unit = {
+    super.configExport(context)
+    context.extractor = new CourseTaskPropertyExtractor()
+  }
+
+  protected override def configImport(setting: ImportSetting): Unit = {
+    val semester = entityDao.get(classOf[Semester], getIntId("courseTask.semester"))
+    setting.listeners = List(ForeignerListener(entityDao), new CourseTaskImportListener(entityDao, semester, getProject))
   }
 }
