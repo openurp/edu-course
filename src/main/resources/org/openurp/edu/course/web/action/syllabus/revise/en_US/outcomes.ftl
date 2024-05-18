@@ -1,7 +1,7 @@
 [#ftl]
 [@b.head/]
 <div class="container">
-[@b.toolbar title="课程教学大纲编写"]
+[@b.toolbar title="Course Syllabus Edit Form"]
   bar.addClose();
 [/@]
 [#include "step.ftl"/]
@@ -24,7 +24,7 @@
     </div>
     [/@]
     [#list graduateObjectives as go]
-      [@b.textarea label=go.name name="GO${go.id}.contents" value=(syllabus.getOutcome(go).contents)! cols="100" rows="3" maxlength="500" /]
+      [@b.textarea label=go.name name="GO${go.id}.contents" value=(syllabus.getOutcome(go).contents)! cols="100" rows="5" maxlength="800" /]
     [/#list]
     [@b.field label="支撑矩阵"]
       [#assign orderedCourseObjectieves = syllabus.objectives?sort_by('code')/]
@@ -61,8 +61,8 @@
       [#list graduateObjectives as go]
         <input type="hidden" name="GO${go.id}.courseObjectives" id="GO${go.id}.courseObjectives" value="${(syllabus.getOutcome(go).courseObjectives)!}"/>
       [/#list]
-      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=objectives" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
-      [@b.submit value="保存，进入下一步" /]
+      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=objectives" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+      [@b.submit value="Save and move to the next step" /]
     [/@]
   [/@]
   </div>

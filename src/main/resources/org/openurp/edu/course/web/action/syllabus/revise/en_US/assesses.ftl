@@ -1,7 +1,7 @@
 [#ftl]
 [@b.head/]
 <div class="container">
-[@b.toolbar title="课程教学大纲编写"]
+[@b.toolbar title="Course Syllabus Edit Form"]
   bar.addClose();
 [/@]
 [#include "step.ftl"/]
@@ -19,9 +19,9 @@
 
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form name="assessForm" theme="list" action="!saveAssess"]
-    [@b.textfield name="grade${usualType.id}.scorePercent" label="平时成绩百分比" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
-    [@b.textfield name="grade${endType.id}.scorePercent" label="期末成绩百分比" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
-    [@b.field label="期末对课程目标支撑比例"]
+    [@b.textfield name="grade${usualType.id}.scorePercent" label="Usual score accounts for" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
+    [@b.textfield name="grade${endType.id}.scorePercent" label="Final grade accounts for" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
+    [@b.field label="Objectives(final grade)"]
       [#list syllabus.objectives?sort_by("code") as co]
         <label for="end_co${co.id}">${co.code}</label><input name="end_co${co.id}" type="number" style="width:50px"  onchange="checkEndCoPercent()">
       [/#list]
@@ -31,66 +31,66 @@
       [#list syllabus.getAssessments(usualType)?sort_by("idx") as a]
         [#if a.component??][#assign usualAssessments=usualAssessments +[a]/][/#if]
       [/#list]
-      [#assign sectionIndex= ["一","二","三","四","五","六","七"] /]
+      [#assign sectionIndex= ["I","II","III","IV","V","VI","VII"] /]
       [#assign orderedObjectives = syllabus.objectives?sort_by("code")/]
 
       [#list usualAssessments as assessment]
         [#assign rnIndex=assessment_index/]
-        <div class="card card-info card-primary card-outline" style="display: block;">
+        <div class="card card-info card-primary card-outline">
           [#assign rn=sectionIndex[rnIndex] /]
           [@b.card_header]
-            <div class="card-title"><i class="fas fa-edit"></i>&nbsp;平时成绩--${assessment.component}</div>
+            <div class="card-title"><i class="fas fa-edit"></i>&nbsp;Usual Score--${assessment.component}</div>
             [@b.card_tools]
              <div class="btn-group">
-             <a onclick="moveAssess('${assessment.id}');return false;" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-up-down"></i>上下移动</a>
-             [@b.a href="!removeAssess?assessment.id="+assessment.id onclick="return confirm('确认删除该评分标准?')"  class="btn btn-sm btn-outline-danger"]<i class="fa fa-xmark"></i>删除[/@]
+             <a onclick="moveAssess('${assessment.id}');return false;" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-up-down"></i> Up/down</a>
+             [@b.a href="!removeAssess?assessment.id="+assessment.id onclick="return confirm('确认删除该评分标准?')"  class="btn btn-sm btn-outline-danger"]<i class="fa fa-xmark"></i> Remove[/@]
              </div>
             [/@]
            [/@]
           <div class="card-body">
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="平时环节"+rn value=assessment.component required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value=assessment.scorePercent comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
-            [@b.field label="对课程目标支撑比例"]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="Name" value=assessment.component required="false" /]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="Accounts for" value=assessment.scorePercent comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
+            [@b.field label="Course objectives"]
               [#assign objectivePercentMap=assessment.objectivePercentMap/]
               [#list orderedObjectives as co]
                 <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" value="${objectivePercentMap[co.code]!}" style="width:50px" onchange="checkUsualCoPercent(${rnIndex})">
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value=assessment.assessCount /]
-            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value=assessment.description! required="false"]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="Evaluation frequency" value=assessment.assessCount /]
+            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="Scoring standard" rows="4" cols="80" style="width:650px" maxlength="2000" value=assessment.description! required="false"]
               <a class="btn btn-sm btn-outline-primary" onclick="return toggleScoreTable(this)">
-                [#if assessment.scoreTable??]<i class="fa fa-minus"></i>评分表[#else]<i class="fa fa-plus"></i>评分表[/#if]
+                [#if assessment.scoreTable??]<i class="fa fa-minus"></i>Scoring Table[#else]<i class="fa fa-plus"></i>Scoring Table[/#if]
               </a>
             [/@]
             [#assign editorstyle="width:650px;height:300px;display:none"/]
             [#if assessment.scoreTable??]
             [#assign editorstyle="width:650px;height:300px;"/]
             [/#if]
-            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style=editorstyle maxlength="20000" value=assessment.scoreTable!/]
+            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="Scoring Table" rows="7" cols="80" style=editorstyle maxlength="20000" value=assessment.scoreTable!/]
           </div>
         </div>
       [/#list]
 
       [#if 6>usualAssessments?size]
       [#list usualAssessments?size..5 as rnIndex]
-        <div class="card card-info card-primary card-outline" style="display: block;">
+        <div class="card card-info card-primary card-outline">
           [#assign rn=sectionIndex[rnIndex] /]
           [@b.card_header]
-            <div class="card-title"><i class="fas fa-edit"></i>&nbsp;平时成绩--环节${rn}</div>
+            <div class="card-title"><i class="fas fa-edit"></i>&nbsp;Usual score--method ${rn}</div>
            [/@]
           <div class="card-body">
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="平时环节"+rn value="" required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value="" comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
-            [@b.field label="对课程目标支撑比例"]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="Name" value="" required="false" /]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="Accounts for" value="" comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
+            [@b.field label="Course objectives"]
               [#list orderedObjectives as co]
                 <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" style="width:50px" onchange="checkUsualCoPercent(${rnIndex})">
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" /]
-            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"/]
-            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style="width:650px;heigth:300px;display:none" maxlength="20000" value="" /]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="Evaluation frequency" value="" /]
+            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="Scoring standard" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"/]
+            [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="Scoring table" rows="7" cols="80" style="width:650px;heigth:300px;display:none" maxlength="20000" value="" /]
           </div>
         </div>
       [/#list]
@@ -98,8 +98,8 @@
     [@b.formfoot]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       <input type="hidden" name="step" value="textbook"/>
-      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=designs" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
-      [@b.submit value="保存，进入下一步" /]
+      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=designs" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+      [@b.submit value="Save and move to the next step" /]
     [/@]
   [/@]
   <script>

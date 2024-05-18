@@ -4,13 +4,8 @@
 [@b.toolbar title="课程教学大纲编写"]
   bar.addClose();
 [/@]
-<style>
-  fieldset.listset li > label.title{
-    min-width: 10rem;
-  }
-</style>
 [#include "step.ftl"/]
-[@displayStep ['填写基本信息','介绍和目标、价值引领','对毕业要求的支撑','课程教学内容与教学安排','学验并重的教学设计','课程考核方式与评分标准','教材和教学资源'] 1/]
+[@displayStep  1/]
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [#assign placeholders=["思想政治素质目标","诚信品质"]/]
   [@b.form theme="list" action="!saveObjectives"]

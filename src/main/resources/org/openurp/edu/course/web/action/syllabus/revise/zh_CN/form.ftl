@@ -5,7 +5,7 @@
   bar.addClose();
 [/@]
 [#include "step.ftl"/]
-[@displayStep ['填写基本信息','介绍和目标、价值引领','对毕业要求的支撑','课程教学内容与教学安排','学验并重的教学设计','课程考核方式与评分标准','教材和教学资源'] 0/]
+[@displayStep  0/]
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
     [@b.field label="课程"]${course.code} ${course.name}[/@]
@@ -57,8 +57,8 @@
     [/#if]
     [@b.number name="syllabus.learningHours" label="自主学习课时" value=syllabus.learningHours!/]
     [@b.textarea name="syllabus.prerequisites" label="先修课程" value=syllabus.prerequisites! rows="2" cols="80"/]
-    [@b.textarea name="syllabus.corequisites" label="并修课程" values=syllabus.corequisites!  rows="2" cols="80"/]
-    [@b.textarea name="syllabus.subsequents" label="后续课程" values=syllabus.subsequents!  rows="2" cols="80"/]
+    [@b.textarea name="syllabus.corequisites" label="并修课程" value=syllabus.corequisites!  rows="2" cols="80"/]
+    [@b.textarea name="syllabus.subsequents" label="后续课程" value=syllabus.subsequents!  rows="2" cols="80"/]
     [@b.formfoot]
       <input type="hidden" name="course.id" value="${course.id}"/>
       [#if syllabus.id??]

@@ -1,7 +1,7 @@
 [#ftl]
 [@b.head/]
 <div class="container">
-[@b.toolbar title="课程教学大纲编写"]
+[@b.toolbar title="Course Syllabus Edit Form"]
   bar.addClose();
 [/@]
 [#include "step.ftl"/]
@@ -12,7 +12,7 @@
     [/#list]
     <div class="card card-info card-primary card-outline">
       [@b.card_header]
-        <div class="card-title"><i class="fas fa-edit"></i>&nbsp;新增教学法--序号${(syllabus.designs?size+1)}</div>
+        <div class="card-title"><i class="fas fa-edit"></i>&nbsp;New teaching method -- No.${(syllabus.designs?size+1)}</div>
         [@b.card_tools]
           <button type="button" class="btn btn-tool" data-card-widget="collapse">
             <i class="fas fa-plus"></i>
@@ -21,22 +21,22 @@
       [/@]
       <div class="card-body" [#if syllabus.designs?size>0]style="display:none"[/#if]>
         [@b.form theme="list" action="!saveDesign"]
-          [@b.textfield label="教学法名称" name="design.name" value="" required="true" comment="标题中不要添加序号"/]
-          [@b.textarea label="教学法内容" name="design.contents" rows="12" cols="80" value="" required="true"/]
+          [@b.textfield label="Name" name="design.name" value="" required="true"/]
+          [@b.textarea label="Contents" name="design.contents" rows="12" cols="80" value="" required="true" maxlength="3000"/]
           [#assign caseAndExperiments=""/]
-          [@b.checkboxes label="案例和实验" items="hasCase:有案例,hasExperiment:有实验" onclick="toggleCaseAndExperiment(this)" name="caseAndExperiments"/]
-          [@b.field label="案例" id="hasCase_field"]
+          [@b.checkboxes label="Case and experiments" items="hasCase:Case teaching,hasExperiment:Experiment teaching" onclick="toggleCaseAndExperiment(this)" name="caseAndExperiments"/]
+          [@b.field label="Cases" id="hasCase_field"]
             [#assign cases = {}/]
             [#list syllabus.cases?sort_by("idx") as c]
               [#assign cases=cases+{'${c.idx}':c}/]
             [/#list]
             <ul style="margin-left: 6.25rem;padding-left: 1rem;">
             [#list 0..9 as i]
-              <ol><label>${i+1}：</label><input type="text" placeholder="案例${i+1}的名称" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
+              <ol><label>${i+1}：</label><input type="text" placeholder="Case No.${i+1}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
             [/#list]
             </ul>
           [/@]
-          [@b.field label="实验项目" id="hasExperiment_field"  style="display:none"]
+          [@b.field label="Experiments" id="hasExperiment_field"  style="display:none"]
             [#assign exps = {}/]
             [#list syllabus.experiments?sort_by("idx") as c]
               [#assign exps=exps+{'${c.idx}':c}/]
@@ -44,7 +44,7 @@
             <ul style="margin-left: 6.25rem;padding-left: 1rem;">
             [#list 0..9 as i]
               <ol>
-              <label>${i+1}：</label><input type="text" placeholder="实验项目${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
+              <label>${i+1}：</label><input type="text" placeholder="Experiment ${i+1}'s name" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
               <select name="experiment${i}.experimentType.id">
                 [#list experimentTypes as et]
                 <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]checked="checked"[/#if]>${et.name}</option>
@@ -64,7 +64,7 @@
           [/@]
           [@b.formfoot]
             <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-            [@b.submit value="保存" /]
+            [@b.submit value="Save" /]
           [/@]
         [/@]
       </div>
@@ -83,8 +83,8 @@
   [@b.formfoot]
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
     <input type="hidden" name="step" value="assess"/>
-    [@b.a href="!edit?syllabus.id=${syllabus.id}&step=topics" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
-    [@b.a href="!assesses?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-right fa-sm"></i>下一步[/@]
+    [@b.a href="!edit?syllabus.id=${syllabus.id}&step=topics" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+    [@b.a href="!assesses?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-right fa-sm"></i>Next step[/@]
   [/@]
 [/@]
 </div>

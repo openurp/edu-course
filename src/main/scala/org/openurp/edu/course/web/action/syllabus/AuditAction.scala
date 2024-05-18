@@ -61,7 +61,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
       val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
       syllabuses foreach { s =>
         s.status = status
-        s.dean = user
+        s.approver = user
       }
     }
     entityDao.saveOrUpdate(syllabuses)

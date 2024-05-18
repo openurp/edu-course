@@ -75,7 +75,7 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
       syllabuses foreach { s =>
         s.status = status
-        s.auditor = user
+        s.reviewer = user
       }
     }
     entityDao.saveOrUpdate(syllabuses)

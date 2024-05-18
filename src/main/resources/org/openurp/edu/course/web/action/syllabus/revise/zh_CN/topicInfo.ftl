@@ -3,7 +3,7 @@
       [@b.card_header]
         <div class="card-title">${topic.name!}
           <span class="text-muted text-sm">
-          [#list topic.hours as h]${h.nature.name}[#if h.creditHours>0]${h.creditHours}学时[#else]${h.weeks}周[/#if][#sep]&nbsp;[/#list]&nbsp;
+          [#list topic.hours as h]${h.nature.name}[#if h.creditHours>0]${h.creditHours}学时[#else][#if h.weeks>0]${h.weeks}周[/#if][/#if][#sep]&nbsp;[/#list]&nbsp;
           [#if topic.learningHours>0]自主学习${topic.learningHours}学时&nbsp;[/#if]
           ${topic.methods!}&nbsp;
           [#if topic.objectives??]对应课程目标:${topic.objectives?replace(",","&nbsp;")}[/#if]
@@ -11,8 +11,8 @@
         </div>
         [@b.card_tools]
          <div class="btn-group">
-         [@b.a href="!editTopic?topic.id=${topic.id}" class="btn btn-sm btn-info"]<i class="fa fa-edit"></i>修改[/@]
-         [@b.a href="!removeTopic?topic.id=${topic.id}" onclick="return confirm('确定删除该主题?');" class="btn btn-sm btn-danger"]<i class="fa fa-xmark"></i>删除[/@]
+         [@b.a href="!editTopic?topic.id=${topic.id}" class="btn btn-sm btn-outline-info"]<i class="fa fa-edit"></i>修改[/@]
+         [@b.a href="!removeTopic?topic.id=${topic.id}" onclick="return confirm('确定删除该主题?');" class="btn btn-sm btn-outline-danger"]<i class="fa fa-xmark"></i>删除[/@]
          </div>
         [/@]
        [/@]

@@ -79,13 +79,17 @@ ol {
 .step-active .ui-step-cont-number { background-color: #3c8dbc; }
 .step-active .ui-step-cont-text { color: #3c8dbc;font-weight: bold; }
 .step-active .ui-step-line { background-color: #e0e0e0; }
-
+  fieldset.listset li > label.title{
+    min-width: 10rem;
+    max-width: 10rem;
+  }
 </style>
-  [#macro displayStep datas step_index]
+  [#assign stepNames=['填写基本信息','介绍和目标、价值引领','对毕业要求的支撑','课程教学内容与教学安排','学验并重的教学设计','课程考核方式与评分标准','教材和教学资源']/]
+  [#macro displayStep step_index]
   <div style="width:90%; margin:25px auto;margin-bottom: 50px;">
-    <ol class="ui-step ui-step-${datas?size} ui-step-blue">
-        [#list datas as data]
-      <li class="[#if data_index==0]step-start[#elseif data_index+1=datas?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
+    <ol class="ui-step ui-step-${stepNames?size} ui-step-blue">
+        [#list stepNames as data]
+      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
         <div class="ui-step-line"></div>
         <div class="ui-step-cont">
           <span class="ui-step-cont-number">${data_index+1}</span>

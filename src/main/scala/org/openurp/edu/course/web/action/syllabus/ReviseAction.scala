@@ -80,6 +80,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       put("graduateObjectives", entityDao.getAll(classOf[GraduateObjective]))
     }
     if (get("step").contains("topics")) {
+      put("teachingMethods", syllabus.teachingMethods.map(x => (x, x)).toMap)
       put("validateHourMessages", validateHours(syllabus))
     }
     if (get("step").isEmpty) {
@@ -529,9 +530,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     getBoolean("submit") foreach { s =>
       syllabus.office = courseTaskService.getOffice(syllabus.course, syllabus.department, syllabus.semester)
       syllabus.office foreach { o =>
-        syllabus.auditor = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
+        syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
       }
-      syllabus.auditor foreach { d =>
+      syllabus.reviewer foreach { d =>
         if (d.code == Securities.user) {
           syllabus.status = PassedByDirector
         } else {

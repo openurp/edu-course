@@ -1,11 +1,11 @@
 [#ftl]
 [@b.head/]
 <div class="container">
-[@b.toolbar title="课程教学大纲编写"]
+[@b.toolbar title="Course Syllabus Edit Form"]
   bar.addClose();
 [/@]
 [#include "step.ftl"/]
-[@displayStep  3/]
+[@displayStep 3/]
 
 [#if validateHourMessages?size>0]
 <div class="alert alert-warning">
@@ -19,7 +19,7 @@
     [/#list]
     <div class="card card-info card-primary card-outline">
         [@b.card_header]
-          <div class="card-title"><i class="fas fa-edit"></i>&nbsp;新增教学内容--序号${(syllabus.topics?size+1)}</div>
+          <div class="card-title"><i class="fas fa-edit"></i>&nbsp;New Topic--Index ${(syllabus.topics?size+1)}</div>
           [@b.card_tools]
             <button type="button" class="btn btn-tool" data-card-widget="collapse">
               <i class="fas fa-plus"></i>
@@ -28,27 +28,27 @@
         [/@]
         <div class="card-body" style="display:none">
           [@b.form theme="list" action="!saveTopic" target="_self"]
-            [@b.textfield label="主题名" name="topic.name" required="true"  style="width:300px" comment="第几章 XXXXXX"/]
-            [@b.textarea label="教学内容" name="topic.contents" rows="5" cols="80" required="true"/]
+            [@b.textfield label="Topic Name" name="topic.name" required="true"  style="width:500px" comment="Chapter 1: xxx "/]
+            [@b.textarea label="Contents" name="topic.contents" rows="5" cols="80" required="true"/]
             [#list topicLabels as label]
-              [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" required="true"/]
+              [@b.textarea label=label.enName name="element"+label.id rows="3" cols="80" required="true" maxlength="800"/]
             [/#list]
-            [@b.checkboxes label="教学方法" name="teachingMethod" items=teachingMethods required="true" min="1"/]
-            [@b.field label="课时分布"]
+            [@b.checkboxes label="Teaching methods11" name="teachingMethod" items=teachingMethods required="true" min="1"/]
+            [@b.field label="Teaching hours"]
               [#list syllabus.teachingNatures as ht]
                 <label for="teachingNature${ht.id}_p">${ht_index+1}.${ht.name}</label>
-                <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="">课时
-                [#if ((syllabus.getHour(ht).weeks)!0)>0]<input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="">周[/#if]
+                <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value=""> hours
+                [#if ((syllabus.getHour(ht).weeks)!0)>0]<input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value=""> weeks[/#if]
               [/#list]
-               <label for="learning_p">自主学习</label>
-               <input name="topic.learningHours" style="width:30px" id="learning_p" value="">课时
+               <label for="learning_p">Autonomous learning hours</label>
+               <input name="topic.learningHours" style="width:30px" id="learning_p" value=""> hours
             [/@]
-            [@b.checkboxes label="对应课程目标" name="objective.id" items=syllabus.objectives required="false"/]
+            [@b.checkboxes label="Course objective" name="objective.id" items=syllabus.objectives required="false"/]
             [@b.formfoot]
               <input type="hidden" name="course.id" value="${course.id}"/>
               <input type="hidden" name="topic.idx" value="${(syllabus.topics?size+1)}"/>
               <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-              [@b.submit value="保存" /]
+              [@b.submit value="Save" /]
             [/@]
           [/@]
         </div>
@@ -60,8 +60,8 @@
     <input type="hidden" name="course.id" value="${course.id}"/>
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
     <input type="hidden" name="step" value="designs"/>
-    [@b.a href="!edit?syllabus.id=${syllabus.id}&step=outcomes" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
-    [@b.submit value="下一步" /]
+    [@b.a href="!edit?syllabus.id=${syllabus.id}&step=outcomes" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+    [@b.submit value="Move to the next step" /]
   [/@]
 [/@]
 </div>

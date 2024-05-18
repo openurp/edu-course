@@ -80,12 +80,17 @@ ol {
 .step-active .ui-step-cont-text { color: #3c8dbc;font-weight: bold; }
 .step-active .ui-step-line { background-color: #e0e0e0; }
 
+  fieldset.listset li > label.title{
+    min-width: 10rem;
+    max-width: 10rem;
+  }
 </style>
-  [#macro displayStep datas step_index]
+  [#assign stepNames=['Basic information','Introduction and objectives','Graduation requirements','Topics and Schedule','Teaching designs','Assessments','Textbook and Resources']/]
+  [#macro displayStep step_index]
   <div style="width:90%; margin:25px auto;margin-bottom: 50px;">
-    <ol class="ui-step ui-step-${datas?size} ui-step-blue">
-        [#list datas as data]
-      <li class="[#if data_index==0]step-start[#elseif data_index+1=datas?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
+    <ol class="ui-step ui-step-${stepNames?size} ui-step-blue">
+        [#list stepNames as data]
+      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
         <div class="ui-step-line"></div>
         <div class="ui-step-cont">
           <span class="ui-step-cont-number">${data_index+1}</span>
@@ -96,3 +101,5 @@ ol {
     </ol>
   </div>
   [/#macro]
+
+[#assign tips={'syllabus.description':'Must include a moral education description of the course','values':'经世济民、诚信服务等职业素养，课程根据思政教育和课程思政的安排，在本课程中融入的课程思政教学内容。'}/]
