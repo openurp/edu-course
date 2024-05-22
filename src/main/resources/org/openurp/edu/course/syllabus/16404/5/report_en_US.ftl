@@ -78,7 +78,7 @@
 
 [#assign course=syllabus.course/]
 
-<div class="container" style="font-family: 宋体;font-size: 12pt;padding:0px 0px;">
+<div class="container" style="font-family: 'Times New Roman',宋体;font-size: 12pt;padding:0px 0px;">
   <table class="header">
     <tr><td><img src="${b.static_url('local','/images/logo.png')}" width="50px"/></td>
     <td style="text-align:right;vertical-align: bottom;">${syllabus.course.project.school.enName}·Syllabus</td>
@@ -121,7 +121,7 @@
       </tr>
       <tr>
         <td>②Total practical weeks：</td>
-        <td class="center">[#if course.weeks>0]${course.weeks} weeks[/#if]</td>
+        <td class="center">[#assign weeks=0][#list syllabus.hours as h][#assign weeks=weeks+h.weeks][/#list][#if weeks>0]${weeks}Weeks[/#if]</td>
       </tr>
       <tr>
         <td>Course nature：</td>
@@ -186,7 +186,7 @@
         <tr>
           <td style="text-align:left;">${o.objective.code}【${o.objective.enName!o.objective.name}】</td>
           [#list orderedCourseObjectieves as co]
-          <td>[#if o.support(co)]&#10004;[/#if]</td>
+          <td>[#if o.supportWith(co)]&#10004;[/#if]</td>
           [/#list]
         </tr>
       [/#list]
@@ -210,9 +210,9 @@
         <tr>
           <td>${topic.name}</td>
           <td>
-          ${topic.contents}
+          <p style="white-space: preserve;" class="m-0">${topic.contents}</p>
           [#list topic.elements?sort_by(["label","code"]) as elem]
-          <br/><span style="font-weight:bold;">${elem.label.enName}：</span>${elem.contents}
+          <p style="white-space: preserve;" class="m-0"><span style="font-weight:bold;">${elem.label.enName}：<br/></span>${elem.contents}</p>
           [/#list]
           </td>
           <td>${topic.methods!}</td>
@@ -442,11 +442,11 @@
       </tr>
       <tr>
         <td>Reviewer:</td>
-        <td>${(syllabus.director.name)!}</td>
+        <td>${(syllabus.reviewer.name)!}</td>
       </tr>
       <tr>
         <td>Approver:</td>
-        <td></td>
+        <td>${(syllabus.approver.name)!}</td>
       </tr>
       <tr>
         <td>Start using time:</td>

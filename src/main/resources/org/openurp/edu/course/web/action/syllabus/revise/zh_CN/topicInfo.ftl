@@ -17,11 +17,9 @@
         [/@]
        [/@]
       <div class="card-body">
-        <p>教学内容：${topic.contents}</p>
+        <p style="white-space: preserve;">教学内容：${topic.contents}</p>
         [#list topic.elements?sort_by(["label","code"]) as elem]
-        <p>
-          ${elem.label.name}：${elem.contents}
-        </p>
+        <p style="white-space: preserve;">${elem.label.name}：${elem.contents}</p>
         [/#list]
       </div>
   </div>

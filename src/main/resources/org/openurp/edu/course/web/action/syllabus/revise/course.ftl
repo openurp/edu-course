@@ -6,10 +6,11 @@
     }
   </style>
 <div class="container">
+
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">${course.code} ${course.name}</h4>
-      [@b.a class="btn btn-primary btn-sm" href="!edit?id=" +course.id style="float:right"]修改[/@]
+      [#--[@b.a class="btn btn-primary btn-sm" href="!edit?id=" +course.id style="float:right"]修改[/@]--]
     </div>
     <table class="infoTable">
       <tr>
@@ -27,14 +28,8 @@
       <tr>
         <td class="title">开课院系:</td>
         <td class="content">${(course.department.name)!}</td>
-        <td class="title">课程类别:</td>
+        <td class="title">建议课程类别:</td>
         <td class="content">${(course.courseType.name)!}</td>
-      </tr>
-       <tr>
-        <td class="title">课程分类:</td>
-        <td class="content">${(course.category.name)!}</td>
-        <td class="title">考试方式:</td>
-        <td class="content">${(course.examMode.name)!}</td>
       </tr>
     </table>
   </div>
@@ -57,6 +52,7 @@
            <td>
              [#if editables?seq_contains(syllabus.status)]
              [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
+             [@b.a href="!remove?id=${syllabus.id}" onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
              [/#if]
            </td>
            <td>[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]</td>

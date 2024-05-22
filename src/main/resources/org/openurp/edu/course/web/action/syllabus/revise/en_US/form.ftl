@@ -22,13 +22,14 @@
     [@b.textfield name="syllabus.methods" label="Teaching Manners" value=syllabus.methods! required="true" style="width:500px" comment="多个方式请用,或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="Examination/Test" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="Grading Mode" items=gradingModes value=syllabus.gradingMode!/]
+    [@b.number label="Credit Hours" name="syllabus.creditHours" value=syllabus.creditHours required="true" max=course.creditHours min="0"/]
+    [@b.number label="Week Hours" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0"/]
     [#if teachingNatures?size>0]
     [@b.field label="Credit Hours"]
        [#assign hours={}/]
        [#list syllabus.hours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
        [/#list]
-       ${course.creditHours!}学时(
        [#list teachingNatures as ht]
         <label for="teachingNature${ht.id}_p" style="font-weight:normal;">${ht.name}</label>
         <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}" onchange="checkCreditHours()">
@@ -37,7 +38,6 @@
         [/#if]
         [#sep],
        [/#list]
-       )
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
@@ -87,8 +87,9 @@
       total += Number.parseInt(h);
     }
     [/#list]
-    if(total!=${syllabus.course.creditHours}){
-      $("#credit_hour_tips").html("课时小计"+total+"不等于${syllabus.course.creditHours}");
+    var creditHours = form['syllabus.creditHours'].value || "0";
+    if(total!= parseInt(creditHours)){
+      $("#credit_hour_tips").html("课时小计"+total+"不等于" + creditHours);
       $("#credit_hour_tips").show();
       return false;
     }

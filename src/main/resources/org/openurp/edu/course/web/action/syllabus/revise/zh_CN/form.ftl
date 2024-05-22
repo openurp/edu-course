@@ -8,8 +8,7 @@
 [@displayStep  0/]
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
-    [@b.field label="课程"]${course.code} ${course.name}[/@]
-    [@b.field  label="学分学时"]${course.defaultCredits!}学分 ${course.creditHours!}学时 每周${course.weekHours}课时[/@]
+    [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分[/@]
     [@b.radios label="语言" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
     [@base.semester label="生效起始学期" name="syllabus.semester.id" required="true" value=syllabus.semester!/]
     [@b.select name="syllabus.department.id" label="开课院系" value=syllabus.department! required="true"
@@ -22,13 +21,14 @@
     [@b.textfield name="syllabus.methods" label="教学方式" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
+    [@b.number label="总学时" name="syllabus.creditHours" value=syllabus.creditHours required="true" max=course.creditHours?string min="0"/]
+    [@b.number label="周学时" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0"/]
     [#if teachingNatures?size>0]
-    [@b.field label="总课时分布"]
+    [@b.field label="总课时分布" required="true"]
        [#assign hours={}/]
        [#list syllabus.hours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
        [/#list]
-       ${course.creditHours!}学时(
        [#list teachingNatures as ht]
         <label for="teachingNature${ht.id}_p" style="font-weight:normal;">${ht.name}</label>
         <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}" onchange="checkCreditHours()">
@@ -37,12 +37,11 @@
         [/#if]
         [#sep],
        [/#list]
-       )
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
     [#if syllabus.course.defaultCredits > 1.9]
-    [@b.textfield name="syllabus.examCreditHours" label="考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()"]
+    [@b.textfield name="syllabus.examCreditHours" label="考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
        学时([#assign hours={}/]
        [#list syllabus.examHours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
@@ -87,8 +86,9 @@
       total += Number.parseInt(h);
     }
     [/#list]
-    if(total!=${syllabus.course.creditHours}){
-      $("#credit_hour_tips").html("课时小计"+total+"不等于${syllabus.course.creditHours}");
+    var creditHours = form['syllabus.creditHours'].value || "0";
+    if(total!= parseInt(creditHours)){
+      $("#credit_hour_tips").html("课时小计"+total+"不等于" + creditHours);
       $("#credit_hour_tips").show();
       return false;
     }

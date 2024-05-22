@@ -20,11 +20,12 @@ package org.openurp.edu.course.web.action.syllabus
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.mapping
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.base.edu.model.{Course, Major, Textbook}
+import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
 import org.openurp.base.model.AuditStatus.{PassedByDirector, Submited}
@@ -42,6 +43,8 @@ import java.util.Locale
  * 教师修订教学大纲
  */
 class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
+
+  var businessLogger: WebBusinessLogger = _
 
   var courseTaskService: CourseTaskService = _
 
@@ -94,6 +97,17 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case Some(s) => forward(s"${locale}/${s}")
   }
 
+  def remove(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    if (syllabus.writer.code == Securities.user) {
+      entityDao.remove(syllabus)
+      businessLogger.info(s"删除课程教学大纲:${syllabus.course.name}", syllabus.id, Map("syllabus" -> syllabus.id.toString))
+      redirect("course", s"course.id=${syllabus.course.id}", "删除成功")
+    } else {
+      redirect("course", s"course.id=${syllabus.course.id}", "只能删除自己编写的大纲")
+    }
+  }
+
   private def putBasicDatas(course: Course): Unit = {
     given project: Project = course.project
 
@@ -140,6 +154,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.department = course.department
     syllabus.examMode = course.examMode
     syllabus.gradingMode = course.gradingMode
+    syllabus.creditHours = course.creditHours
+    syllabus.weekHours = course.weekHours
+    if (course.defaultCredits > 1) {
+      syllabus.examCreditHours = course.defaultCredits.toInt
+    }
     syllabus
   }
 
@@ -161,7 +180,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.writer = me
     syllabus.updatedAt = Instant.now
 
+    val majorIds = getLongIds("major")
+    syllabus.majors.clear()
+    syllabus.majors.addAll(entityDao.find(classOf[Major], majorIds))
     entityDao.saveOrUpdate(syllabus)
+    businessLogger.info(s"保存了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))
     toStep(syllabus)
   }
 
@@ -540,6 +563,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         }
       }
       entityDao.saveOrUpdate(syllabus)
+      businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
     }
     redirect("info", s"&syllabus.id=${syllabus.id}", "info.save.success")
   }
@@ -562,6 +586,52 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
     put("syllabuses", syllabuses)
     put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
+
+    val last = entityDao.findBy(classOf[CourseProfile], "course", course).sortBy(_.beginOn).lastOption
+    put("profile", last)
+    forward()
+  }
+
+  def editProfile(): View = {
+    val course = entityDao.get(classOf[Course], getLongId("course"))
+    val profile = getLong("profile.id") match
+      case None =>
+        val profile = new CourseProfile
+        profile.course = course
+        profile
+      case Some(profileId) => entityDao.get(classOf[CourseProfile], profileId)
+    put("profile", profile)
+    forward()
+  }
+
+  /** 保存简介
+   *
+   * @return
+   */
+  def saveProfile(): View = {
+    val course = entityDao.get(classOf[Course], getLongId("course"))
+    val profile = getLong("profile.id") match
+      case None =>
+        val profile = new CourseProfile
+        profile.course = course
+        profile
+      case Some(profileId) => entityDao.get(classOf[CourseProfile], profileId)
+    profile.description = get("description", "")
+    profile.enDescription = get("enDescription")
+    profile.updatedAt = Instant.now
+    entityDao.saveOrUpdate(profile)
+    redirect("courseInfo", s"course.id=${course.id}", "info.save.success")
+  }
+
+  /** 显示课程基本信息
+   *
+   * @return
+   */
+  def courseInfo(): View = {
+    val course = entityDao.get(classOf[Course], getLongId("course"))
+    val last = entityDao.findBy(classOf[CourseProfile], "course", course).sortBy(_.beginOn).lastOption
+    put("course", course)
+    put("profile", last)
     forward()
   }
 

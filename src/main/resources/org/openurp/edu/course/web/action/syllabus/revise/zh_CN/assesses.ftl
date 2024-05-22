@@ -22,8 +22,12 @@
     [@b.textfield name="grade${usualType.id}.scorePercent" label="平时成绩百分比" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
     [@b.textfield name="grade${endType.id}.scorePercent" label="期末成绩百分比" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
     [@b.field label="期末对课程目标支撑比例"]
+      [#assign endPercentMap={}/]
+      [#if syllabus.getAssessment(endType,null)??]
+        [#assign endPercentMap=syllabus.getAssessment(endType,null).objectivePercentMap/]
+      [/#if]
       [#list syllabus.objectives?sort_by("code") as co]
-        <label for="end_co${co.id}">${co.code}</label><input name="end_co${co.id}" type="number" style="width:50px"  onchange="checkEndCoPercent()">
+        <label for="end_co${co.id}">${co.code}</label><input name="end_co${co.id}" type="number" style="width:50px"  value="${endPercentMap[co.code]!}" onchange="checkEndCoPercent()">
       [/#list]
       <span id="EndCoTip"></span>
     [/@]

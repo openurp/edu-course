@@ -11,7 +11,7 @@
         [@b.col width="10%" title="课程序号"]${(clazz.crn)?if_exists}[/@]
         [@b.col title="课程名称"]${(clazz.course.name)?if_exists}[/@]
         [@b.col width="12%" title="课程类型"]${(clazz.courseType.name)?if_exists}[/@]
-        [@b.col width="5%" title="周课时"]${(clazz.schedule.weekHours)?if_exists}[/@]
+        [@b.col width="5%" title="学分"]${clazz.course.defaultCredits}[/@]
         [@b.col width="5%" title="总学时"]${(clazz.schedule.creditHours)?if_exists}[/@]
         [@b.col width="5%" title="学生数"]${clazz.enrollment.courseTakers?size}[/@]
         [@b.col width="19%" title="操作"]

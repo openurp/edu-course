@@ -2,10 +2,10 @@
     [@b.textfield label="Name" name="design.name" value=design.name! required="true"/]
     [@b.textarea label="Contents" name="design.contents" rows="12" cols="80" value=design.contents! required="true" maxlength="3000"/]
     [#assign caseAndExperiments=""/]
-    [#if syllabus.cases?size>0][#assign caseAndExperiments=caseAndExperiments+"hasCase"/][/#if]
-    [#if syllabus.experiments?size>0][#assign caseAndExperiments=caseAndExperiments+",hasExperiment"/][/#if]
+    [#if design.hasCase][#assign caseAndExperiments=caseAndExperiments+"hasCase"/][/#if]
+    [#if design.hasExperiment][#assign caseAndExperiments=caseAndExperiments+",hasExperiment"/][/#if]
     [@b.checkboxes label="Case and experiments" items="hasCase:Case teaching,hasExperiment:Experiment teaching" onclick="toggleCaseAndExperiment(this)" values=caseAndExperiments name="caseAndExperiments"/]
-    [#assign caseStyle][#if syllabus.cases?size==0]display:none[/#if][/#assign]
+    [#assign caseStyle][#if !design.hasCase]display:none[/#if][/#assign]
     [@b.field label="Cases" id="hasCase_field" style=caseStyle]
       [#assign cases = {}/]
       [#list syllabus.cases?sort_by("idx") as c]
@@ -17,7 +17,7 @@
       [/#list]
       </ul>
     [/@]
-    [#assign expStyle][#if syllabus.experiments?size==0]display:none[/#if][/#assign]
+    [#assign expStyle][#if !design.hasExperiment]display:none[/#if][/#assign]
     [@b.field label="Experiments" id="hasExperiment_field" style=expStyle]
       [#assign exps = {}/]
       [#list syllabus.experiments?sort_by("idx") as c]
@@ -46,7 +46,7 @@
     [/@]
     [@b.formfoot]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=topics" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
-      [@b.submit value="Save and move to the next step" /]
+      <input type="hidden" name="design.id" value="${design.id}"/>
+      [@b.submit value="Save" /]
     [/@]
   [/@]

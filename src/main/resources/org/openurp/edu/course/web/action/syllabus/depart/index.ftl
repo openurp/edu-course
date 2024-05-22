@@ -11,6 +11,7 @@
       [@b.select style="width:100px" name="syllabus.department.id" label="开课院系" items=departs option="id,name" empty="..." /]
       [@b.textfield name="syllabus.office.name" label="教研室"/]
       [@b.textfield name="syllabus.writer.name" label="编写人"/]
+      [@b.select  name="syllabus.status" label="状态" items=statuses empty="..." /]
       <input type="hidden" name="orderBy" value="syllabus.course.code"/>
     [/@]
   </div>

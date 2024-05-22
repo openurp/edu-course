@@ -29,9 +29,9 @@
         <div class="card-body" style="display:none">
           [@b.form theme="list" action="!saveTopic" target="_self"]
             [@b.textfield label="主题名" name="topic.name" required="true"  style="width:300px" comment="第几章 XXXXXX"/]
-            [@b.textarea label="教学内容" name="topic.contents" rows="5" cols="80" required="true"/]
+            [@b.textarea label="教学内容" name="topic.contents" rows="5" cols="80" required="true" maxlength="3000"/]
             [#list topicLabels as label]
-              [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" required="true"/]
+              [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" required="true" maxlength="2000"/]
             [/#list]
             [@b.checkboxes label="教学方法" name="teachingMethod" items=teachingMethods required="true" min="1"/]
             [@b.field label="课时分布"]

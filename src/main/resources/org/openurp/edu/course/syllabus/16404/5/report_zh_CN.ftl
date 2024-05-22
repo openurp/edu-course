@@ -127,7 +127,7 @@
       </tr>
       <tr>
         <td>②总实践周：</td>
-        <td>[#if course.weeks>0]${course.weeks}[/#if]</td>
+        <td>[#assign weeks=0][#list syllabus.hours as h][#assign weeks=weeks+h.weeks][/#list][#if weeks>0]${weeks}周[/#if]</td>
       </tr>
       <tr>
         <td>课程性质：</td>
@@ -176,23 +176,23 @@
     毕业要求${o.objective.code}【${o.objective.name}】：${o.contents}
 [/#list]
     </p>[#t/]
-    [#assign orderedCourseObjectieves = syllabus.objectives?sort_by('code')/]
+    [#assign orderedCourseObjectives = syllabus.objectives?sort_by('code')/]
     <table class="info-table" style="text-align:center;table-layout:fixed;">
       <caption style="caption-side: top;text-align: center;">表 ${tableIndex}：课程目标和毕业要求的对应关系和支撑矩阵</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr>
-          <th rowspan="2" style="width:250px"> 毕业要求（SR）</th><th colspan="${orderedCourseObjectieves?size}"> 课程目标</th>
+          <th rowspan="2" style="width:250px"> 毕业要求（SR）</th><th colspan="${orderedCourseObjectives?size}"> 课程目标</th>
         </tr>
         <tr>
-          [#list orderedCourseObjectieves as co]<th>${co.code}</th>[/#list]
+          [#list orderedCourseObjectives as co]<th>${co.code}</th>[/#list]
         </tr>
       </thead>
       [#list syllabus.outcomes?sort_by(["objective","code"]) as o]
         <tr>
           <td style="text-align:left;">${o.objective.code}【${o.objective.name}】</td>
-          [#list orderedCourseObjectieves as co]
-          <td>[#if o.support(co)]&#10004;[/#if]</td>
+          [#list orderedCourseObjectives as co]
+          <td>[#if o.supportWith(co)]&#10004;[/#if]</td>
           [/#list]
         </tr>
       [/#list]
@@ -216,9 +216,9 @@
         <tr>
           <td>${topic.name}</td>
           <td>
-          <span style="font-weight:bold;">教学内容：</span>${topic.contents}
+          <p style="white-space: preserve;" class="m-0">${topic.contents}</p>
           [#list topic.elements?sort_by(["label","code"]) as elem]
-          <br/><span style="font-weight:bold;">${elem.label.name}：</span>${elem.contents}
+          <p style="white-space: preserve;" class="m-0"><span style="font-weight:bold;">${elem.label.name}：</span><br/>${elem.contents}</p>
           [/#list]
           </td>
           <td>${topic.methods!}</td>
@@ -234,7 +234,7 @@
       <thead>
         <tr style="text-align:center;">
           <th rowspan="3">教学主题</th><th style="width:${22*teachingNatures?size+1}mm" colspan="${teachingNatures?size+1}">课堂学时或实践周分布</th>
-          <th style="width:22mm" rowspan="3">自主学习</th><th style="width:22mm" rowspan="3">对应课程教学目标</th>
+          <th style="width:22mm" rowspan="3">自主学习</th><th style="width:60mm" rowspan="3">对应课程教学目标</th>
         </tr>
         <tr>
           <th rowspan="2" style="width:22mm">小计</th><th style="width:${21*teachingNatures?size}mm" colspan="${teachingNatures?size}">其中：</th>
@@ -432,11 +432,11 @@
       </tr>
       <tr>
         <td>专业/教研室主任:</td>
-        <td>${(syllabus.director.name)!}</td>
+        <td>${(syllabus.reviewer.name)!}</td>
       </tr>
       <tr>
         <td>教学院长:</td>
-        <td></td>
+        <td>${(syllabus.approver.name)!}</td>
       </tr>
       <tr>
         <td>教学大纲启用时间:</td>

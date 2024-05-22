@@ -60,14 +60,14 @@
         <td rowspan="3">${clazz.course.defaultCredits}</td>
         <td rowspan="3">课程学时或实践周</td>
         <td rowspan="2">①总学时：<br>（其中，理论与实践学时）</td>
-        <td>${clazz.course.creditHours}学时</td>
+        <td>${syllabus.creditHours}学时</td>
       </tr>
       <tr>
         <td>其中：[#list syllabus.hours?sort_by(['nature','code']) as h]${h.nature.name}${h.creditHours}[#sep]，[/#list]</td>
       </tr>
       <tr>
         <td>②总实践周：</td>
-        <td>[#if clazz.course.weeks>0]${clazz.course.weeks}[/#if]</td>
+        <td>[#assign weeks=0][#list syllabus.hours as h][#assign weeks=weeks+h.weeks][/#list][#if weeks>0]${weeks}周[/#if]</td>
       </tr>
       <tr>
         <td>课程性质</td>
@@ -113,8 +113,8 @@
               <td>${h.creditHours}</td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>${clazz.course.creditHours}</td>
-              <td>${plan.learningHours!}</td>
+              <td>${syllabus.creditHours}</td>
+              <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
         </td>
@@ -157,7 +157,7 @@
       <tr>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.idx}</td>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${(dates[lesson_index])!}</td>
-        <td>${clazz.course.weekHours}</td>
+        <td>${syllabus.weekHours}</td>
         <td style="text-align:left;">${lesson.contents!}</td>
         <td>${lesson.forms!}</td>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.homework!}</td>

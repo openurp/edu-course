@@ -22,8 +22,12 @@
     [@b.textfield name="grade${usualType.id}.scorePercent" label="Usual score accounts for" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
     [@b.textfield name="grade${endType.id}.scorePercent" label="Final grade accounts for" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
     [@b.field label="Objectives(final grade)"]
+      [#assign endPercentMap={}/]
+      [#if syllabus.getAssessment(endType,null)??]
+        [#assign endPercentMap=syllabus.getAssessment(endType,null).objectivePercentMap/]
+      [/#if]
       [#list syllabus.objectives?sort_by("code") as co]
-        <label for="end_co${co.id}">${co.code}</label><input name="end_co${co.id}" type="number" style="width:50px"  onchange="checkEndCoPercent()">
+        <label for="end_co${co.id}">${co.code}</label><input name="end_co${co.id}" type="number" style="width:50px"  value="${endPercentMap[co.code]!}" onchange="checkEndCoPercent()">
       [/#list]
       <span id="EndCoTip"></span>
     [/@]

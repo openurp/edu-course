@@ -22,7 +22,7 @@
     [@b.col width="10%" property="director.name" title="负责人"/]
     [@b.col width="5%" property="course.defaultCredits" title="学分"/]
     [@b.col width="10%" property="syllabus.course.creditHours" title="学时"]
-      ${syllabus.course.creditHours}
+      ${syllabus.creditHours}
       [#if syllabus.hours?size>1]
         ([#list syllabus.hours?sort_by(['nature','code']) as ch]${ch.creditHours}[#if ch_has_next]+[/#if][/#list])
       [/#if]

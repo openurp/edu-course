@@ -29,9 +29,9 @@
         <div class="card-body" style="display:none">
           [@b.form theme="list" action="!saveTopic" target="_self"]
             [@b.textfield label="Topic Name" name="topic.name" required="true"  style="width:500px" comment="Chapter 1: xxx "/]
-            [@b.textarea label="Contents" name="topic.contents" rows="5" cols="80" required="true"/]
+            [@b.textarea label="Contents" name="topic.contents" rows="5" cols="80" required="true" maxlength="3000"/]
             [#list topicLabels as label]
-              [@b.textarea label=label.enName name="element"+label.id rows="3" cols="80" required="true" maxlength="800"/]
+              [@b.textarea label=label.enName name="element"+label.id rows="3" cols="80" required="true" maxlength="2000"/]
             [/#list]
             [@b.checkboxes label="Teaching methods11" name="teachingMethod" items=teachingMethods required="true" min="1"/]
             [@b.field label="Teaching hours"]

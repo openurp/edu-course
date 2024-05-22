@@ -22,7 +22,7 @@ import org.openurp.base.edu.model.{Course, CourseProfile, Terms}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.SyllabusDoc
-import org.openurp.edu.program.model.{ExecutionPlanCourse, PlanCourse}
+import org.openurp.edu.program.model.{ExecutivePlanCourse, PlanCourse}
 
 import java.time.LocalDate
 
@@ -40,7 +40,7 @@ class StatHelper(entityDao: EntityDao) {
   }
 
   def statPlanCourseInfo(course: Course): Iterable[PlanCourseInfo] = {
-    val pQuery = OqlBuilder.from(classOf[ExecutionPlanCourse], "pc")
+    val pQuery = OqlBuilder.from(classOf[ExecutivePlanCourse], "pc")
     pQuery.where("pc.course=:course", course)
     val today = LocalDate.now
     pQuery.where(":today < pc.group.plan.endOn", today)
