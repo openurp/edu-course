@@ -9,7 +9,7 @@
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!saveTextbook"]
     [@b.field label="课程"]${course.code} ${course.name}[/@]
-    [@b.field  label="学分学时"]${course.defaultCredits!}学分 ${course.creditHours!}学时 每周${course.weekHours}课时[/@]
+    [@b.field  label="学分学时"]${course.defaultCredits!}学分 ${course.creditHours!}学时[/@]
     [@b.select name="textbook.id" label="教材" required="false" style="width:500px;" items=textbooks values=syllabus.textbooks multiple="true" option="id,name" empty="..."/]
     [@b.textarea name="syllabus.bibliography" label="参考书目" value=syllabus.bibliography! required="false" rows="4" cols="80"/]
     [@b.textarea name="syllabus.materials" label="其他教学资源" value=syllabus.materials! required="false" rows="4" cols="80"/]

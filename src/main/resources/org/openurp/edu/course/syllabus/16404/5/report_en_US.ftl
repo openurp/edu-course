@@ -166,26 +166,26 @@
     [@header_title "${numSeq[4]}、Course supporting to graduation requirements"/]
     <p style="white-space: preserve;">[#t/]
     Supports of the course to graduation requirements：
-[#list syllabus.outcomes?sort_by(["objective","code"]) as o]
-    Graduation requirements【${o.objective.enName!o.objective.name}】：${o.contents}
+[#list syllabus.outcomes?sort_by(["code"]) as o]
+    Graduation requirements【${o.title}】：${o.contents}
 [/#list]
     </p>[#t/]
-    [#assign orderedCourseObjectieves = syllabus.objectives?sort_by('code')/]
+    [#assign orderedCourseObjectives = syllabus.objectives?sort_by('code')/]
     <table class="info-table" style="text-align:center;table-layout:fixed;">
       <caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Corresponding relationship and supporting matrix between course objectives and graduation requirements</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr>
-          <th rowspan="2" style="width:250px"> Graduation requirements </th><th colspan="${orderedCourseObjectieves?size}"> Course objectives</th>
+          <th rowspan="2" style="width:250px"> Graduation requirements </th><th colspan="${orderedCourseObjectives?size}"> Course objectives</th>
         </tr>
         <tr>
-          [#list orderedCourseObjectieves as co]<th>${co.code}</th>[/#list]
+          [#list orderedCourseObjectives as co]<th>${co.code}</th>[/#list]
         </tr>
       </thead>
-      [#list syllabus.outcomes?sort_by(["objective","code"]) as o]
+      [#list syllabus.outcomes?sort_by(["code"]) as o]
         <tr>
-          <td style="text-align:left;">${o.objective.code}【${o.objective.enName!o.objective.name}】</td>
-          [#list orderedCourseObjectieves as co]
+          <td style="text-align:left;">【${o.title}】</td>
+          [#list orderedCourseObjectives as co]
           <td>[#if o.supportWith(co)]&#10004;[/#if]</td>
           [/#list]
         </tr>
@@ -401,11 +401,11 @@
     [@header_title "（${numSeq[2]}）Scoring standard of main assessment methods"/]
     [#assign assessIdx=0/]
     [#list usualAssessments as a]
-      [#if !a.description??][#continue/][/#if]
+      [#if !a.description?? && !a.scoreTable??][#continue/][/#if]
       [#assign title]${assessIdx+1}. Grading standard of ${a.component}[/#assign]
       [#assign assessIdx=assessIdx+1/]
       [@header_title title/]
-      [@p a.description/]
+      [@p a.description!/]
       [#if a.scoreTable??]
         [#assign caption]<caption style="caption-side: top;text-align: center;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
         [#assign tableIndex = tableIndex+1 /]

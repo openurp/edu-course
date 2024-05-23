@@ -172,8 +172,8 @@
     [@header_title "四、课程对毕业要求的支撑"/]
     <p style="white-space: preserve;">[#t/]
     本课程对毕业要求的支撑：
-[#list syllabus.outcomes?sort_by(["objective","code"]) as o]
-    毕业要求${o.objective.code}【${o.objective.name}】：${o.contents}
+[#list syllabus.outcomes?sort_by(["code"]) as o]
+    毕业要求【${o.title}】：${o.contents}
 [/#list]
     </p>[#t/]
     [#assign orderedCourseObjectives = syllabus.objectives?sort_by('code')/]
@@ -182,15 +182,15 @@
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr>
-          <th rowspan="2" style="width:250px"> 毕业要求（SR）</th><th colspan="${orderedCourseObjectives?size}"> 课程目标</th>
+          <th rowspan="2" style="width:250px"> 毕业要求</th><th colspan="${orderedCourseObjectives?size}"> 课程目标</th>
         </tr>
         <tr>
           [#list orderedCourseObjectives as co]<th>${co.code}</th>[/#list]
         </tr>
       </thead>
-      [#list syllabus.outcomes?sort_by(["objective","code"]) as o]
+      [#list syllabus.outcomes?sort_by(["code"]) as o]
         <tr>
-          <td style="text-align:left;">${o.objective.code}【${o.objective.name}】</td>
+          <td style="text-align:left;">【${o.title}】</td>
           [#list orderedCourseObjectives as co]
           <td>[#if o.supportWith(co)]&#10004;[/#if]</td>
           [/#list]
@@ -391,11 +391,11 @@
     [@header_title "（二）主要考核方式的评分标准"/]
     [#assign assessIdx=0/]
     [#list usualAssessments as a]
-      [#if !a.description??][#continue/][/#if]
+      [#if !a.description?? && !a.scoreTable??][#continue/][/#if]
       [#assign title]${assessIdx+1}.${a.component}的评分标准[/#assign]
       [#assign assessIdx=assessIdx+1/]
       [@header_title title/]
-      [@p a.description/]
+      [@p a.description!/]
       [#if a.scoreTable??]
         [#assign caption]<caption style="caption-side: top;text-align: center;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
         [#assign tableIndex = tableIndex+1 /]

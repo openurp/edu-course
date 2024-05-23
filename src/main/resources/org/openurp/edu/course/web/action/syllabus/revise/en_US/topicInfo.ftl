@@ -17,7 +17,7 @@
         [/@]
        [/@]
       <div class="card-body">
-        <p style="white-space: preserve;"><span style="font-weight:bold;">Contents: </span>${topic.contents}</p>
+        <p style="white-space: preserve;">${topic.contents}</p>
         [#list topic.elements?sort_by(["label","code"]) as elem]
         <p style="white-space: preserve;"><span style="font-weight:bold;">${elem.label.enName}: </span>${elem.contents}</p>
         [/#list]

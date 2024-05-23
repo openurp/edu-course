@@ -26,14 +26,14 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Project, User}
 import org.openurp.code.edu.model.{TeachingMethod, TeachingSection}
 import org.openurp.edu.clazz.domain.ClazzProvider
-import org.openurp.edu.clazz.model.{Clazz, ClazzActivity}
+import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{Lesson, Syllabus, TeachingPlan, TeachingPlanSection}
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.TeachingPlanHelper
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.time.{Instant, LocalTime}
 import java.util.Locale
 
 /** 修订授课计划表
@@ -94,11 +94,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
     put("syllabus", syllabus)
-    val schedules = convert(clazz.schedule.activities, beginAt, endAt)
-    val dates = Collections.newBuffer[LocalDate]
-    schedules.sortBy(_.date) foreach { schedule =>
-      dates.addOne(schedule.date)
-    }
+    val schedules = LessonSchedule.convert(clazz.schedule.activities, beginAt, endAt)
     (plan.lessons.size + 1 to schedules.size) foreach { i =>
       val lesson = new Lesson()
       lesson.plan = plan
@@ -107,31 +103,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     val hours = plan.sections.map(x => (x.name, x.creditHours)).toMap
     put("hours", hours)
-    put("dates", dates)
+    put("schedules", schedules)
     forward()
-  }
-
-  def convert(activities: Iterable[ClazzActivity], beginAt: LocalDateTime, endAt: LocalDateTime): collection.Seq[LessonSchedule] = {
-    val schedules = Collections.newBuffer[LessonSchedule]
-    activities.foreach { activity =>
-      val beginTime = activity.time.beginAt.toLocalTime
-      val endTime = activity.time.endAt.toLocalTime
-      println((activity.time.weekstate, activity.time.weekstate.value, activity.time.weekday))
-      activity.time.dates foreach { d => println(d) }
-      activity.time.dates foreach { date =>
-        val s1 = date.atTime(beginTime)
-        val e2 = date.atTime(endTime)
-        if (s1.isBefore(endAt) && beginAt.isBefore(e2)) {
-          val schedule = LessonSchedule(activity, date, beginTime, endTime)
-          schedules.addOne(schedule)
-        }
-      }
-    }
-    val a = schedules.sorted
-    a foreach { s =>
-      println((s.date, s.time, s.units, s.room))
-    }
-    a
   }
 
   def save(): View = {

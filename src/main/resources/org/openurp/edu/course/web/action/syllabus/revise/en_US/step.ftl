@@ -102,4 +102,4 @@ ol {
   </div>
   [/#macro]
 
-[#assign tips={'syllabus.description':'Must include a moral education description of the course','values':'经世济民、诚信服务等职业素养，课程根据思政教育和课程思政的安排，在本课程中融入的课程思政教学内容。'}/]
+[#assign tips={'syllabus.description':'Must include a moral education description of the course','values':'Professional qualities such as serving the people and providing honest services are integrated into this course based on the arrangement of ideological and political education and course ideological and political education.'}/]

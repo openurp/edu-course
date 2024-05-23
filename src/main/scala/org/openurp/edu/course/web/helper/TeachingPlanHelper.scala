@@ -19,10 +19,11 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
 import org.beangle.data.dao.EntityDao
+import org.openurp.edu.clazz.model.ClazzActivity
 import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 
-import java.time.{LocalDate, LocalTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 class TeachingPlanHelper(entityDao: EntityDao) {
   def collectDatas(plan: TeachingPlan): collection.Map[String, Any] = {
@@ -41,10 +42,7 @@ class TeachingPlanHelper(entityDao: EntityDao) {
     val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
     datas.put("syllabus", syllabus)
     val schedules = LessonSchedule.convert(clazz.schedule.activities, beginAt, endAt)
-    schedules.sortBy(_.date) foreach { schedule =>
-      dates.addOne(schedule.date)
-    }
-    datas.put("dates", dates)
+    datas.put("schedules", schedules)
 
     datas
   }

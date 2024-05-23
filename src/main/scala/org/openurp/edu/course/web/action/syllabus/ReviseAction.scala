@@ -28,7 +28,7 @@ import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
-import org.openurp.base.model.AuditStatus.{PassedByDirector, Submited}
+import org.openurp.base.model.AuditStatus.Submited
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
@@ -79,8 +79,23 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       put("director", courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester))
       put("me", Securities.user)
     }
-    if (get("step").contains("outcomes")) {
-      put("graduateObjectives", entityDao.getAll(classOf[GraduateObjective]))
+    if (get("step").contains("requirements")) {
+      val orderedOutcomes = syllabus.outcomes.sortBy(_.code)
+      var i = 1
+      orderedOutcomes foreach { o =>
+        o.code = s"R${i}"
+        i += 1
+      }
+      entityDao.saveOrUpdate(syllabus)
+      val requirements = orderedOutcomes.map(_.title)
+      if (requirements.isEmpty) {
+        if (syllabus.locale == Locale.SIMPLIFIED_CHINESE) {
+          requirements.addAll(entityDao.getAll(classOf[GraduateObjective]).sortBy(_.code).map(_.name))
+        } else {
+          requirements.addAll(entityDao.getAll(classOf[GraduateObjective]).sortBy(_.code).map(_.enName2))
+        }
+      }
+      put("requirements", requirements)
     }
     if (get("step").contains("topics")) {
       put("teachingMethods", syllabus.teachingMethods.map(x => (x, x)).toMap)
@@ -142,7 +157,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("syllabus", syllabus)
     val locale = get("locale", classOf[Locale]).getOrElse(Locale.SIMPLIFIED_CHINESE)
     put("locale", locale)
-
+    val majors = entityDao.findBy(classOf[Major], "project" -> syllabus.course.project)
+    val courseMajors = majors.filter(m => m.active && m.journals.exists(_.depart == syllabus.department))
+    put("majors", courseMajors)
     get("step") match
       case None => forward(s"${locale}/form")
       case Some(s) => forward(s"${locale}/${s}")
@@ -179,6 +196,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     populateHours(syllabus)
     syllabus.writer = me
     syllabus.updatedAt = Instant.now
+    syllabus.creditHours = course.creditHours
 
     val majorIds = getLongIds("major")
     syllabus.majors.clear()
@@ -257,28 +275,44 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     toStep(syllabus)
   }
 
+  /** 保存毕业要求
+   *
+   * @return
+   */
+  def saveRequirements(): View = {
+    val syllabus = populateEntity()
+    syllabus.updatedAt = Instant.now
+    (1 to 12) foreach { i =>
+      val code = s"R${i}"
+      val name = get(code, "")
+      if (Strings.isNotEmpty(name)) {
+        syllabus.outcomes.find(_.code == code) match
+          case None =>
+            val g = new SyllabusOutcome(syllabus, code, name, " ", " ")
+            syllabus.outcomes.addOne(g)
+          case Some(outcome) => outcome.title = name
+      } else {
+        syllabus.outcomes.find(_.code == code) foreach {
+          syllabus.outcomes.subtractOne
+        }
+      }
+    }
+    entityDao.saveOrUpdate(syllabus)
+    toStep(syllabus)
+  }
+
   def saveOutcomes(): View = {
     val syllabus = populateEntity()
     syllabus.updatedAt = Instant.now
 
     given project: Project = getProject
 
-    val gos = getCodes(classOf[GraduateObjective])
-    gos foreach { go =>
-      val name = s"GO${go.id}"
-      val cos = Strings.split(get(name + ".courseObjectives", "")).toSeq.sorted.mkString(",")
-      val contents = get(name + ".contents", "")
-      syllabus.getOutcome(go) match
-        case None =>
-          if Strings.isNotBlank(contents) then
-            val o = new SyllabusOutcome(syllabus, go, contents, cos)
-            syllabus.outcomes += o
-        case Some(o) =>
-          if Strings.isBlank(contents) then
-            syllabus.outcomes -= o
-          else
-            o.courseObjectives = cos
-            o.contents = contents
+    syllabus.outcomes foreach { r =>
+      val prefix = s"R${r.id}"
+      val cos = Strings.split(get(prefix + ".courseObjectives", "")).toSeq.sorted.mkString(",")
+      val contents = get(prefix + ".contents", "")
+      r.contents = contents
+      r.courseObjectives = cos
     }
     entityDao.saveOrUpdate(syllabus)
     toStep(syllabus)
@@ -555,13 +589,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       syllabus.office foreach { o =>
         syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
       }
-      syllabus.reviewer foreach { d =>
-        if (d.code == Securities.user) {
-          syllabus.status = PassedByDirector
-        } else {
-          syllabus.status = Submited
-        }
-      }
+      syllabus.status = Submited
       entityDao.saveOrUpdate(syllabus)
       businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
     }

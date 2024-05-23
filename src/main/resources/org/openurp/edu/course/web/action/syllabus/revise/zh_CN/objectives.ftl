@@ -22,7 +22,7 @@
     [@b.formfoot]
       <input type="hidden" name="course.id" value="${course.id}"/>
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-      <input type="hidden" name="step" value="outcomes"/>
+      <input type="hidden" name="step" value="requirements"/>
       [@b.a href="!edit?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
       [@b.submit value="保存，进入下一步" /]
     [/@]

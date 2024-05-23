@@ -156,8 +156,8 @@
       [#list plan.lessons?sort_by('idx') as lesson]
       <tr>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.idx}</td>
-        <td [#if lesson.learning??]rowspan="2"[/#if]>${(dates[lesson_index])!}</td>
-        <td>${syllabus.weekHours}</td>
+        <td [#if lesson.learning??]rowspan="2"[/#if]>${(schedules[lesson_index].date)!}</td>
+        <td>${(schedules[lesson_index].hours)!}</td>
         <td style="text-align:left;">${lesson.contents!}</td>
         <td>${lesson.forms!}</td>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.homework!}</td>
@@ -177,25 +177,25 @@
       [/#list]
       <tr>
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
-        <td>${teachingHours}</td> <td colspan="3">&nbsp;</td>
+        <td>${teachingHours}</td> <td colspan="3">——</td>
       </tr>
       [#if syllabus.examCreditHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">考核学时</td>
         <td>${syllabus.examCreditHours}</td>
-        <td colspan="3">课程考核</td>
+        <td colspan="3">——</td>
       </tr>
       [/#if]
       [#if syllabus.learningHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">自主学习课时</td>
         <td>${syllabus.learningHours}</td>
-        <td colspan="3">&nbsp;</td>
+        <td colspan="3">——</td>
       </tr>
       [/#if]
       <tr>
         <td colspan="2" style="text-align:left;">合计</td>
-        <td>${teachingHours + syllabus.examCreditHours+syllabus.learningHours}</td><td colspan="3">&nbsp;</td>
+        <td>${teachingHours + syllabus.examCreditHours+syllabus.learningHours}</td><td colspan="3">——</td>
       </tr>
       <tr>
         <td colspan="6" style="text-align:left;">注：1.如每周2次课，按照1-1和1-2填写，帮助学生了解教学进度，进行课前预习。2.本学期课程的授课计划中未扣除国定假日，如遇节假日，教学安排适当调整，并确保课程教学大纲完整执行。</td>

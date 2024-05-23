@@ -143,8 +143,8 @@
       [#list plan.lessons?sort_by('idx') as lesson]
       <tr>
         <td>${lesson.idx}</td>
-        <td>${(dates[lesson_index])!}</td>
-        <td>${syllabus.weekHours}</td>
+        <td>${(schedules[lesson_index].date)!}</td>
+        <td>${(schedules[lesson_index].hours)!}</td>
         <td>
           <input type="text" name="lesson${lesson_index+1}.contents" value="${lesson.contents!}" style="width:100%" placeholder="第${lesson.idx}次课，教学内容"/>
           [#if syllabus.learningHours>0]

@@ -8,7 +8,7 @@
 [@displayStep  0/]
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
-    [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分[/@]
+    [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分 ${syllabus.creditHours}学时[/@]
     [@b.radios label="语言" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
     [@base.semester label="生效起始学期" name="syllabus.semester.id" required="true" value=syllabus.semester!/]
     [@b.select name="syllabus.department.id" label="开课院系" value=syllabus.department! required="true"
@@ -21,8 +21,10 @@
     [@b.textfield name="syllabus.methods" label="教学方式" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
-    [@b.number label="总学时" name="syllabus.creditHours" value=syllabus.creditHours required="true" max=course.creditHours?string min="0"/]
-    [@b.number label="周学时" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0"/]
+    [#--
+    [@b.number label="总学时" name="syllabus.creditHours" value=syllabus.creditHours required="true" max=course.creditHours?string min="0" /]
+    [@b.number label="周学时" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0" /]
+    --]
     [#if teachingNatures?size>0]
     [@b.field label="总课时分布" required="true"]
        [#assign hours={}/]
@@ -52,6 +54,7 @@
         [#sep],
        [/#list])
        <span  style="color:red" id="exam_hour_tips" style="display:none"></span>
+       <span class="text-muted">考试周统一组织考试，或者根据教学安排需由教师自行组织的期末考核，一般为一个教学周与学分数相当的学时</span>
     [/@]
     [/#if]
     [@b.number name="syllabus.learningHours" label="自主学习课时" value=syllabus.learningHours!/]
@@ -63,6 +66,7 @@
       [#if syllabus.id??]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       [/#if]
+      <input type="hidden" name="syllabus.creditHours" value="${syllabus.creditHours}"/>
       <input type="hidden" name="step" value="objectives"/>
       [@b.submit value="保存，进入下一步" /]
     [/@]
