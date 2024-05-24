@@ -161,19 +161,6 @@
       </tr>
       [/#list]
       <tr>
-        <td colspan="2" style="text-align:left;">2学分及以上课程考核的周学时</td>
-        <td></td>
-        <td colspan="3">按照学校的统一安排，组织期末考试</td>
-      </tr>
-      <tr>
-        <td colspan="2" style="text-align:left;">课堂教学合计</td>
-        <td></td> <td></td> <td></td> <td></td>
-      </tr>
-      <tr>
-        <td colspan="2" style="text-align:left;">合计<br>（含自主学习）</td>
-        <td></td> <td></td> <td></td> <td></td>
-      </tr>
-      <tr>
         <td colspan="6" style="text-align:left;">注：1.如每周2次课，按照1-1和1-2填写，帮助学生了解教学进度，进行课前预习。2.本学期课程的授课计划中未扣除国定假日，如遇节假日，教学安排适当调整，并确保课程教学大纲完整执行。</td>
       </tr>
     </table>

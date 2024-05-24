@@ -42,7 +42,7 @@
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
-    [#if syllabus.course.defaultCredits > 1.9]
+    [#if syllabus.course.defaultCredits > 1 || syllabus.course.creditHours > 30]
     [@b.textfield name="syllabus.examCreditHours" label="考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
        学时([#assign hours={}/]
        [#list syllabus.examHours as h]
@@ -100,7 +100,7 @@
     $("#credit_hour_tips").hide();
     return true;
   }
-  [#if syllabus.course.defaultCredits > 1.9]
+  [#if syllabus.course.defaultCredits > 1 || syllabus.course.creditHours>30]
   function checkExamHours(){
     var form = document.syllabusForm;
     var h="";
@@ -111,13 +111,18 @@
       total += Number.parseInt(h);
     }
     [/#list]
-    if(total.toString() != form['syllabus.examCreditHours'].value){
-      $("#exam_hour_tips").html("课时小计"+total+"不等于"+form['syllabus.examCreditHours'].value);
+    var examHours = parseInt(form['syllabus.examCreditHours'].value || "0")
+    if(total != examHours){
+      $("#exam_hour_tips").html("课时小计"+total+"不等于"+examHours);
       $("#exam_hour_tips").show();
       return false;
     }
-    $("#exam_hour_tips").html("");
-    $("#exam_hour_tips").hide();
+    if(examHours==0){
+      $("#exam_hour_tips").html("该课程应该填写考核课时");
+    }else{
+      $("#exam_hour_tips").html("");
+      $("#exam_hour_tips").hide();
+    }
     return true;
   }
   [#else]

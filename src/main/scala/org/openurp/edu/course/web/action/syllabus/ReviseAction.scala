@@ -78,6 +78,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
       put("director", courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester))
       put("me", Securities.user)
+      put("warningMessages", validate(syllabus))
     }
     if (get("step").contains("requirements")) {
       val orderedOutcomes = syllabus.outcomes.sortBy(_.code)
@@ -173,7 +174,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.gradingMode = course.gradingMode
     syllabus.creditHours = course.creditHours
     syllabus.weekHours = course.weekHours
-    if (course.defaultCredits > 1) {
+    if (course.defaultCredits > 1 || course.creditHours >= 32) {
       syllabus.examCreditHours = course.defaultCredits.toInt
     }
     syllabus
@@ -667,6 +668,55 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+  }
+
+  private def validate(syllabus: Syllabus): Seq[String] = {
+    val messages = Collections.newBuffer[String]
+    if (syllabus.creditHours > 0 && syllabus.topics.isEmpty) {
+      messages += "缺少课程主题"
+    }
+    messages ++= validateHours(syllabus)
+    messages ++= validAssessment(syllabus)
+    messages.toSeq
+  }
+
+  /** 验证考核比例
+   *
+   * @param syllabus
+   * @return
+   */
+  private def validAssessment(syllabus: Syllabus): Seq[String] = {
+    val messages = Collections.newBuffer[String]
+    val usualType = entityDao.get(classOf[GradeType], GradeType.Usual)
+    val endType = entityDao.get(classOf[GradeType], GradeType.End)
+    val endAssessment = syllabus.getAssessment(endType, null)
+    val usualPercent = syllabus.getAssessment(usualType, null).map(_.scorePercent).getOrElse(0)
+    val endPercent = endAssessment.map(_.scorePercent).getOrElse(0)
+    if (usualPercent + endPercent != 100) {
+      messages.addOne(s"平时期末百分比合计为${usualPercent + endPercent}，应等于100.")
+    }
+    endAssessment foreach { a =>
+      if (a.scorePercent > 0) {
+        val s = a.objectivePercentMap.values.sum
+        if (s != 100) {
+          messages.addOne(s"期末成绩对课程目标的占比合计为${s}，应等于100.")
+        }
+      }
+    }
+    if (usualPercent > 0) {
+      val usualAssessments = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty)
+      val usualTotal = usualAssessments.map(_.scorePercent).sum
+      if (usualTotal != 100) {
+        messages.addOne(s"平时成绩，各个环节合计占比为${usualTotal}，应等于100.")
+      }
+      usualAssessments foreach { a =>
+        val s = a.objectivePercentMap.values.sum
+        if (s != a.scorePercent) {
+          messages.addOne(s"平时成绩--${a.component.get}的课程目标的占比合计为${s}，应等于${a.scorePercent}.")
+        }
+      }
+    }
+    messages.toSeq
   }
 
   private def validateHours(syllabus: Syllabus): Seq[String] = {
