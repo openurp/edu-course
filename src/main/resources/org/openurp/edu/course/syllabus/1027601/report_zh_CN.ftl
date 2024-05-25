@@ -62,7 +62,7 @@
         <td colspan="4"><input name="nature" style="width:100%" placeholder="从课程信息里面读取"/></td>
       </tr>
       <tr>
-        <td>教学方式</td>
+        <td>教学方法</td>
         <td colspan="4"><input name="nature" style="width:100%"/></td>
       </tr>
       <tr>

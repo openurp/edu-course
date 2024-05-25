@@ -61,7 +61,7 @@
         <td colspan="4">[#if syllabus??]${syllabus.stage.name}-${syllabus.module.name}-${syllabus.rank.name}-${syllabus.nature.name}-${syllabus.examMode.name}[/#if]</td>
       </tr>
       <tr>
-        <td>教学方式</td>
+        <td>教学方法</td>
         <td colspan="4">${syllabus.methods}</td>
       </tr>
       <tr>
@@ -168,8 +168,8 @@
 
   <div style="text-align:center;">
     <input type="hidden" name="clazz.id" value="${clazz.id}"/>
-
-    [@b.submit value="提交"/]
+    [@b.submit value="保存"/]
+    [@b.submit value="提交教研室审批" action="!save?submit=1"/]
   </div>
   [/@]
 </div>

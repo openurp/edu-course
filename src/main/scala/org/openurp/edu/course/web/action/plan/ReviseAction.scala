@@ -20,10 +20,11 @@ package org.openurp.edu.course.web.action.plan
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
-import org.openurp.base.model.{Project, User}
+import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{TeachingMethod, TeachingSection}
 import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
@@ -40,7 +41,7 @@ import java.util.Locale
  */
 class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   var clazzProvider: ClazzProvider = _
-
+  var businessLogger: WebBusinessLogger = _
   var courseTaskService: CourseTaskService = _
 
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
@@ -166,8 +167,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     plan.updatedAt = Instant.now
     plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
     plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).headOption
+    plan.office foreach { o =>
+      plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
+    }
     entityDao.saveOrUpdate(plan)
 
+    val submit = getBoolean("submit", false)
     val isDirector = courseTaskService.isDirector(clazz.course, me)
     //课程负责人
     if (isDirector) {
@@ -183,10 +188,21 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         val p = plans.getOrElse(clz, new TeachingPlan(clz))
         if (p.writer.isEmpty || p.writer.map(_.code).contains(me.code)) {
           plan.copyTo(p)
+          val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
+          if (submit && editables.contains(p.status)) {
+            p.status = AuditStatus.Submited
+          }
           entityDao.saveOrUpdate(p)
         }
       }
     }
+
+    getBoolean("submit") foreach { s =>
+      plan.status = AuditStatus.Submited
+      entityDao.saveOrUpdate(plan)
+      businessLogger.info(s"提交课程授课计划:${clazz.course.name}", plan.id, Map("course" -> clazz.course.id.toString))
+    }
+
     redirect("report", "plan.id=" + plan.id, "info.save.success")
   }
 

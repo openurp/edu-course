@@ -74,7 +74,7 @@
         <td colspan="4">[#if syllabus??]${syllabus.stage.name}-${syllabus.module.name}-${syllabus.rank.name}-${syllabus.nature.name}-${syllabus.examMode.name}[/#if]</td>
       </tr>
       <tr>
-        <td>教学方式</td>
+        <td>教学方法</td>
         <td colspan="4">${syllabus.methods!}</td>
       </tr>
       <tr>

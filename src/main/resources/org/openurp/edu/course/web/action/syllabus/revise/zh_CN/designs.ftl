@@ -45,9 +45,10 @@
             [#list 0..9 as i]
               <ol>
               <label>${i+1}：</label><input type="text" placeholder="实验项目${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
+              <input type="text" name="experiment${i}.creditHours" style="width:60px" value="${(exps[i?string].creditHours)!}" placeholder="学时"/>
               <select name="experiment${i}.experimentType.id">
                 [#list experimentTypes as et]
-                <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]checked="checked"[/#if]>${et.name}</option>
+                <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]selected="selected"[/#if]>${et.name}</option>
                 [/#list]
               </select>
               <div class="btn-group btn-group-toggle" data-toggle="buttons" style="height: 1.5625rem;">
@@ -64,13 +65,69 @@
           [/@]
           [@b.formfoot]
             <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-            [@b.submit value="保存" /]
+            [@b.submit value="保存" onsubmit="checkCaseAndExperiment"/]
           [/@]
         [/@]
       </div>
     </div>
   </div>
   <script>
+     function checkCaseAndExperiment(form){
+       var checks = form['caseAndExperiments'];
+       var hasCase=false;
+       var hasExperiment=false;
+       for(var i=0;i< checks.length;i++){
+         if(checks[i].checked){
+           if(checks[i].value=='hasCase'){
+             hasCase=true;
+           }else{
+             hasExperiment=true;
+           }
+         }
+       }
+       if(hasCase){
+         var caseCnt =0;
+         for(var i=0; i<=9;i++){
+           if(form["case"+i+".name"].value){
+             caseCnt +=1;
+           }
+         }
+         if(caseCnt==0){
+           alert("请至少填写一个案例");
+           return false;
+         }
+       }
+       if(hasExperiment){
+         var totalHours = 0;
+         var experimentCnt = 0;
+         var missingHoursExperiments = [];
+         for(var i=0; i<=9;i++){
+           if(form["experiment"+i+".name"].value){
+             var hours = parseInt(form["experiment"+i+".creditHours"].value||"0");
+             if(hours<=0){
+               missingHoursExperiments.push(i+1);
+             }
+             experimentCnt += 1;
+             totalHours += hours;
+           }
+         }
+         if(experimentCnt==0){
+           alert("请至少填写一个实验项目");
+           return false;
+         }
+         if(missingHoursExperiments.length>0){
+           alert("实验项目"+missingHoursExperiments.join(',')+"缺少实验学时");
+           return false;
+         }
+         [#assign practicalHours = 0/]
+         [#list syllabus.hours as h][#if h.nature.id=9][#assign practicalHours = practicalHours + h.creditHours/][/#if][/#list]
+         if(totalHours > ${practicalHours}){
+            alert("实验项目总课时为"+totalHours+",不应超过课程实践${practicalHours}学时");
+            return false;
+         }
+       }
+       return true;
+     }
     function toggleCaseAndExperiment(elem){
       if(elem.checked){
         document.getElementById(elem.value+"_field").style.display="";

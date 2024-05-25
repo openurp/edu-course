@@ -18,7 +18,7 @@
     [@b.radios label="必修选修" name="syllabus.rank.id" value=syllabus.rank! items=courseRanks required="true"/]
     [@b.radios name="syllabus.nature.id" label="课程性质" value=syllabus.nature! items=courseNatures empty="..." required="true"/]
     [@b.select name="major.id" label="面向专业" values=syllabus.majors  multiple="true" items=majors required="false" comment="专业课需要该项"/]
-    [@b.textfield name="syllabus.methods" label="教学方式" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
+    [@b.textfield name="syllabus.methods" label="教学方法" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
     [#--

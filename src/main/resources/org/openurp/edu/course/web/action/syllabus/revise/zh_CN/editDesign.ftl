@@ -1,4 +1,4 @@
-  [@b.form theme="list" action="!saveDesign" target="_self"]
+  [@b.form theme="list" action="!saveDesign" target="_self" onsubmit="checkCaseAndExperiment"]
     [@b.textfield label="教学法名称" name="design.name" value=design.name! required="true"/]
     [@b.textarea label="教学法内容" name="design.contents" rows="12" cols="80" value=design.contents! required="true"/]
     [#assign caseAndExperiments=""/]
@@ -27,9 +27,10 @@
       [#list 0..9 as i]
         <ol>
         <label>${i+1}：</label><input type="text" placeholder="实验项目${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
+        <input type="text" name="experiment${i}.creditHours" style="width:60px" value="${(exps[i?string].creditHours)!}" placeholder="学时"/>
         <select name="experiment${i}.experimentType.id" >
           [#list experimentTypes as et]
-          <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]checked="checked"[/#if]>${et.name}</option>
+          <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]selected="selected"[/#if]>${et.name}</option>
           [/#list]
         </select>
         <div class="btn-group btn-group-toggle" data-toggle="buttons" style="height: 1.5625rem;">

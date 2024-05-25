@@ -19,7 +19,7 @@
         [/#if]
         [#if design.hasExperiment]
         <ul>实验：
-        [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.experimentType.name} ${e.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
+        [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.creditHours}学时 ${e.experimentType.name} ${e.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
         </ul>
         [/#if]
       </div>

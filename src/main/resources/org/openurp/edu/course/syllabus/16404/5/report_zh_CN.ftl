@@ -136,7 +136,7 @@
         </td>
       </tr>
       <tr>
-        <td>教学方式：</td>
+        <td>教学方法：</td>
         <td colspan="4">${syllabus.methods!}</td>
       </tr>
       <tr>
@@ -414,7 +414,7 @@
           ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
         [/#list]
       [#else]
-        自编讲义
+        使用其他教学资料
       [/#if]
     [@header_title "（二）参考书目"/]
     [@p syllabus.bibliography!"无"/]

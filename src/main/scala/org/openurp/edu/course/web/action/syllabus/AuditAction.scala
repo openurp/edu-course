@@ -58,7 +58,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
     val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
-      val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
+      val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
       syllabuses foreach { s =>
         s.status = status
         s.approver = user

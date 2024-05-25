@@ -456,10 +456,20 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             if (Strings.isNotBlank(name)) {
               val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
               val online = getBoolean(s"experiment${i}.online", false)
-              syllabus.experiments += new SyllabusExperiment(syllabus, i, name, experimentType, online)
+              val hours = getInt(s"experiment${i}.creditHours", 0)
+              syllabus.experiments += new SyllabusExperiment(syllabus, i, name, hours, experimentType, online)
             }
           case Some(c) =>
-            if Strings.isBlank(name) then syllabus.experiments -= c else c.name = name
+            if Strings.isBlank(name) then syllabus.experiments -= c
+            else
+              val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
+              val online = getBoolean(s"experiment${i}.online", false)
+              val hours = getInt(s"experiment${i}.creditHours", 0)
+              c.name = name
+              c.creditHours = hours
+              c.experimentType = experimentType
+              c.online = online
+
       }
       design.hasExperiment = true
     } else {
@@ -748,6 +758,21 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     if (totalLearningHours != syllabus.learningHours) {
       messages += s"自主学习要求${syllabus.learningHours}课时，教学内容累计${totalLearningHours}课时，请检查。"
+    }
+
+    syllabus.topics foreach { p =>
+      val hours = p.hours.map(_.creditHours).sum
+      if (hours == 0) {
+        if (p.hours.isEmpty) {
+          messages += s"教学主题:${p.name},缺少学时分布"
+        } else {
+          messages += s"教学主题:${p.name},学时为0"
+        }
+      }
+
+      if (p.methods.isEmpty) {
+        messages += s"教学主题:${p.name},缺少教学方法"
+      }
     }
     messages.toSeq
   }

@@ -13,13 +13,13 @@
       <div class="card-body">
         <p>${design.contents}</p>
         [#if design.hasCase]
-        <ul>案例：
+        <ul>Cases：
         [#list syllabus.cases as c]<li>${c.idx+1}:${c.name}</li>[/#list]
         </ul>
         [/#if]
         [#if design.hasExperiment]
-        <ul>实验：
-        [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.experimentType.name} ${e.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
+        <ul>Experiments：
+        [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.creditHours} hours ${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
         </ul>
         [/#if]
       </div>
