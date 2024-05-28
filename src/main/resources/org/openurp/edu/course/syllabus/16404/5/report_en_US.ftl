@@ -154,7 +154,7 @@
 
   <section style="margin-top:30px;">
     [@header_title "${numSeq[2]}、Course introduction and objectives"/]
-    <p style="white-space: preserve;">${syllabus.description}[#list syllabus.objectives?sort_by("code") as co]<br>    Course objective {co.code}：${co.contents}[/#list]</p>
+    <p style="white-space: preserve;">${syllabus.description}[#list syllabus.objectives?sort_by("code") as co]<br>    Course objective ${co.code}：${co.contents}[/#list]</p>
   </section>
 
   <section style="margin-top:30px;">
@@ -166,7 +166,7 @@
     [@header_title "${numSeq[4]}、Course supporting to graduation requirements"/]
     <p style="white-space: preserve;">[#t/]
     Supports of the course to graduation requirements：
-[#list syllabus.outcomes?sort_by(["code"]) as o]
+[#list syllabus.outcomes?sort_by(["idx"]) as o]
     Graduation requirements【${o.title}】：${o.contents}
 [/#list]
     </p>[#t/]
@@ -182,7 +182,7 @@
           [#list orderedCourseObjectives as co]<th>${co.code}</th>[/#list]
         </tr>
       </thead>
-      [#list syllabus.outcomes?sort_by(["code"]) as o]
+      [#list syllabus.outcomes?sort_by(["idx"]) as o]
         <tr>
           <td style="text-align:left;">【${o.title}】</td>
           [#list orderedCourseObjectives as co]
@@ -421,7 +421,7 @@
     [@header_title "（${numSeq[1]}）Textbooks used in the course"/]
       [#if syllabus.textbooks?size>0]
         [#list syllabus.textbooks as textbook]
-          ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
+          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy-MM")} Edition:${(textbook.edition)!}
         [/#list]
       [#else]
         Using other teaching materials.

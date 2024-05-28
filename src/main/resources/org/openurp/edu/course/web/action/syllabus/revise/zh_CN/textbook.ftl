@@ -15,11 +15,11 @@
   [@b.form theme="list" action="!saveTextbook"]
     [@b.field label="课程"]${course.code} ${course.name}[/@]
     [@b.field  label="学分学时"]${course.defaultCredits!}学分 ${course.creditHours!}学时[/@]
-    [@b.select name="textbook.id" label="教材" required="false" style="width:600px;" items=textbooks values=syllabus.textbooks multiple="true" option=r"${item.isbn!} ${item.name} ${item.author} ${(item.press.name)!} 版次:${item.edition!}" empty="..."/]
+    [@b.select name="textbook.id" label="教材" required="false" style="width:600px;" items=textbooks values=syllabus.textbooks multiple="true" option=r"${item.name} ${item.author} ${(item.press.name)!} 版次:${item.edition!}" empty="..."/]
     [@b.textarea name="syllabus.bibliography" label="参考书目" value=syllabus.bibliography! required="false" rows="4" cols="80"/]
     [@b.textarea name="syllabus.materials" label="其他教学资源" value=syllabus.materials! required="false" rows="4" cols="80"/]
     [@b.textfield name="syllabus.website" label="课程网站" value=syllabus.website! required="false" maxlength="300" style="width:500px"/]
-    [@b.field label="负责人"][#if director??]${director.code} ${director.name}[#else]无相应课程负责人，可以暂时保存，无法提交审核。[/#if][/@]
+    [@b.field label="审核人"][#if director??]${director.code} ${director.name}[#else]无相应课程审核人，可以暂时保存，无法提交审核。[/#if][/@]
     [@b.formfoot]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       <button class="btn btn-outline-primary btn-sm" onclick="history.back(-1);"><i class="fa fa-arrow-circle-left fa-sm"></i>上一步</button>

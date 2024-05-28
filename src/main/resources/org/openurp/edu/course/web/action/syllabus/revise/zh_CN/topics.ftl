@@ -21,12 +21,12 @@
         [@b.card_header]
           <div class="card-title"><i class="fas fa-edit"></i>&nbsp;新增教学内容--序号${(syllabus.topics?size+1)}</div>
           [@b.card_tools]
-            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <button type="button" class="btn btn-tool" [#if validateHourMessages?size==0]data-card-widget="collapse"[/#if]>
               <i class="fas fa-plus"></i>
             </button>
           [/@]
         [/@]
-        <div class="card-body" style="display:none">
+        <div class="card-body" style="padding-top: 0px;[#if validateHourMessages?size==0]display:none;[/#if]">
           [@b.form theme="list" action="!saveTopic" target="_self"]
             [@b.textfield label="主题名" name="topic.name" required="true"  style="width:300px" comment="第几章 XXXXXX"/]
             [@b.textarea label="教学内容" name="topic.contents" rows="5" cols="80" required="true" maxlength="3000"/]
@@ -61,7 +61,9 @@
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
     <input type="hidden" name="step" value="designs"/>
     [@b.a href="!edit?syllabus.id=${syllabus.id}&step=outcomes" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
+    [#if syllabus.topics?size>0]
     [@b.submit value="下一步" /]
+    [/#if]
   [/@]
 [/@]
 </div>

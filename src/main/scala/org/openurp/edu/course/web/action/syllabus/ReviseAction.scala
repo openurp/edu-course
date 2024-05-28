@@ -30,9 +30,11 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
 import org.openurp.base.model.AuditStatus.Submited
 import org.openurp.code.edu.model.*
+import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -61,9 +63,20 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     put("course", syllabus.course)
     put("syllabus", syllabus)
+    syllabus.creditHours = syllabus.course.creditHours
     putBasicDatas(syllabus.course)
 
     given project: Project = syllabus.course.project
+
+    put("examHours", 0)
+    val first = findScheduledClazz(syllabus.course, syllabus.semester)
+    first foreach { clazz =>
+      //根据排课课时测算考核课时
+      val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
+      if (scheduleHours <= syllabus.course.creditHours) {
+        put("examHours", syllabus.course.creditHours - scheduleHours)
+      }
+    }
 
     //topic item
     put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
@@ -81,11 +94,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       put("warningMessages", validate(syllabus))
     }
     if (get("step").contains("requirements")) {
-      val orderedOutcomes = syllabus.outcomes.sortBy(_.code)
-      var i = 1
+      val orderedOutcomes = syllabus.outcomes.sortBy(_.idx)
+      var idx = 1
+      //修复顺序号
       orderedOutcomes foreach { o =>
-        o.code = s"R${i}"
-        i += 1
+        o.idx = idx
+        idx += 1
       }
       entityDao.saveOrUpdate(syllabus)
       val requirements = orderedOutcomes.map(_.title)
@@ -152,8 +166,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     given project: Project = course.project
 
     putBasicDatas(course)
-    val syllabus = newSyllabus(course)
-    syllabus.semester = getSemester
+    val semester = getSemester
+    val syllabus = newSyllabus(course, semester)
     put("course", course)
     put("syllabus", syllabus)
     val locale = get("locale", classOf[Locale]).getOrElse(Locale.SIMPLIFIED_CHINESE)
@@ -166,7 +180,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case Some(s) => forward(s"${locale}/${s}")
   }
 
-  private def newSyllabus(course: Course): Syllabus = {
+  private def findScheduledClazz(course: Course, semester: Semester): Option[Clazz] = {
+    entityDao.findBy(classOf[Clazz], "course" -> course, "semester" -> semester).find(_.schedule.activities.nonEmpty)
+  }
+
+  private def newSyllabus(course: Course, semester: Semester): Syllabus = {
     val syllabus = new Syllabus
     syllabus.course = course
     syllabus.department = course.department
@@ -174,9 +192,22 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.gradingMode = course.gradingMode
     syllabus.creditHours = course.creditHours
     syllabus.weekHours = course.weekHours
-    if (course.defaultCredits > 1 || course.creditHours >= 32) {
-      syllabus.examCreditHours = course.defaultCredits.toInt
-    }
+    syllabus.semester = semester
+    put("examHours", 0)
+    val first = findScheduledClazz(course, semester)
+    first match
+      case None =>
+        if (course.defaultCredits > 1 || course.creditHours >= 30) {
+          syllabus.examCreditHours = course.defaultCredits.toInt
+          put("examHours", syllabus.examCreditHours)
+        }
+      case Some(clazz) =>
+        //根据排课课时测算考核课时
+        val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
+        if (scheduleHours < course.creditHours) {
+          syllabus.examCreditHours = course.creditHours - scheduleHours
+        }
+        put("examHours", syllabus.examCreditHours)
     syllabus
   }
 
@@ -283,13 +314,13 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def saveRequirements(): View = {
     val syllabus = populateEntity()
     syllabus.updatedAt = Instant.now
-    (1 to 12) foreach { i =>
-      val code = s"R${i}"
+    (1 to 12) foreach { idx =>
+      val code = s"R${idx}"
       val name = get(code, "")
       if (Strings.isNotEmpty(name)) {
-        syllabus.outcomes.find(_.code == code) match
+        syllabus.outcomes.find(_.idx == idx) match
           case None =>
-            val g = new SyllabusOutcome(syllabus, code, name, " ", " ")
+            val g = new SyllabusOutcome(syllabus, idx, name, " ", " ")
             syllabus.outcomes.addOne(g)
           case Some(outcome) => outcome.title = name
       } else {
@@ -428,6 +459,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val design = populateEntity(classOf[SyllabusMethodDesign], "design")
     if (!design.persisted) {
       design.syllabus = syllabus
+      design.idx = syllabus.designs.size
       syllabus.designs += design
     }
     val caseAndExps = getAll("caseAndExperiments", classOf[String]).toSet
@@ -514,7 +546,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     popluateAssessment(syllabus, endType, 0, None)
     popluateAssessment(syllabus, usualType, 0, None)
 
-    (0 to 4) foreach { i =>
+    //max 7
+    (0 to 6) foreach { i =>
       val component = get(s"grade${usualType.id}_${i}.component", "")
       val percent = getInt(s"grade${usualType.id}_${i}.scorePercent", 0)
       if (percent > 0 && Strings.isNotBlank(component)) {
@@ -685,6 +718,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (syllabus.creditHours > 0 && syllabus.topics.isEmpty) {
       messages += "缺少课程主题"
     }
+    if (syllabus.designs.isEmpty) {
+      messages += "缺少教学设计"
+    }
+
     messages ++= validateHours(syllabus)
     messages ++= validAssessment(syllabus)
     messages.toSeq

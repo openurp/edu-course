@@ -19,7 +19,7 @@
         <td style="width:35%;border-bottom: solid 1px black;">${clazz.teachDepart.name}</td>
       </tr>
       <tr>
-        <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${t.name}[#sep],[/#list]</td>
+        <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${(t.name)!}[#sep],[/#list]</td>
         <td style="text-align:right;">教  学  班：</td><td style="border-bottom: solid 1px black;">${clazz.clazzName}</td>
       </tr>
       <tr>
@@ -33,7 +33,7 @@
     <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（一）课程基本情况</p>
   </div>
 
-  [@b.form action="!save" name="planForm"]
+  [@b.form action="!save" name="planForm" onsubmit="checkLessons"]
   <div>
     <table  style="width:100%;border: solid 1px black;text-align:center;" class="form-table">
       <tr>
@@ -70,10 +70,10 @@
           [#if syllabus??]
             [#if syllabus.textbooks?size>0]
               [#list syllabus.textbooks as textbook]
-                ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
+                ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
               [/#list]
             [#else]
-              自编讲义
+               使用其他教学资料
             [/#if]
           [/#if]
         </td>
@@ -84,7 +84,7 @@
           <table style="width:100%;border: hidden;" >
             <tr>
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
-              <td colspan="${sectionNames?size}">课堂学时</td>
+              <td colspan="${sectionNames?size}">课堂学时(${scheduleHours})<span id="schedule_hour_tips"></span></td>
               <td rowspan="2">考试周考核或自主考核*</td>
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
@@ -97,10 +97,10 @@
             <tr>
               <td>本学期教学学时</td>
               [#list sectionNames as sectionName]
-              <td><input name="section${sectionName_index+1}.creditHours" value="${hours.get(sectionName)!}" style="width:100%" placeholder="学时"/></td>
+              <td><input name="section${sectionName_index+1}.creditHours" value="${hours.get(sectionName)!}" style="width:100%" placeholder="学时" onchange="checkHours(this)"/></td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>${syllabus.creditHours}</td>
+              <td>${syllabus.examCreditHours+scheduleHours}</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -141,12 +141,13 @@
         <td>作业布置</td>
       </tr>
       [#list plan.lessons?sort_by('idx') as lesson]
+      [#assign totalLessonHours=0/]
       <tr>
         <td>${lesson.idx}</td>
-        <td>${(schedules[lesson_index].date)!}</td>
-        <td>${(schedules[lesson_index].hours)!}</td>
+        <td>${(schedules[lesson_index].date)!} ${(schedules[lesson_index].units)!}</td>
+        <td>[#if schedules[lesson_index]??]${schedules[lesson_index].hours} [#assign totalLessonHours=totalLessonHours +schedules[lesson_index].hours/][/#if]</td>
         <td>
-          <input type="text" name="lesson${lesson_index+1}.contents" value="${lesson.contents!}" style="width:100%" placeholder="第${lesson.idx}次课，教学内容"/>
+          <textarea type="text" name="lesson${lesson_index+1}.contents" style="width:100%" placeholder="第${lesson.idx}次课，教学内容" rows="2">${lesson.contents!}</textarea>
           [#if syllabus.learningHours>0]
           <div style="display:flex">
             <input type="text" name="lesson${lesson_index+1}.learning" value="${lesson.learning!}" style="width:80%" placeholder="第${lesson.idx}次课，自主学习内容"/>
@@ -155,9 +156,9 @@
           [/#if]
         </td>
         <td>
-          <input type="text" name="lesson${lesson_index+1}.forms" style="width:100%" value="${lesson.forms!}"/>
+          <input type="text" name="lesson${lesson_index+1}.forms" style="width:100%" value="${lesson.forms!}" placeholder="上课形式"/>
         </td>
-        <td><input type="text" name="lesson${lesson_index+1}.homework" style="width:100%" value="${lesson.homework!}"/></td>
+        <td><input type="text" name="lesson${lesson_index+1}.homework" style="width:100%" value="${lesson.homework!}" placeholder="作业布置"/></td>
       </tr>
       [/#list]
       <tr>
@@ -166,11 +167,57 @@
     </table>
   </div>
 
-  <div style="text-align:center;">
+  <div style="text-align:center;margin:10px 0px">
     <input type="hidden" name="clazz.id" value="${clazz.id}"/>
-    [@b.submit value="保存"/]
-    [@b.submit value="提交教研室审批" action="!save?submit=1"/]
+    [@b.submit value="保存" class="btn btn-sm btn-outline-primary"/]
+    [@b.submit value="提交教研室审批" id="submit_btn" class="btn btn-sm btn-outline-success" action="!save?submit=1" /]
   </div>
   [/@]
+  <script>
+    function checkLessons(form){
+      //check lesson
+      var missingContents = [];
+      for(var i=1;i<=${plan.lessons?size};i++){
+        if(!form['lesson'+i+".contents"].value || !form['lesson'+i+".forms"].value){
+          missingContents.push(i);
+        }
+      }
+      if(missingContents.length>0){
+        alert("第"+missingContents.join(",")+"次课程，缺少内容或上课形式，请填写");
+        return false;
+      }
+      //check hours
+      var warnings = checkHours();
+      if(warnings){
+        return !confirm(warnings+"，继续填写?");
+      }else{
+        return true;
+      }
+    }
+
+    function checkHours(){
+      var hours = 0;
+    [#list sectionNames as sectionName]
+      hours += parseInt(document.planForm["section${sectionName_index+1}.creditHours"].value||'0');
+    [/#list]
+      var warnings="";
+      if(hours != ${scheduleHours}){
+        warnings ="分项累计为"+hours+"和课堂课时"+${scheduleHours}+"不相等";
+      }else if(hours + ${syllabus.examCreditHours} < ${syllabus.creditHours}){
+        warnings="课堂学时+考核学时少于${syllabus.creditHours}学时";
+      }
+      if(warnings){
+        document.getElementById("schedule_hour_tips").innerHTML=warnings;
+        document.getElementById("schedule_hour_tips").style.color="red";
+        jQuery("#submit_btn").attr("disabled",true);
+      }else{
+        document.getElementById("schedule_hour_tips").innerHTML="";
+        document.getElementById("schedule_hour_tips").style.color="green";
+        jQuery("#submit_btn").attr("disabled",false);
+      }
+      return warnings;
+    }
+    checkHours();
+  </script>
 </div>
 [@b.foot/]

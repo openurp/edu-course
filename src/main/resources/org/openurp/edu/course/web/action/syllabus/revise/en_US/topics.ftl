@@ -61,7 +61,7 @@
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
     <input type="hidden" name="step" value="designs"/>
     [@b.a href="!edit?syllabus.id=${syllabus.id}&step=outcomes" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
-    [@b.submit value="Move to the next step" /]
+    [#if syllabus.topics?size>0][@b.submit value="Move to the next step" /][/#if]
   [/@]
 [/@]
 </div>

@@ -41,7 +41,7 @@ class TeachingPlanHelper(entityDao: EntityDao) {
 
     val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
     datas.put("syllabus", syllabus)
-    val schedules = LessonSchedule.convert(clazz.schedule.activities, beginAt, endAt)
+    val schedules = LessonSchedule.convert(clazz)
     datas.put("schedules", schedules)
 
     datas

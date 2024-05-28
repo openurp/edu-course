@@ -172,7 +172,7 @@
     [@header_title "四、课程对毕业要求的支撑"/]
     <p style="white-space: preserve;">[#t/]
     本课程对毕业要求的支撑：
-[#list syllabus.outcomes?sort_by(["code"]) as o]
+[#list syllabus.outcomes?sort_by(["idx"]) as o]
     毕业要求【${o.title}】：${o.contents}
 [/#list]
     </p>[#t/]
@@ -188,7 +188,7 @@
           [#list orderedCourseObjectives as co]<th>${co.code}</th>[/#list]
         </tr>
       </thead>
-      [#list syllabus.outcomes?sort_by(["code"]) as o]
+      [#list syllabus.outcomes?sort_by("idx") as o]
         <tr>
           <td style="text-align:left;">【${o.title}】</td>
           [#list orderedCourseObjectives as co]
@@ -411,7 +411,7 @@
     [@header_title "（一）本课程使用教材"/]
       [#if syllabus.textbooks?size>0]
         [#list syllabus.textbooks as textbook]
-          ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
+          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}
         [/#list]
       [#else]
         使用其他教学资料

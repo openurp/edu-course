@@ -8,7 +8,8 @@
     [@b.grid items=clazzes var="clazz"]
       [@b.row]
         [@b.col width="5%" title="序号"]${clazz_index+1}[/@]
-        [@b.col width="10%" title="课程序号"]${(clazz.crn)?if_exists}[/@]
+        [@b.col width="8%" title="课程序号"]${(clazz.crn)?if_exists}[/@]
+        [@b.col width="10%" title="课程代码"]${(clazz.course.code)?if_exists}[/@]
         [@b.col title="课程名称"]${(clazz.course.name)?if_exists}[/@]
         [@b.col width="12%" title="课程类型"]${(clazz.courseType.name)?if_exists}[/@]
         [@b.col width="5%" title="学分"]${clazz.course.defaultCredits}[/@]
@@ -16,7 +17,7 @@
         [@b.col width="5%" title="学生数"]${clazz.enrollment.courseTakers?size}[/@]
         [@b.col width="19%" title="操作"]
           [#if syllabusCourses?seq_contains(clazz.course)]
-            [@b.a href="!edit?clazz.id="+clazz.id target="_blank"]编写[/@]
+             [#if !plans.get(clazz)?? || editables?seq_contains(plans.get(clazz).status)][@b.a href="!edit?clazz.id="+clazz.id target="_blank"]编写[/@][#else]${(plans.get(clazz).status)!'--'}[/#if]
           [#else]
             课程大纲缺失，请先修订大纲
           [/#if]

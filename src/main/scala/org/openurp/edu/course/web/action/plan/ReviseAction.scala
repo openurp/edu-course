@@ -27,14 +27,14 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{TeachingMethod, TeachingSection}
 import org.openurp.edu.clazz.domain.ClazzProvider
-import org.openurp.edu.clazz.model.Clazz
+import org.openurp.edu.clazz.model.{Clazz, ClazzActivity}
 import org.openurp.edu.course.model.{Lesson, Syllabus, TeachingPlan, TeachingPlanSection}
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.TeachingPlanHelper
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
-import java.time.{Instant, LocalTime}
+import java.time.{Instant, LocalDateTime, LocalTime}
 import java.util.Locale
 
 /** 修订授课计划表
@@ -56,6 +56,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabusCourses = entityDao.findBy(classOf[Syllabus], "course", clazzes.map(_.course)).map(_.course)
     put("syllabusCourses", syllabusCourses)
     put("clazzes", scheduled)
+    put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
+
     forward()
   }
 
@@ -95,7 +97,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
     put("syllabus", syllabus)
-    val schedules = LessonSchedule.convert(clazz.schedule.activities, beginAt, endAt)
+    val schedules = LessonSchedule.convert(clazz)
+
+    val scheduleHours = schedules.map(_.hours).sum
+    put("scheduleHours", scheduleHours)
     (plan.lessons.size + 1 to schedules.size) foreach { i =>
       val lesson = new Lesson()
       lesson.plan = plan
@@ -121,7 +126,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       plan.semester = clazz.semester
       plan.docLocale = Locale.SIMPLIFIED_CHINESE
     }
-    (1 to 20) foreach { i =>
+    (1 to 60) foreach { i =>
       val lesson = plan.lessons.find(_.idx == i).getOrElse(new Lesson)
       lesson.idx = i
       lesson.contents = get(s"lesson${i}.contents", "")

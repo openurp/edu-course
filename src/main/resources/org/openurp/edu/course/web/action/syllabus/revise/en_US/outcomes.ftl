@@ -8,7 +8,7 @@
 [@displayStep 2/]
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!saveOutcomes"]
-    [#list syllabus.outcomes?sort_by("code") as r]
+    [#list syllabus.outcomes?sort_by("idx") as r]
       [@b.textarea label=r.title name="R${r.id}.contents" value=(r.contents)! cols="100" rows="3" maxlength="1000" /]
     [/#list]
     [@b.field label="支撑矩阵"]
@@ -23,7 +23,7 @@
             [#list orderedCourseObjectieves as co]<td>${co.code}</td>[/#list]
           </tr>
 
-          [#list syllabus.outcomes?sort_by("code") as r]
+          [#list syllabus.outcomes?sort_by("idx") as r]
             <tr>
               <td style="width:100px">【${r.title}】</td>
               [#list orderedCourseObjectieves as co]

@@ -10,7 +10,7 @@
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
     [@b.field label="Course Name"]${course.code} ${course.name} ${course.defaultCredits!} Credits ${syllabus.creditHours} Hours[/@]
     [@b.radios label="Language" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
-    [@base.semester label="Semester" name="syllabus.semester.id" required="true" value=syllabus.semester!/]
+    [@b.field label="Semester"]${syllabus.semester.schoolYear} ${syllabus.semester.name}[/@]
     [@b.select name="syllabus.department.id" label="Department" value=syllabus.department! required="true"
                style="width:200px;" items=departments option="id,name" empty="..."/]
     [@b.radios name="syllabus.stage.id" label="Semester Stage" value=syllabus.stage! required="true" items=calendarStages /]
@@ -42,7 +42,6 @@
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
-    [#if syllabus.course.defaultCredits > 1 || syllabus.course.creditHours > 30]
     [@b.textfield name="syllabus.examCreditHours" label="Assessment Hours" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()"]
        学时([#assign hours={}/]
        [#list syllabus.examHours as h]
@@ -54,14 +53,15 @@
         [#sep],
        [/#list])
        <span  style="color:red" id="exam_hour_tips" style="display:none"></span>
+       <div class="text-muted" style="margin-left: 10rem;">建议${examHours}学时。理论、实践课时分布根据课程实际情况填写。当实际排课课时小于课程总学时的时候，建议填写考核课时（包括考试周统一考试，或自行组织的期末考核，一般为一个教学周与学分数相当的学时）</div>
     [/@]
-    [/#if]
     [@b.number name="syllabus.learningHours" label="Autonomous Learning Hours" value=syllabus.learningHours!/]
     [@b.textarea name="syllabus.prerequisites" label="Prerequisite course(s)" value=syllabus.prerequisites! rows="2" cols="80"/]
     [@b.textarea name="syllabus.corequisites" label="Corequisites course(s)" value=syllabus.corequisites!  rows="2" cols="80"/]
     [@b.textarea name="syllabus.subsequents" label="Subsequent course(s)" value=syllabus.subsequents!  rows="2" cols="80"/]
     [@b.formfoot]
       <input type="hidden" name="course.id" value="${course.id}"/>
+      <input type="hidden" name="syllabus.semester.id" value="${syllabus.semester.id}"/>
       [#if syllabus.id??]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       [/#if]
@@ -99,7 +99,6 @@
     $("#credit_hour_tips").hide();
     return true;
   }
-  [#if syllabus.course.defaultCredits > 1 || syllabus.course.creditHours>30]
   function checkExamHours(){
     var form = document.syllabusForm;
     var h="";
@@ -116,19 +115,14 @@
       $("#exam_hour_tips").show();
       return false;
     }
-    if(examHours==0){
-      $("#exam_hour_tips").html("该课程应该填写考核课时");
+    if(examHours==0 && ${examHours}>0){
+      $("#exam_hour_tips").html("建议填写");
     }else{
       $("#exam_hour_tips").html("");
       $("#exam_hour_tips").hide();
     }
     return true;
   }
-  [#else]
-  function checkExamHours(){
-    return true;
-  }
-  [/#if]
-
+  checkInfo();
 </script>
 [@b.foot/]

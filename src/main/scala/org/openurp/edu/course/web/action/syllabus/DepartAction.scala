@@ -17,13 +17,11 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
-import org.beangle.data.dao.{EntityDao, OqlBuilder}
+import org.beangle.data.dao.OqlBuilder
 import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.support.ActionSupport
 import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.{EntityAction, RestfulAction}
+import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
@@ -70,4 +68,5 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport {
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
   }
+
 }

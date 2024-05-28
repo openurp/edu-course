@@ -43,7 +43,10 @@
   <div style="margin-top:30px;">
     <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（一）课程基本情况</p>
   </div>
-
+  [#assign teachingHours=0/]
+  [#list plan.sections as h]
+    [#assign teachingHours=teachingHours+h.creditHours/]
+  [/#list]
   <div>
     <table  style="width:100%;border: solid 1px black;text-align:center;" class="form-table">
       <tr>
@@ -83,10 +86,10 @@
           [#if syllabus??]
             [#if syllabus.textbooks?size>0]
               [#list syllabus.textbooks as textbook]
-                ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
+                ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}
               [/#list]
             [#else]
-              自编讲义
+              使用其他教学资料
             [/#if]
           [/#if]
         </td>
@@ -113,7 +116,7 @@
               <td>${h.creditHours}</td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>${syllabus.creditHours}</td>
+              <td>${syllabus.examCreditHours+teachingHours}</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -171,10 +174,6 @@
       [/#if]
       [/#list]
 
-      [#assign teachingHours=0/]
-      [#list plan.sections as h]
-        [#assign teachingHours=teachingHours+h.creditHours/]
-      [/#list]
       <tr>
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
         <td>${teachingHours}</td> <td colspan="3">——</td>

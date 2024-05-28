@@ -93,7 +93,9 @@
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" /]
-            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"/]
+            [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"]
+              <a class="btn btn-sm btn-outline-primary" onclick="return toggleScoreTable(this)"><i class="fa fa-plus"></i>评分表</a>
+            [/@]
             [@b.editor theme="mini" name="grade${usualType.id}_"+rnIndex+".scoreTable" label="评分表" rows="7" cols="80" style="width:650px;heigth:300px;display:none" maxlength="20000" value="" /]
           </div>
         </div>

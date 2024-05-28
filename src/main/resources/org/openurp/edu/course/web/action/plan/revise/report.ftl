@@ -83,10 +83,10 @@
           [#if syllabus??]
             [#if syllabus.textbooks?size>0]
               [#list syllabus.textbooks as textbook]
-                ${textbook.isbn} ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
+                ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${(textbook.edition)!}
               [/#list]
             [#else]
-              自编讲义
+              使用其他教学资料
             [/#if]
           [/#if]
         </td>

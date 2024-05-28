@@ -13,6 +13,8 @@
     [@b.col width="8%" property="course.department.name" title="开课院系"]
       ${director.course.department.shortName!director.course.department.name}
     [/@]
+    [@b.col width="5%" property="course.defaultCredits" title="学分"/]
+    [@b.col width="5%" property="course.creditHours" title="学时"/]
     [@b.col width="18%" property="office.name" title="专业/教研室"/]
     [@b.col width="13%" property="director.name" title="负责人"/]
   [/@]

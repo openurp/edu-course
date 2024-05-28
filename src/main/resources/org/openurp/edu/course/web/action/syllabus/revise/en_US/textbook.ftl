@@ -19,7 +19,7 @@
     [@b.textarea name="syllabus.bibliography" label="Bibliographies" value=syllabus.bibliography! required="false" rows="5" cols="80"/]
     [@b.textarea name="syllabus.materials" label="Teaching resources" value=syllabus.materials! required="false" rows="5" cols="80"/]
     [@b.textfield name="syllabus.website" label="Website" value=syllabus.website! required="false" maxlength="300" style="width:500px"/]
-    [@b.field label="Reviewer"][#if director??]${director.code} ${director.name}[#else]无相应课程负责人，可以暂时保存，无法提交审核。[/#if][/@]
+    [@b.field label="Reviewer"][#if director??]${director.code} ${director.name}[#else]无相应课程审核人，可以暂时保存，无法提交审核。[/#if][/@]
     [@b.formfoot]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       <button class="btn btn-outline-primary btn-sm" onclick="history.back(-1);"><i class="fa fa-arrow-circle-left fa-sm"></i>Previous step</button>
