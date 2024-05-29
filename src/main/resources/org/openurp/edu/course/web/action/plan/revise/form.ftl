@@ -204,7 +204,7 @@
       if(hours != ${scheduleHours}){
         warnings ="分项累计为"+hours+"和课堂课时"+${scheduleHours}+"不相等";
       }else if(hours + ${syllabus.examCreditHours} < ${syllabus.creditHours}){
-        warnings="课堂学时+考核学时少于${syllabus.creditHours}学时";
+        warnings="课堂学时+期末考核学时少于${syllabus.creditHours}学时";
       }
       if(warnings){
         document.getElementById("schedule_hour_tips").innerHTML=warnings;

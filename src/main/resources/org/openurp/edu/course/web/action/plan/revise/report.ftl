@@ -181,9 +181,9 @@
       </tr>
       [#if syllabus.examCreditHours>0]
       <tr>
-        <td colspan="2" style="text-align:left;">考核学时</td>
+        <td colspan="2" style="text-align:left;">期末考核</td>
         <td>${syllabus.examCreditHours}</td>
-        <td colspan="3">课程考核</td>
+        <td colspan="3">期末考核</td>
       </tr>
       [/#if]
       [#if syllabus.learningHours>0]

@@ -42,7 +42,7 @@
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
-    [@b.textfield name="syllabus.examCreditHours" label="考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
+    [@b.textfield name="syllabus.examCreditHours" label="期末考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
        学时([#assign hours={}/]
        [#list syllabus.examHours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]

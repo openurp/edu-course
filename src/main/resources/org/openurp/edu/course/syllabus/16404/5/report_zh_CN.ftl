@@ -265,7 +265,7 @@
       [#if syllabus.examCreditHours>0]
        [#assign totalCreditHours=totalCreditHours + syllabus.examCreditHours/]
       <tr>
-        <td style="text-align:left;">课程考核</td>
+        <td style="text-align:left;">期末考核</td>
         <td>${syllabus.examCreditHours}</td>
         [#list teachingNatures as nature]
           <td>[#list syllabus.examHours as eh][#if eh.nature==nature && eh.creditHours>0]${eh.creditHours}[#break/][/#if][/#list]</td>

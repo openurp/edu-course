@@ -241,7 +241,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   private def populateHours(syllabus: Syllabus)(using project: Project): Unit = {
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
-      val creditHour = getInt("creditHour" + ht.id)
+      val creditHour = getFloat("creditHour" + ht.id)
       val week = getInt("week" + ht.id)
       syllabus.hours find (h => h.nature == ht) match {
         case Some(hour) =>
@@ -249,11 +249,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             syllabus.hours -= hour
           } else {
             hour.weeks = week.getOrElse(0)
-            hour.creditHours = creditHour.getOrElse(0)
+            hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
           if (!(week.isEmpty && creditHour.isEmpty)) {
-            syllabus.hours += new SyllabusCreditHour(syllabus, ht, creditHour.getOrElse(0), week.getOrElse(0))
+            syllabus.hours += new SyllabusCreditHour(syllabus, ht, creditHour.getOrElse(0f), week.getOrElse(0))
           }
       }
     }
@@ -261,13 +261,13 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.hours.subtractAll(deprecated)
 
     teachingNatures foreach { ht =>
-      val creditHour = getInt("examHour" + ht.id)
+      val creditHour = getFloat("examHour" + ht.id)
       syllabus.examHours find (h => h.nature == ht) match {
         case Some(hour) =>
           if (creditHour.isEmpty) {
             syllabus.examHours -= hour
           } else {
-            hour.creditHours = creditHour.getOrElse(0)
+            hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
           if (creditHour.isDefined) {
@@ -304,7 +304,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     entityDao.saveOrUpdate(syllabus)
-    toStep(syllabus)
+    val justSave = getBoolean("justSave", false)
+    if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=objectives", "info.save.success")
+    else toStep(syllabus)
   }
 
   /** 保存毕业要求
@@ -330,7 +332,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     entityDao.saveOrUpdate(syllabus)
-    toStep(syllabus)
+    val justSave = getBoolean("justSave", false)
+    if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=requirements", "info.save.success")
+    else toStep(syllabus)
   }
 
   def saveOutcomes(): View = {
@@ -347,7 +351,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       r.courseObjectives = cos
     }
     entityDao.saveOrUpdate(syllabus)
-    toStep(syllabus)
+    val justSave = getBoolean("justSave", false)
+    if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=outcomes", "info.save.success")
+    else toStep(syllabus)
   }
 
   def editTopic(): View = {
@@ -393,7 +399,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
-      val creditHour = getInt("creditHour" + ht.id)
+      val creditHour = getFloat("creditHour" + ht.id)
       val week = getInt("week" + ht.id)
       topic.hours find (h => h.nature == ht) match {
         case Some(hour) =>
@@ -401,11 +407,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             topic.hours -= hour
           } else {
             hour.weeks = week.getOrElse(0)
-            hour.creditHours = creditHour.getOrElse(0)
+            hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
           if (!(week.isEmpty && creditHour.isEmpty)) {
-            topic.hours += new SyllabusTopicHour(topic, ht, creditHour.getOrElse(0), week.getOrElse(0))
+            topic.hours += new SyllabusTopicHour(topic, ht, creditHour.getOrElse(0f), week.getOrElse(0))
           }
       }
     }
@@ -555,7 +561,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     entityDao.saveOrUpdate(syllabus)
-    toStep(syllabus)
+    val justSave = getBoolean("justSave", false)
+    if justSave then redirect("assesses", s"syllabus.id=${syllabus.id}", "info.save.success")
+    else toStep(syllabus)
   }
 
   def removeAssess(): View = {
@@ -768,32 +776,32 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   private def validateHours(syllabus: Syllabus): Seq[String] = {
     val messages = Collections.newBuffer[String]
-    var total = 0
+    var total = 0f
     syllabus.hours foreach { h =>
       total += h.creditHours
     }
-    if total != syllabus.course.creditHours then
-      messages += s"课程要求${syllabus.course.creditHours}课时，分项累计${total}课时，请检查。"
+    if java.lang.Double.compare(total.toDouble, syllabus.creditHours * 1.0) != 0 then
+      messages += s"课程要求${syllabus.creditHours}课时，分项累计${total}课时，请检查。"
 
     val totalExamHours = syllabus.examHours.map(_.creditHours).sum
-    if totalExamHours != syllabus.examCreditHours then
+    if java.lang.Double.compare(totalExamHours.toDouble, syllabus.examCreditHours * 1.0) != 0 then
       messages += s"大纲考核要求${syllabus.examCreditHours}课时，分项累计${totalExamHours}课时，请检查。"
 
     syllabus.hours foreach { h =>
-      var t = 0;
+      var t = 0f
       syllabus.topics foreach { p =>
-        t += p.getHour(h.nature).map(_.creditHours).getOrElse(0)
+        t += p.getHour(h.nature).map(_.creditHours).getOrElse(0f)
       }
-      t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0)
-      if (t != h.creditHours) {
+      t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0f)
+      if (java.lang.Double.compare(t, h.creditHours) != 0) {
         messages += s"课程要求${h.nature.name}${h.creditHours}课时，教学内容累计${t}课时，请检查。"
       }
     }
-    var totalLearningHours = 0
+    var totalLearningHours = 0f
     syllabus.topics foreach { t =>
       totalLearningHours += t.learningHours
     }
-    if (totalLearningHours != syllabus.learningHours) {
+    if (java.lang.Double.compare(totalLearningHours, syllabus.learningHours) != 0) {
       messages += s"自主学习要求${syllabus.learningHours}课时，教学内容累计${totalLearningHours}课时，请检查。"
     }
 

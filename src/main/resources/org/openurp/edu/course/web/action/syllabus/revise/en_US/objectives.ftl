@@ -26,6 +26,7 @@
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
       <input type="hidden" name="step" value="requirements"/>
       [@b.a href="!edit?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+      [@b.submit action="!saveObjectives?justSave=1"]<i class="fa-solid fa-floppy-disk"></i>Save[/@]
       [@b.submit value="Save and move to the next step" /]
     [/@]
   [/@]

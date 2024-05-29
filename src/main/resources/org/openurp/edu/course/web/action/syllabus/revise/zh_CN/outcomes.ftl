@@ -47,6 +47,7 @@
         <input type="hidden" name="R${r.id}.courseObjectives" id="R${r.id}.courseObjectives" value="${(r.courseObjectives)!}"/>
       [/#list]
       [@b.a href="!edit?syllabus.id=${syllabus.id}&step=objectives" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
+      [@b.submit action="!saveOutcomes?justSave=1"]<i class="fa-solid fa-floppy-disk"></i>保存[/@]
       [@b.submit value="保存，进入下一步" /]
     [/@]
   [/@]
