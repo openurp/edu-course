@@ -17,15 +17,17 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
+import org.beangle.commons.bean.orderings.PropertyOrdering
+import org.beangle.commons.collection.Collections
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
-import org.openurp.base.model.{AuditStatus, CalendarStage, Project}
+import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
-import org.openurp.edu.course.model.Syllabus
-import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusPropertyExtractor}
+import org.openurp.edu.course.model.{CourseTask, Syllabus}
+import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -108,5 +110,40 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   protected override def configExport(context: ExportContext): Unit = {
     super.configExport(context)
     context.extractor = new SyllabusPropertyExtractor()
+  }
+
+  def stat(): View = {
+    val project = getProject
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    val q = OqlBuilder.from[Array[Any]](classOf[CourseTask].getName, "t")
+    q.where("t.course.project=:project and t.semester=:semester", project, semester)
+    q.where("t.syllabusRequired=true")
+    q.groupBy("t.department.id,t.department.code,t.department.name")
+    q.select("t.department.id,t.department.code,t.department.name,count(*)")
+    val taskStats = entityDao.search(q)
+
+    val q2 = OqlBuilder.from[Array[Any]](classOf[Syllabus].getName, "s")
+    q2.where("s.course.project=:project and s.semester=:semester", project, semester)
+    q2.where(s"exists(from ${classOf[CourseTask].getName} ct where ct.course=s.course and ct.semester=s.semester and ct.syllabusRequired=true)")
+    q2.groupBy("s.department.id")
+    q2.select("s.department.id,count(distinct s.course.id)")
+    q2.where("s.status != :status", AuditStatus.Draft)
+    val syllabusStats = entityDao.search(q2)
+
+    val items = Collections.newBuffer[StatItem]
+    taskStats foreach { stat =>
+      val entry = Collections.newMap[String, Any]
+      entry.addAll(Map("id" -> stat(0).toString, "code" -> stat(1).toString, "name" -> stat(2).toString))
+      val item = new StatItem
+      item.entry = entry
+      val s2 = syllabusStats.find(_(0) == stat(0)).map(_.apply(1).asInstanceOf[Number]).getOrElse(0)
+      item.counters = Seq(stat(3).asInstanceOf[Number], s2)
+      items.addOne(item)
+    }
+
+    put("project", project)
+    put("semester", semester)
+    put("items", items.sorted(PropertyOrdering.by("entry(code)")))
+    forward()
   }
 }

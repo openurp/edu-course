@@ -1,10 +1,14 @@
 [#ftl]
 [@b.head/]
 [@b.toolbar title="教学大纲学院管理"]
+  bar.addItem("上传统计","stat()");
+  function stat(){
+    bg.form.submit(document.courseTaskSearchForm,"${b.url('!stat?semester.id='+semester.id)}","main");
+  }
 [/@]
 <div class="search-container">
   <div class="search-panel">
-    [@b.form name="courseTaskSearchForm" action="!search" target="courseTasklist" title="ui.searchForm" theme="search"]
+    [@b.form name="courseTaskSearchForm" action="!search" target="courseTaskList" title="ui.searchForm" theme="search"]
       [@base.semester name="syllabus.semester.id" value=semester label="学年学期"/]
       [@b.textfield name="syllabus.course.code" label="课程代码"/]
       [@b.textfield name="syllabus.course.name" label="课程名称"/]
@@ -16,7 +20,7 @@
     [/@]
   </div>
   <div class="search-list">
-    [@b.div id="courseTasklist" href="!search?syllabus.semester.id=${semester.id}&orderBy=syllabus.course.code asc"/]
+    [@b.div id="courseTaskList" href="!search?syllabus.semester.id=${semester.id}&orderBy=syllabus.course.code asc"/]
   </div>
 </div>
 [@b.foot/]
