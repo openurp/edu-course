@@ -20,21 +20,28 @@ package org.openurp.edu.course.web.action.plan
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.doc.core.PrintOptions
+import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
-import org.beangle.web.action.view.View
+import org.beangle.security.Securities
+import org.beangle.web.action.context.ActionContext
+import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{TeachingMethod, TeachingSection}
 import org.openurp.edu.clazz.domain.ClazzProvider
-import org.openurp.edu.clazz.model.{Clazz, ClazzActivity}
-import org.openurp.edu.course.model.{Lesson, Syllabus, TeachingPlan, TeachingPlanSection}
+import org.openurp.edu.clazz.model.Clazz
+import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.TeachingPlanHelper
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
-import java.time.{Instant, LocalDateTime, LocalTime}
+import java.io.File
+import java.net.URI
+import java.time.{Instant, LocalTime}
 import java.util.Locale
 
 /** 修订授课计划表
@@ -48,7 +55,22 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val semester = getSemester
     put("semester", semester)
 
-    val clazzes = clazzProvider.getClazzes(semester, teacher, project)
+    val clazzes = Collections.newSet[Clazz]
+    clazzes.addAll(clazzProvider.getClazzes(semester, teacher, project))
+
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", project)
+    q.where("c.director=:me", teacher)
+    q.where("c.semester=:semester", semester)
+    val directCourses = entityDao.search(q).map(_.course)
+
+    if (directCourses.nonEmpty) {
+      val query = OqlBuilder.from(classOf[Clazz], "clazz")
+      query.where("clazz.project=:project and clazz.semester=:semester", project, semester)
+      query.where("clazz.course in(:courses)", directCourses)
+      clazzes.addAll(entityDao.search(query))
+    }
+
     val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
     if (scheduled.nonEmpty) {
       put("plans", entityDao.findBy(classOf[TeachingPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
@@ -95,8 +117,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val beginAt = semester.beginOn.atTime(LocalTime.MIN)
     val endAt = semester.endOn.atTime(LocalTime.MAX)
 
-    val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
-    put("syllabus", syllabus)
+    put("syllabus", new TeachingPlanHelper(entityDao).findSyllabus(clazz))
     val schedules = LessonSchedule.convert(clazz)
 
     val scheduleHours = schedules.map(_.hours).sum
@@ -110,6 +131,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val hours = plan.sections.map(x => (x.name, x.creditHours)).toMap
     put("hours", hours)
     put("schedules", schedules)
+    plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
+    plan.office foreach { o =>
+      plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
+    }
     forward()
   }
 
@@ -170,8 +195,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     plan.updatedAt = Instant.now
-    plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
     plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).headOption
+    plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
     }
@@ -215,5 +240,16 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val plan = entityDao.get(classOf[TeachingPlan], getLongId("plan"))
     new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
+  }
+
+  def pdf(): View = {
+    val id = getLongId("plan")
+    val plan = entityDao.get(classOf[TeachingPlan], id)
+    val url = Ems.base + ActionContext.current.request.getContextPath + s"/plan/revise/report?id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val pdf = File.createTempFile("doc", ".pdf")
+    val options = new PrintOptions
+    SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+
+    Stream(pdf, plan.clazz.crn + "_" + plan.clazz.course.name + " 授课计划.pdf").cleanup(() => pdf.delete())
   }
 }

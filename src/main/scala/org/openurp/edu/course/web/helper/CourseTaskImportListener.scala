@@ -91,7 +91,7 @@ class CourseTaskImportListener(entityDao: EntityDao, semester: Semester, project
   override def onItemFinish(tr: ImportResult): Unit = {
     val task = transfer.current.asInstanceOf[CourseTask]
     if (task.course != null) {
-      if (task.courseType == null) task.courseType = task.course.courseType
+      if (task.courseType == null) task.courseType = task.course.courseType.orNull
       if (null == task.semester) task.semester = semester
       if (task.director.nonEmpty) {
         val cd = entityDao.findBy(classOf[CourseDirector], "course", task.course).headOption.getOrElse(new CourseDirector(task.course))

@@ -26,8 +26,8 @@
         <td class="content">${(course.courseType.name)!}</td>
       </tr>
        <tr>
-        <td class="title">课程分类:</td>
-        <td class="content">${(course.category.name)!}</td>
+        <td class="title">课程模块:</td>
+        <td class="content">${(course.module.name)!}</td>
         <td class="title">考试方式:</td>
         <td class="content">${(course.examMode.name)!}</td>
       </tr>

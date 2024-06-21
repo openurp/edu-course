@@ -76,8 +76,8 @@
         </div>
       [/#list]
 
-      [#if 6>usualAssessments?size]
-      [#list usualAssessments?size..5 as rnIndex]
+      [#if 7>usualAssessments?size]
+      [#list usualAssessments?size..6 as rnIndex]
         <div class="card card-info card-primary card-outline" style="display: block;">
           [#assign rn=sectionIndex[rnIndex] /]
           [@b.card_header]

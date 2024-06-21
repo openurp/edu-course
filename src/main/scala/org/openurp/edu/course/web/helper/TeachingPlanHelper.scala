@@ -18,14 +18,33 @@
 package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
-import org.beangle.data.dao.EntityDao
-import org.openurp.edu.clazz.model.ClazzActivity
+import org.beangle.data.dao.{EntityDao, OqlBuilder}
+import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.{LocalDate, LocalTime}
+import java.util.Locale
 
 class TeachingPlanHelper(entityDao: EntityDao) {
+  def findSyllabus(clazz: Clazz): Option[Syllabus] = {
+    val query = OqlBuilder.from(classOf[Syllabus], "s")
+    query.where("s.locale=:locale", Locale.SIMPLIFIED_CHINESE)
+    query.where("s.course=:course", clazz.course)
+    query.where("s.semester=:semester", clazz.semester)
+
+    val syllabuses = entityDao.search(query)
+    if (syllabuses.isEmpty) {
+      val query = OqlBuilder.from(classOf[Syllabus], "s")
+      query.where("s.locale=:locale", new Locale("en", "US"))
+      query.where("s.course=:course", clazz.course)
+      query.where("s.semester=:semester", clazz.semester)
+      entityDao.search(query).headOption
+    } else {
+      syllabuses.headOption
+    }
+  }
+
   def collectDatas(plan: TeachingPlan): collection.Map[String, Any] = {
     val datas = Collections.newMap[String, Any]
 
@@ -39,8 +58,7 @@ class TeachingPlanHelper(entityDao: EntityDao) {
     val beginAt = semester.beginOn.atTime(LocalTime.MIN)
     val endAt = semester.endOn.atTime(LocalTime.MAX)
 
-    val syllabus = entityDao.findBy(classOf[Syllabus], "course", clazz.course).headOption
-    datas.put("syllabus", syllabus)
+    datas.put("syllabus", findSyllabus(clazz))
     val schedules = LessonSchedule.convert(clazz)
     datas.put("schedules", schedules)
 

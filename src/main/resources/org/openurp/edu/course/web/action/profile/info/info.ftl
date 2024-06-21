@@ -55,8 +55,8 @@
         <td class="content">${(course.nature.name)!}</td>
         <td class="title">课程类别:</td>
         <td class="content">${(course.courseType.name)!}</td>
-        <td class="title">课程分类:</td>
-        <td class="content">${(course.category.name)!}</td>
+        <td class="title">课程模块:</td>
+        <td class="content">${(course.module.name)!}</td>
       </tr>
     </table>
     </div>

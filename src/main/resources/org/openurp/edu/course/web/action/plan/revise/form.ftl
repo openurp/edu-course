@@ -84,7 +84,7 @@
           <table style="width:100%;border: hidden;" >
             <tr>
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
-              <td colspan="${sectionNames?size}">课堂学时(${scheduleHours})<span id="schedule_hour_tips"></span></td>
+              <td colspan="${sectionNames?size}">课堂学时([#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if])<span id="schedule_hour_tips"></span></td>
               <td rowspan="2">考试周考核或自主考核*</td>
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
@@ -99,8 +99,8 @@
               [#list sectionNames as sectionName]
               <td><input name="section${sectionName_index+1}.creditHours" value="${hours.get(sectionName)!}" style="width:100%" placeholder="学时" onchange="checkHours(this)"/></td>
               [/#list]
-              <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>${syllabus.examCreditHours+scheduleHours}</td>
+              <td>${syllabus.examCreditHours}</td>
+              <td>[#if scheduleHours == syllabus.creditHours]${scheduleHours}[#else]${syllabus.examCreditHours+scheduleHours}[/#if]</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -170,7 +170,11 @@
   <div style="text-align:center;margin:10px 0px">
     <input type="hidden" name="clazz.id" value="${clazz.id}"/>
     [@b.submit value="保存" class="btn btn-sm btn-outline-primary"/]
-    [@b.submit value="提交教研室审批" id="submit_btn" class="btn btn-sm btn-outline-success" action="!save?submit=1" /]
+    [#if plan.reviewer??]
+    [@b.submit value="提交教研室主任${plan.reviewer.name}审批" id="submit_btn" class="btn btn-sm btn-outline-success" action="!save?submit=1" /]
+    [#else]
+    <span id="submit_btn">找不到教研室主任，无法提交审核</span>
+    [/#if]
   </div>
   [/@]
   <script>
@@ -201,10 +205,12 @@
       hours += parseInt(document.planForm["section${sectionName_index+1}.creditHours"].value||'0');
     [/#list]
       var warnings="";
-      if(hours != ${scheduleHours}){
-        warnings ="分项累计为"+hours+"和课堂课时"+${scheduleHours}+"不相等";
-      }else if(hours + ${syllabus.examCreditHours} < ${syllabus.creditHours}){
-        warnings="课堂学时+期末考核学时少于${syllabus.creditHours}学时";
+      var scheduleHours = [#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if]
+      var totalHours = [#if scheduleHours == syllabus.creditHours]${syllabus.creditHours}[#else]${scheduleHours+syllabus.examCreditHours}[/#if]
+      if(hours != scheduleHours){
+        warnings ="分项累计为"+hours+"学时，不等于课堂课时"+scheduleHours;
+      }else if(hours + ${syllabus.examCreditHours} < totalHours){
+        warnings="课堂学时+期末考核学时少于"+totalHours+"学时";
       }
       if(warnings){
         document.getElementById("schedule_hour_tips").innerHTML=warnings;

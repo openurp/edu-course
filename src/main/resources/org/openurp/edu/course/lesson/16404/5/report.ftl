@@ -1,5 +1,5 @@
 [@b.head/]
-[@b.toolbar title="打印授课计划"]
+[@b.toolbar title="${clazz.course.name}(${clazz.crn})授课计划"]
   bar.addClose();
 [/@]
 <style>
@@ -31,7 +31,7 @@
       </tr>
       <tr>
         <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${t.name}[#sep],[/#list]</td>
-        <td style="text-align:right;">教  学  班：</td><td style="border-bottom: solid 1px black;">${clazz.clazzName}</td>
+        <td style="text-align:right;">教  学  班：</td><td style="border-bottom: solid 1px black;">${clazz.clazzName}(${clazz.crn})</td>
       </tr>
       <tr>
         <td style="text-align:right;">授课时间：</td><td style="border-bottom: solid 1px black;">${schedule_time}</td>
@@ -43,9 +43,9 @@
   <div style="margin-top:30px;">
     <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（一）课程基本情况</p>
   </div>
-  [#assign teachingHours=0/]
+  [#assign scheduleHours=0/]
   [#list plan.sections as h]
-    [#assign teachingHours=teachingHours+h.creditHours/]
+    [#assign scheduleHours=scheduleHours+h.creditHours/]
   [/#list]
   <div>
     <table  style="width:100%;border: solid 1px black;text-align:center;" class="form-table">
@@ -116,7 +116,7 @@
               <td>${h.creditHours}</td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>${syllabus.examCreditHours+teachingHours}</td>
+              <td>[#if scheduleHours == syllabus.creditHours]${scheduleHours}[#else]${syllabus.examCreditHours+scheduleHours}[/#if]</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -176,7 +176,7 @@
 
       <tr>
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
-        <td>${teachingHours}</td> <td colspan="3">——</td>
+        <td>[#if scheduleHours==syllabus.creditHours]${scheduleHours-syllabus.examCreditHours}[#else]${scheduleHours}[/#if]</td> <td colspan="3">——</td>
       </tr>
       [#if syllabus.examCreditHours>0]
       <tr>
@@ -185,6 +185,12 @@
         <td colspan="3">——</td>
       </tr>
       [/#if]
+      <tr>
+        <td colspan="2" style="text-align:left;">合计</td>
+        <td>[#assign examCreditHours =syllabus.examCreditHours/] [#if scheduleHours==syllabus.creditHours][#assign examCreditHours=0/][/#if]
+        ${scheduleHours + examCreditHours}
+        </td><td colspan="3">——</td>
+      </tr>
       [#if syllabus.learningHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">自主学习课时</td>
@@ -192,14 +198,12 @@
         <td colspan="3">——</td>
       </tr>
       [/#if]
-      <tr>
-        <td colspan="2" style="text-align:left;">合计</td>
-        <td>${teachingHours + syllabus.examCreditHours+syllabus.learningHours}</td><td colspan="3">——</td>
-      </tr>
+
       <tr>
         <td colspan="6" style="text-align:left;">注：1.如每周2次课，按照1-1和1-2填写，帮助学生了解教学进度，进行课前预习。2.本学期课程的授课计划中未扣除国定假日，如遇节假日，教学安排适当调整，并确保课程教学大纲完整执行。</td>
       </tr>
     </table>
+    <br/>
   </div>
 
 </div>

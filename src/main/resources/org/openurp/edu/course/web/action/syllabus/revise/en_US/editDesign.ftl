@@ -12,7 +12,7 @@
         [#assign cases=cases+{'${c.idx}':c}/]
       [/#list]
       <ul style="margin-left: 6.25rem;padding-left: 1rem;">
-      [#list 0..9 as i]
+      [#list 0..14 as i]
         <ol><label>${i+1}：</label><input type="text" placeholder="Case No.${i+1}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
       [/#list]
       </ul>

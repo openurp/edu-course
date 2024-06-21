@@ -37,7 +37,7 @@
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">教学大纲</h4>
-       [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" +course.id target="_blank" style="float:right;margin-left:20px"]新增英文大纲[/@]
+       [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" + course.id + "&locale=en_US"  target="_blank" style="float:right;margin-left:20px"]新增英文大纲[/@]
        [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" +course.id target="_blank" style="float:right"]新增中文大纲[/@] &nbsp;
     </div>
       <div class="card-body" style="padding-top: 0px;">
@@ -56,7 +56,7 @@
              [/#if]
            </td>
            <td>[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]</td>
-           [#--<td>生成PDF</td>--]
+           <td>[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>
          </tr>
            [/#list]
        </table>

@@ -20,10 +20,14 @@ package org.openurp.edu.course.web.action.syllabus
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.doc.core.PrintOptions
+import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.mapping
-import org.beangle.web.action.view.View
+import org.beangle.web.action.context.ActionContext
+import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
 import org.openurp.base.hr.model.Teacher
@@ -38,6 +42,8 @@ import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
 
+import java.io.File
+import java.net.URI
 import java.time.Instant
 import java.util.Locale
 
@@ -54,7 +60,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course.project=:project", project)
     q.where("c.director=:me", teacher)
-    val courses = entityDao.search(q).map(_.course)
+    val tasks = entityDao.search(q)
+    val courses = tasks.map(_.course)
     put("courses", courses)
     forward()
   }
@@ -191,7 +198,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.examMode = course.examMode
     syllabus.gradingMode = course.gradingMode
     syllabus.creditHours = course.creditHours
-    syllabus.weekHours = course.weekHours
     syllabus.semester = semester
     put("examHours", 0)
     val first = findScheduledClazz(course, semester)
@@ -400,18 +406,18 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
       val creditHour = getFloat("creditHour" + ht.id)
-      val week = getInt("week" + ht.id)
+      //      val week = getInt("week" + ht.id)
       topic.hours find (h => h.nature == ht) match {
         case Some(hour) =>
-          if (week.isEmpty && creditHour.isEmpty) {
+          if (creditHour.isEmpty) {
             topic.hours -= hour
           } else {
-            hour.weeks = week.getOrElse(0)
+            //            hour.weeks = week.getOrElse(0)
             hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
-          if (!(week.isEmpty && creditHour.isEmpty)) {
-            topic.hours += new SyllabusTopicHour(topic, ht, creditHour.getOrElse(0f), week.getOrElse(0))
+          if (!creditHour.isEmpty) {
+            topic.hours += new SyllabusTopicHour(topic, ht, creditHour.getOrElse(0f))
           }
       }
     }
@@ -459,6 +465,16 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     forward(s"${design.syllabus.locale}/editDesign")
   }
 
+  def submit(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    if (isSubmitable(syllabus)) {
+      syllabus.status = AuditStatus.Submited
+      entityDao.saveOrUpdate(syllabus)
+      businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
+    }
+    redirect("info", "&id=" + syllabus.id, "提交成功")
+  }
+
   def saveDesign(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     syllabus.updatedAt = Instant.now()
@@ -471,7 +487,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val caseAndExps = getAll("caseAndExperiments", classOf[String]).toSet
     if (caseAndExps.contains("hasCase")) {
       val cases = syllabus.cases.map(x => (x.idx, x)).toMap
-      (0 to 9) foreach { i =>
+      (0 to 14) foreach { i =>
         val name = get(s"case${i}.name", "")
         cases.get(i) match
           case None =>
@@ -635,12 +651,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.materials = get("syllabus.materials")
     syllabus.bibliography = get("syllabus.bibliography")
     syllabus.website = get("syllabus.website")
+    syllabus.office = courseTaskService.getOffice(syllabus.course, syllabus.department, syllabus.semester)
+    syllabus.office foreach { o =>
+      syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
+    }
     entityDao.saveOrUpdate(syllabus)
     getBoolean("submit") foreach { s =>
-      syllabus.office = courseTaskService.getOffice(syllabus.course, syllabus.department, syllabus.semester)
-      syllabus.office foreach { o =>
-        syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
-      }
       syllabus.status = Submited
       entityDao.saveOrUpdate(syllabus)
       businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
@@ -718,6 +734,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def info(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
+    put("submitable", isSubmitable(syllabus))
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
   }
 
@@ -820,5 +837,25 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     messages.toSeq
+  }
+
+  private def isSubmitable(syllabus: Syllabus): Boolean = {
+    val rs = validate(syllabus)
+    if rs.isEmpty then
+      val submitables = Set(AuditStatus.Draft, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart, AuditStatus.Rejected)
+      submitables.contains(syllabus.status) && syllabus.reviewer.nonEmpty
+    else false
+  }
+
+  def pdf(): View = {
+    val id = getLongId("syllabus")
+    val syllabus = entityDao.get(classOf[Syllabus], id)
+    val url = Ems.base + ActionContext.current.request.getContextPath + s"/syllabus/revise/info?id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val pdf = File.createTempFile("doc", ".pdf")
+    val options = new PrintOptions
+    options.scale = 0.66d
+    SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+
+    Stream(pdf, syllabus.course.code + "_" + syllabus.course.name + " 教学大纲.pdf").cleanup(() => pdf.delete())
   }
 }

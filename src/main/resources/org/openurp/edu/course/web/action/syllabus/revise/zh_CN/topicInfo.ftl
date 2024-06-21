@@ -3,7 +3,7 @@
       [@b.card_header]
         <div class="card-title">${topic.name!}
           <span class="text-muted text-sm">
-          [#list topic.hours as h]${h.nature.name}[#if h.creditHours>0]${h.creditHours}学时[#else][#if h.weeks>0]${h.weeks}周[/#if][/#if][#sep]&nbsp;[/#list]&nbsp;
+          [#list topic.hours as h]${h.nature.name}${h.creditHours}学时[#sep]&nbsp;[/#list]&nbsp;
           [#if topic.learningHours>0]自主学习${topic.learningHours}学时&nbsp;[/#if]
           ${topic.methods!}&nbsp;
           [#if topic.objectives??]对应课程目标:${topic.objectives?replace(",","&nbsp;")}[/#if]

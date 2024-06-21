@@ -2,16 +2,18 @@
 [@b.head/]
 [@b.grid items=courseTasks var="courseTask"]
   [@b.gridbar]
+    [#if (Parameters['syllabus_status']!) == "" && (Parameters['plan_status']!) == ""]
     bar.addItem("${b.text("action.modify")}",action.edit());
     bar.addItem("批量修改",action.multi("batchEdit"));
     bar.addItem("自动指定负责人",action.multi('autoAssign'));
     bar.addItem("初始化",action.method("autoCreate"));
     bar.addItem("${b.text("action.delete")}",action.remove("确认删除?"));
     bar.addItem("导入",action.method('importForm'));
+    [/#if]
     bar.addItem("${b.text("action.export")}",
                 action.exportData("course.code:课程代码,course.name:课程名称,course.defaultCredits:学分,course.creditHours:学时,"+
                 "department.name:开课院系,courseType.name:课程类型,office.name:专业教研室,"+
-                "direction.name:课程负责人,teachers:任课教师",
+                "director.name:课程负责人,teachers:任课教师",
                 null,'fileName=课程负责人信息'));
   [/@]
   [@b.row]

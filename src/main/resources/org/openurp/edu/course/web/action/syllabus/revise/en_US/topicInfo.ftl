@@ -3,8 +3,8 @@
       [@b.card_header]
         <div class="card-title">${topic.name!}
           <span class="text-muted text-sm">
-          [#list topic.hours as h]${h.nature.enName}[#if h.creditHours>0] ${h.creditHours} hours[#else][#if h.weeks>0] ${h.weeks} weeks[/#if][/#if][#sep]&nbsp;[/#list]&nbsp;
-          [#if topic.learningHours>0]Autonomous learning {topic.learningHours} hours&nbsp;[/#if]
+          [#list topic.hours as h]${h.nature.enName}${h.creditHours} hours[#sep]&nbsp;[/#list]&nbsp;
+          [#if topic.learningHours>0]Autonomous learning ${topic.learningHours} hours&nbsp;[/#if]
           ${topic.methods!}&nbsp;
           [#if topic.objectives??]Course Objectives:${topic.objectives?replace(",","&nbsp;")}[/#if]
           </span>

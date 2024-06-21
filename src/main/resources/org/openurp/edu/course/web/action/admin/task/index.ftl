@@ -8,7 +8,7 @@
       [@b.textfield name="courseTask.course.code" label="代码"/]
       [@b.textfield name="courseTask.course.name" label="名称"/]
       [@b.select style="width:100px" name="courseTask.department.id" label="开课院系" items=departments option="id,name" empty="..." /]
-      [@b.select name="office.id" label="教研室"  items=offices/]
+      [@b.select name="courseTask.office.id" label="教研室"  items=offices/]
       [@b.select name="teachers" label="多人授课"]
         <option value="">...</option>
         <option value="2">多人授课</option>
@@ -21,6 +21,11 @@
         <option value="">...</option>
         <option value="1">是</option>
         <option value="0">否</option>
+      [/@]
+      [@b.select name="syllabus_status" label="教学大纲"]
+        <option value="">...</option>
+        <option value="1">已提交</option>
+        <option value="0">未提交</option>
       [/@]
       <input type="hidden" name="orderBy" value="courseTask.course.code"/>
     [/@]

@@ -15,17 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.plan
+package org.openurp.edu.course.web.helper
 
-import org.beangle.data.dao.EntityDao
-import org.beangle.web.action.support.ActionSupport
-import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.starter.web.support.ProjectSupport
+import org.beangle.commons.bean.DefaultPropertyExtractor
+import org.beangle.commons.lang.Strings
+import org.openurp.base.edu.model.CourseJournal
 
-/** 教学进度表
- */
-class EditAction extends ActionSupport, EntityAction[TeachingPlan], ProjectSupport {
+class CourseJournalPropertyExtractor extends DefaultPropertyExtractor {
 
-  var entityDao: EntityDao = _
+  override def get(target: Object, property: String): Any = {
+    val journal = target.asInstanceOf[CourseJournal]
+    if (property.startsWith("hour.")) {
+      val hid = Strings.substringAfter(property, "hour.")
+      journal.hours.find(_.nature.id.toString == hid) match
+        case None => ""
+        case Some(h) => h.creditHours
+    } else {
+      super.get(target, property)
+    }
+  }
 }

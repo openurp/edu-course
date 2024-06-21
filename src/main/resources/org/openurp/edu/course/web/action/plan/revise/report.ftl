@@ -179,7 +179,7 @@
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
         <td>${teachingHours}</td> <td colspan="3">&nbsp;</td>
       </tr>
-      [#if syllabus.examCreditHours>0]
+      [#if teachingHours < syllabus.creditHours && syllabus.examCreditHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">期末考核</td>
         <td>${syllabus.examCreditHours}</td>

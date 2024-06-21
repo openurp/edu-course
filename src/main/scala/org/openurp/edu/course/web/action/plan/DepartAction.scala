@@ -18,12 +18,13 @@
 package org.openurp.edu.course.web.action.plan
 
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.edu.course.web.helper.TeachingPlanHelper
+import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
+import org.openurp.edu.course.web.helper.{CourseTaskPropertyExtractor, SyllabusPropertyExtractor, TeachingPlanHelper}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -53,12 +54,12 @@ class DepartAction extends RestfulAction[TeachingPlan], ProjectSupport {
   }
 
   def audit(): View = {
-    val syllabuses = entityDao.find(classOf[TeachingPlan], getLongIds("syllabus"))
+    val plans = entityDao.find(classOf[TeachingPlan], getLongIds("syllabus"))
     getBoolean("passed") foreach { passed =>
-      val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
-      syllabuses foreach { s => s.status = status }
+      val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
+      plans foreach { s => s.status = status }
     }
-    entityDao.saveOrUpdate(syllabuses)
+    entityDao.saveOrUpdate(plans)
     redirect("search", "审核成功")
   }
 
@@ -68,4 +69,5 @@ class DepartAction extends RestfulAction[TeachingPlan], ProjectSupport {
     new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
   }
+
 }

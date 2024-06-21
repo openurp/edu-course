@@ -43,7 +43,7 @@ class StatHelper(entityDao: EntityDao) {
     val pQuery = OqlBuilder.from(classOf[ExecutivePlanCourse], "pc")
     pQuery.where("pc.course=:course", course)
     val today = LocalDate.now
-    pQuery.where(":today < pc.group.plan.endOn", today)
+    pQuery.where(":today < pc.group.plan.program.endOn", today)
     val pcs = entityDao.search(pQuery)
     val pcis = pcs.groupBy(x => (x.course, x.group.courseType, x.group.plan.program.grade))
       .map { x =>

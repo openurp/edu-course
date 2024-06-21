@@ -18,20 +18,25 @@
 package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.doc.transfer.exporter.ExportContext
+import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.code.edu.model.TeachingNature
 import org.openurp.edu.course.model.Syllabus
-import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
 /** 教学副院长审核
  */
-class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
+class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport[Syllabus] {
+
+  var businessLogger: WebBusinessLogger = _
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
@@ -42,16 +47,19 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
     put("departs", departs)
     put("project", project)
     put("semester", getSemester)
-    put("statuses", List(AuditStatus.Draft, AuditStatus.Submited,
-      AuditStatus.RejectedByDirector, AuditStatus.PassedByDirector,
-      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart,
-      AuditStatus.Rejected, AuditStatus.Passed))
+    put("statuses", auditStatuses)
     forward()
   }
 
   override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
+    given project: Project = getProject
+
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
-    super.getQueryBuilder
+
+    put("teachingNatures", getCodes(classOf[TeachingNature]))
+    val query = super.getQueryBuilder
+    query.where("syllabus.status in(:statuses)", auditStatuses)
+    query
   }
 
   def audit(): View = {
@@ -65,6 +73,24 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
       }
     }
     entityDao.saveOrUpdate(syllabuses)
+    val list = syllabuses.groupBy(_.status)
+    list foreach { case (status, s) =>
+      if (status == AuditStatus.PassedByDepart) {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"审核通过课程教学大纲:${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+        } else {
+          businessLogger.info(s"审核通过${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      } else {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"驳回了课程教学大纲:${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+        } else {
+          businessLogger.info(s"驳回了${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      }
+    }
     redirect("search", "审核成功")
   }
 
@@ -73,5 +99,16 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+  }
+
+  private def auditStatuses: Seq[AuditStatus] = {
+    List(AuditStatus.PassedByDirector,
+      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart,
+      AuditStatus.Rejected, AuditStatus.Passed)
+  }
+
+  protected override def configExport(context: ExportContext): Unit = {
+    super.configExport(context)
+    context.extractor = new SyllabusPropertyExtractor()
   }
 }

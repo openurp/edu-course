@@ -24,7 +24,6 @@ import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project, User}
-import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
@@ -58,24 +57,18 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val offices = getOffices(project)
     val query = super.getQueryBuilder
     query.where("syllabus.course.project=:project", project)
-    if (offices.isEmpty) {
-      query.where("syllabus.id<0")
-    } else {
-      query.where("syllabus.office in(:offices)", offices)
-    }
+    query.where("syllabus.reviewer.code=:reviewerCode", Securities.user)
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     query
   }
 
   def audit(): View = {
-    val statuses = Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.Rejected)
+    val statuses = auditStatuses
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus")).filter(x => statuses.contains(x.status))
-    val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
       syllabuses foreach { s =>
         s.status = status
-        s.reviewer = user
       }
     }
     entityDao.saveOrUpdate(syllabuses)
@@ -89,4 +82,7 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
   }
 
+  private def auditStatuses: Seq[AuditStatus] = {
+    Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.Rejected)
+  }
 }

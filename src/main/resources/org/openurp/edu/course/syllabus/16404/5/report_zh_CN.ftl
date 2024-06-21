@@ -14,6 +14,10 @@
     ${b.static.load(["jquery","beangle","bui","bootstrap"])}
  </head>
 <body>
+[@b.toolbar title="${syllabus.course.name}教学大纲"]
+  bar.addClose();
+[/@]
+[@b.messages slash="3"/]
 <style>
   .card-header{
     padding:.5rem 1.25rem;
@@ -50,12 +54,10 @@
   }
   @media print {
     body{
-     width:170mm;
-     margin:auto;
+      margin:auto;
     }
     table {
      page-break-inside: avoid;
-     max-width:170mm;
     }
     @page  {
       size: A4 portrait;
@@ -290,7 +292,7 @@
   [#--教学内容--]
   <div style="margin-top:30px;">
     [@header_title "六、学验并重的教学设计"/]
-    [#list syllabus.designs as design]
+    [#list syllabus.designs?sort_by("idx") as design]
       [#assign title]（${numSeq[design.idx]}）${design.name}[/#assign]
       [@header_title title/]
       [@p design.contents/]
@@ -346,6 +348,7 @@
           <td>100%</td><td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
           <td>${endAssess.scorePercent}%</td><td>100%</td>
         </tr>
+        [#if orderedObjectives?size>0]
         [#assign firstObj=orderedObjectives?first/]
         <tr>
           <td rowspan="${orderedObjectives?size}">课程目标</td><td>${firstObj.code}</td>
@@ -357,6 +360,7 @@
           <td>${coPercent}%</td><td>${usualAssess.scorePercent}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${endAssess.scorePercent}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
+        [/#if]
         [#list orderedObjectives as co]
          [#if co_index==0][#continue/][/#if]
         <tr>
@@ -425,14 +429,14 @@
   [#--课程教学大纲的审批--]
   <div style="margin-top:30px;">
     [@header_title "九、课程教学大纲的审批"/]
-    <table>
+    <table style="width:400px">
       <tr>
-        <td>编制人：</td>
+        <td style="width:200px">编制人：</td>
         <td>${syllabus.writer.name}</td>
       </tr>
       <tr>
         <td>专业/教研室主任:</td>
-        <td>${(syllabus.reviewer.name)!}</td>
+        <td>${(syllabus.reviewer.name)!} [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if] </td>
       </tr>
       <tr>
         <td>教学院长:</td>
@@ -445,6 +449,7 @@
     </table>
   </div>
 
+  <br/><br/>
 </div><!--end container-->
 
 [@b.foot/]

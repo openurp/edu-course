@@ -49,13 +49,8 @@
     font-family: 楷体;
   }
   @media print {
-    body{
-     width:170mm;
-     margin:auto;
-    }
     table {
      page-break-inside: avoid;
-     max-width:170mm;
     }
     @page  {
       size: A4 portrait;
@@ -292,7 +287,7 @@
   [#--教学内容--]
   <div style="margin-top:30px;">
     [@header_title numSeq[6]+"、Teaching design of integrity and practical wisdom"/]
-    [#list syllabus.designs as design]
+    [#list syllabus.designs?sort_by("idx") as design]
       [#assign title]（${numSeq[design.idx+1]}）${design.name}[/#assign]
       [@header_title title/]
       [@p design.contents/]
@@ -435,14 +430,14 @@
   [#--课程教学大纲的审批--]
   <div style="margin-top:30px;">
     [@header_title "${numSeq[9]}、Examination and approval"/]
-    <table>
+    <table  style="width:400px">
       <tr>
-        <td>Writer：</td>
+        <td style="width:200px">Writer：</td>
         <td>${syllabus.writer.name}</td>
       </tr>
       <tr>
         <td>Reviewer:</td>
-        <td>${(syllabus.reviewer.name)!}</td>
+        <td>${(syllabus.reviewer.name)!} [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if]</td>
       </tr>
       <tr>
         <td>Approver:</td>
@@ -450,7 +445,7 @@
       </tr>
       <tr>
         <td>Start using time:</td>
-        <td>${syllabus.beginOn?string("yyyy-MM-DD")}</td>
+        <td>${syllabus.beginOn?string("yyyy-MM-dd")}</td>
       </tr>
     </table>
   </div>
