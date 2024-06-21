@@ -32,6 +32,7 @@ import org.openurp.base.edu.model.{CourseDirector, TeachingOffice}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature}
+import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{CourseTask, Syllabus, TeachingPlan}
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.{CourseTaskImportListener, CourseTaskPropertyExtractor}
@@ -73,18 +74,30 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
       case "1" => query.where(s"exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
         s" and s.semester=courseTask.semester and s.status in (:statuses))",
         List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
-      case "0" => query.where(s"not exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
-        s" and s.semester=courseTask.semester and s.status in (:statuses))",
-        List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
+      case "0" =>
+        query.where("courseTask.syllabusRequired=true")
+        query.where(s"not exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
+          s" and s.semester=courseTask.semester and s.status in (:statuses))",
+          List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
       case _ =>
     }
     get("plan_status").foreach {
       case "1" => query.where(s"exists(from ${classOf[TeachingPlan].getName} s where s.clazz.course=courseTask.course" +
         s" and s.semester=courseTask.semester and s.status in (:statuses))",
         List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
-      case "0" => query.where(s"not exists(from ${classOf[TeachingPlan].getName} s where s.clazz.course=courseTask.course" +
-        s" and s.semester=courseTask.semester and s.status in (:statuses))",
-        List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
+      case "0" =>
+        query.where("courseTask.syllabusRequired=true")
+        query.where(s"not exists(from ${classOf[TeachingPlan].getName} s where s.clazz.course=courseTask.course" +
+          s" and s.semester=courseTask.semester and s.status in (:statuses))",
+          List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
+      case _ =>
+    }
+    get("schedule_status").foreach {
+      case "1" => query.where(s"exists(from ${classOf[Clazz].getName} s where s.course=courseTask.course" +
+        s" and s.semester=courseTask.semester and size(s.schedule.activities)>0)")
+      case "0" =>
+        query.where(s"not exists(from ${classOf[Clazz].getName} s where s.course=courseTask.course" +
+          s" and s.semester=courseTask.semester and size(s.schedule.activities)>0)")
       case _ =>
     }
     getBoolean("assigned").foreach {
@@ -164,6 +177,9 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
     getLong("office.id") foreach { officeId =>
       val office = entityDao.get(classOf[TeachingOffice], officeId)
       tasks foreach (_.office = Some(office))
+    }
+    getBoolean("syllabusRequired") foreach { required =>
+      tasks foreach (_.syllabusRequired = required)
     }
     entityDao.saveOrUpdate(tasks)
     redirect("search", "批量成功")

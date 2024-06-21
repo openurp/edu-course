@@ -22,10 +22,20 @@
         <option value="1">是</option>
         <option value="0">否</option>
       [/@]
+      [@b.select name="courseTask.syllabusRequired" label="大纲要求"]
+        <option value="">...</option>
+        <option value="1">需要上传大纲</option>
+        <option value="0">无需上传大纲</option>
+      [/@]
       [@b.select name="syllabus_status" label="教学大纲"]
         <option value="">...</option>
         <option value="1">已提交</option>
         <option value="0">未提交</option>
+      [/@]
+      [@b.select name="schedule_status" label="排课情况"]
+        <option value="">...</option>
+        <option value="1">已安排</option>
+        <option value="0">未安排</option>
       [/@]
       <input type="hidden" name="orderBy" value="courseTask.course.code"/>
     [/@]

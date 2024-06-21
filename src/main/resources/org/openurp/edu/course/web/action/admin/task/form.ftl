@@ -10,6 +10,7 @@
       [#list courseTask.teachers?sort_by("name") as teacher]${teacher.name}[#if teacher_has_next]&nbsp;[/#if][/#list]
     [/@]
     [@b.select name="courseTask.director.id" label="负责人" value=courseTask.director! items=directors?sort_by("name")  option="id,description" required="true"/]
+    [@b.radios label="是否需要大纲"  name="courseTask.syllabusRequired" value=courseTask.syllabusRequired items="1:common.yes,0:common.no" required="true"/]
     [@b.formfoot]
       [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
     [/@]

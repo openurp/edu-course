@@ -10,8 +10,9 @@
         [/#list]
       </div>
     [/@]
-    [@b.select style="width:100px" name="office.id" label="教研室" items=offices option="id,name" empty="..." /]
-    [@base.teacher name="teacher.id" label="负责人" required="false" value=""/]
+    [@b.select style="width:100px" name="office.id" label="教研室" items=offices option="id,name" empty="..."  comment="为空时，不做更新"/]
+    [@base.teacher name="teacher.id" label="负责人" required="false" value="" comment="为空时，不做更新"/]
+    [@b.radios name="syllabusRequired" items={'':'不做改变','1':'需要','0':'不需要'} label="大纲要求"/]
     [@b.formfoot]
       [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
     [/@]
