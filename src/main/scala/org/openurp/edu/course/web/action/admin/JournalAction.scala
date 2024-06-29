@@ -23,6 +23,7 @@ import org.beangle.doc.excel.schema.ExcelSchema
 import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.doc.transfer.importer.ImportSetting
 import org.beangle.doc.transfer.importer.listener.ForeignerListener
+import org.beangle.event.bus.{DataEvent, DataEventBus}
 import org.beangle.web.action.annotation.response
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
@@ -39,6 +40,8 @@ import java.time.LocalDate
 /** 课程日志
  */
 class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, ExportSupport[CourseJournal], ImportSupport[CourseJournal] {
+
+  var databus: DataEventBus = _
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
@@ -91,6 +94,8 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     course.tags.clear()
     course.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
     entityDao.saveOrUpdate(course)
+    databus.publish(DataEvent.update(journal))
+    databus.publish(DataEvent.update(course))
 
     super.saveAndRedirect(journal)
   }

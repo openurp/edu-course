@@ -22,6 +22,7 @@ import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.Ems
 import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.support.ActionSupport
 import org.beangle.web.action.view.{Stream, View}
@@ -58,7 +59,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     dQuery.select("c.department.id,c.department.name,count(*)")
     dQuery.groupBy("c.department.id,c.department.code,c.department.name")
     dQuery.orderBy("c.department.code,c.department.name")
-    dQuery.where("c.status in(:statuses)",statuses)
+    dQuery.where("c.status in(:statuses)", statuses)
     put("departStat", entityDao.search(dQuery))
 
     //    val tQuery = OqlBuilder.from(classOf[Syllabus].getName, "c")
@@ -99,7 +100,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   }
 
   private def statuses: Seq[AuditStatus] = {
-    Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
+    Seq(AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
   }
 
   def info(): View = {
@@ -119,13 +120,17 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   def syllabus(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val project = syllabus.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
   def plan(): View = {
     val plan = entityDao.get(classOf[TeachingPlan], getLongId("plan"))
     new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
+    val project = plan.clazz.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }
 
   def syllabusPdf(): View = {

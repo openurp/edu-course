@@ -28,7 +28,9 @@
     [/@]
     [@b.col width="5%" property="course.defaultCredits" title="学分"/]
     [@b.col width="5%" property="course.creditHours" title="学时"/]
-    [@b.col width="10%" property="office.name" title="专业、教研室"/]
+    [@b.col width="10%" property="office.name" title="专业、教研室"]
+      <span title="${(courseTask.office.director.name)!}">${(courseTask.office.name)!}</span>
+    [/@]
     [@b.col width="8%" property="director.name" title="负责人"/]
     [@b.col title="任课教师" width="13%"]
       <div class="text-ellipsis" title="${courseTask.teachers?size}位老师">[#list courseTask.teachers as t]${t.name}[#sep]&nbsp;[/#list]</div>

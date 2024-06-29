@@ -6,7 +6,7 @@
       [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" value=(topic.getElement(label).contents)! required="true" maxlength="2000"/]
     [/#list]
     [@b.checkboxes label="教学方法" name="teachingMethod" items=teachingMethods values=topic.teachingMethods! required="true"/]
-    [@b.field label="课时分布"]
+    [@b.field label="学时分布"]
       [#assign hours={}/]
       [#list topic.hours as h]
         [#assign hours=hours+{'${h.nature.id}':h} /]
@@ -14,13 +14,13 @@
 
       [#list syllabus.teachingNatures as ht]
         <label for="teachingNature${ht.id}_p">${ht_index+1}.${ht.name}</label>
-        <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}">课时
+        <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}">学时
         [#if ((syllabus.getHour(ht).weeks)!0)>0]
         <input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="${(hours[ht.id?string].weeks)!}">周
         [/#if]
       [/#list]
        <label for="learning_p">自主学习</label>
-       <input name="topic.learningHours" style="width:30px" id="learning_p" value="${topic.learningHours}">课时
+       <input name="topic.learningHours" style="width:30px" id="learning_p" value="${topic.learningHours}">学时
     [/@]
     [@b.checkboxes label="对应课程目标" name="objective.id" items=syllabus.objectives values=topic.matchedObjectives required="false"/]
     [@b.formfoot]

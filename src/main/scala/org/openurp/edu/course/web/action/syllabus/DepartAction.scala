@@ -19,17 +19,30 @@ package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.commons.bean.orderings.PropertyOrdering
 import org.beangle.commons.collection.Collections
+import org.beangle.commons.concurrent.Workers
+import org.beangle.commons.file.zip.Zipper
+import org.beangle.commons.io.Files
+import org.beangle.commons.lang.SystemInfo
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.doc.core.PrintOptions
+import org.beangle.doc.pdf.SPDConverter
 import org.beangle.doc.transfer.exporter.ExportContext
+import org.beangle.ems.app.Ems
+import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.view.View
+import org.beangle.web.action.context.ActionContext
+import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
+import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.model.{CourseTask, Syllabus}
 import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
 
+import java.io.File
+import java.net.URI
 import java.util.Locale
 
 /** 学院查询教学大纲
@@ -57,7 +70,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
 
     put("teachingNatures", getCodes(classOf[TeachingNature]))
-    super.getQueryBuilder
+    val query = super.getQueryBuilder
+    queryByDepart(query, "syllabus.department")
   }
 
   def audit(): View = {
@@ -71,7 +85,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   }
 
   override protected def removeAndRedirect(syllabuses: Seq[Syllabus]): View = {
-    super.removeAndRedirect(syllabuses.filter(_.status == AuditStatus.Draft))
+    val removables = Seq(AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart, AuditStatus.Draft)
+    super.removeAndRedirect(syllabuses.filter(x => removables.contains(x.status)))
   }
 
   override protected def editSetting(syllabus: Syllabus): Unit = {
@@ -91,6 +106,7 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     s.orderBy("s.startWeek").cacheable()
     put("calendarStages", entityDao.search(s))
     put("locales", Map(new Locale("zh", "CN") -> "中文大纲", new Locale("en", "US") -> "English Syllabus"))
+    put("offices", entityDao.findBy(classOf[TeachingOffice], "project" -> project, "department" -> syllabus.department))
     super.editSetting(syllabus)
   }
 
@@ -104,7 +120,47 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   override def info(@param("id") id: String): View = {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val project = syllabus.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
+  }
+
+  def download(): View = {
+    val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
+    val pdfDir = SystemInfo.tmpDir + "/" + s"syllabus_${Securities.user}"
+    Files.travel(new File(pdfDir), f => f.delete())
+    val contextPath = ActionContext.current.request.getContextPath
+    new File(pdfDir).mkdirs()
+    if (syllabuses.size == 1) {
+      val syllabus = syllabuses.head
+      val url = Ems.base + contextPath + s"/syllabus/depart/${syllabus.id}?URP_SID=" + Securities.session.map(_.id).getOrElse("")
+      val fileName = Files.purify(syllabus.course.code + "_" + syllabus.course.name + "_" + syllabus.writer.name + "_课程大纲")
+      val pdf = new File(pdfDir + s"/${fileName}.pdf")
+      val options = new PrintOptions
+      options.scale = 0.66d
+      println(s"download ${url} to ${pdf.getAbsolutePath}")
+      SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+      Stream(pdf).cleanup { () =>
+        pdf.delete()
+        //new File(pdfDir).delete()
+      }
+    } else {
+      val datas = syllabuses.map(x => (x.id, Files.purify(x.course.code + "_" + x.course.name + "_" + x.writer.name + "_课程大纲")))
+      Workers.work(datas, (data: (Long, String)) => {
+        val url = Ems.base + contextPath + s"/syllabus/depart/${data._1}?URP_SID=" + Securities.session.map(_.id).getOrElse("")
+        val pdf = new File(pdfDir + s"/${data._2}.pdf")
+        val options = new PrintOptions
+        options.scale = 0.66d
+        println(s"download ${url} to ${pdf.getAbsolutePath}")
+        SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+      }, Runtime.getRuntime.availableProcessors)
+      val zipFile = new File(SystemInfo.tmpDir + s"/syllabus${Securities.user}.zip")
+      Zipper.zip(new File(pdfDir), zipFile, "utf-8")
+      Stream(zipFile).cleanup { () =>
+        zipFile.delete()
+        Files.travel(new File(pdfDir), f => f.delete())
+      }
+    }
   }
 
   protected override def configExport(context: ExportContext): Unit = {

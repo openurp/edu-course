@@ -29,14 +29,14 @@ import java.util.Locale
 class TeachingPlanHelper(entityDao: EntityDao) {
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")
-    query.where("s.locale=:locale", Locale.SIMPLIFIED_CHINESE)
+    query.where("s.docLocale=:locale", Locale.SIMPLIFIED_CHINESE)
     query.where("s.course=:course", clazz.course)
     query.where("s.semester=:semester", clazz.semester)
 
     val syllabuses = entityDao.search(query)
     if (syllabuses.isEmpty) {
       val query = OqlBuilder.from(classOf[Syllabus], "s")
-      query.where("s.locale=:locale", new Locale("en", "US"))
+      query.where("s.docLocale=:locale", new Locale("en", "US"))
       query.where("s.course=:course", clazz.course)
       query.where("s.semester=:semester", clazz.semester)
       entityDao.search(query).headOption

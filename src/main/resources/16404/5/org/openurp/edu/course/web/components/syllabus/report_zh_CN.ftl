@@ -1,19 +1,5 @@
 [#ftl/]
-<!DOCTYPE html>
-<html lang="zh_CN">
-  <head>
-    <title></title>
-    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta http-equiv="pragma" content="no-cache"/>
-    <meta http-equiv="cache-control" content="no-cache"/>
-    <meta http-equiv="expires" content="0"/>
-    <meta http-equiv="content-style-type" content="text/css"/>
-    <meta http-equiv="content-script-type" content="text/javascript"/>
-    ${b.static.load(["jquery","beangle","bui","bootstrap"])}
- </head>
-<body>
+[@b.head/]
 [@b.toolbar title="${syllabus.course.name}教学大纲"]
   bar.addClose();
 [/@]
@@ -68,7 +54,7 @@
     }
   }
 </style>
-[#assign numSeq= ["一","二","三","四","五","六","七"] /]
+[#assign numSeq= ["一","二","三","四","五","六","七","八","九","十"] /]
 [#assign tableIndex=1/]
 [#macro header_title title]
   <p style="width:100%;font-weight:bold;font-family: 宋体;font-size: 14pt;">${title}</p>
@@ -303,7 +289,7 @@
       [/#if]
       [#if design.hasExperiment]
       <ul>实验：
-      [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.experimentType.name} ${e.online?string("线上实验","线下实验")}</li>[/#list]
+      [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} [#if e.creditHours>0]${e.creditHours}学时 [/#if]${e.experimentType.name} ${e.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
       </ul>
       [/#if]
     [/#list]
@@ -357,7 +343,7 @@
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[firstObj.code]??]${percentMap[firstObj.code]}%[#assign coPercent=coPercent+percentMap[firstObj.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${usualAssess.scorePercent}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${endAssess.scorePercent}%</td>
+          <td>${coPercent}%</td><td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
         [/#if]
@@ -370,7 +356,7 @@
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[co.code]??]${percentMap[co.code]}%[#assign coPercent=coPercent+percentMap[co.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${usualAssess.scorePercent}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${endAssess.scorePercent}%</td>
+          <td>${coPercent}%</td><td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[co.code]!0))/100}%</td>
         </tr>
         [/#list]
@@ -436,11 +422,11 @@
       </tr>
       <tr>
         <td>专业/教研室主任:</td>
-        <td>${(syllabus.reviewer.name)!} [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if] </td>
+        <td>[#if syllabus.status.id==40||syllabus.status.id==50||syllabus.status.id==100||syllabus.status.id==200]${(syllabus.reviewer.name)!}[/#if] [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if] </td>
       </tr>
       <tr>
         <td>教学院长:</td>
-        <td>${(syllabus.approver.name)!}</td>
+        <td>[#if syllabus.status.id==50||syllabus.status.id==100||syllabus.status.id==200]${(syllabus.approver.name)!}[/#if]</td>
       </tr>
       <tr>
         <td>教学大纲启用时间:</td>
@@ -448,7 +434,20 @@
       </tr>
     </table>
   </div>
-
+  [#if auditable?? && auditable]
+    [@b.form name="auditForm" action="!audit" onsubmit="confirmSubmit"]
+      <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
+      <input type="hidden" name="toInfo" value="1"/>
+      [@b.field label="状态"]${syllabus.status}[/@]
+      [@b.submit value="驳回修改" action="!audit?passed=0" class="btn btn-warning"/]
+      [@b.submit value="审批通过" action="!audit?passed=1" class="btn btn-success"/]
+    [/@]
+    <script>
+      function confirmSubmit(form){
+         return confirm("确认审核操作？");
+      }
+    </script>
+  [/#if]
   <br/><br/>
 </div><!--end container-->
 

@@ -21,6 +21,7 @@ import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
@@ -59,6 +60,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
     query.where("syllabus.status in(:statuses)", auditStatuses)
+    queryByDepart(query, "syllabus.department")
     query
   }
 
@@ -91,20 +93,24 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
         }
       }
     }
-    redirect("search", "审核成功")
+    val toInfo = getBoolean("toInfo", false)
+    if (toInfo) redirect("info", "id=" + syllabuses.head.id, "审核成功")
+    else redirect("search", "审核成功")
   }
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val project = syllabus.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    put("auditable", auditStatuses.contains(syllabus.status))
+    forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
   private def auditStatuses: Seq[AuditStatus] = {
     List(AuditStatus.PassedByDirector,
-      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart,
-      AuditStatus.Rejected, AuditStatus.Passed)
+      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart)
   }
 
   protected override def configExport(context: ExportContext): Unit = {

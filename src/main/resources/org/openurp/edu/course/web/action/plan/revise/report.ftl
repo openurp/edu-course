@@ -188,7 +188,7 @@
       [/#if]
       [#if syllabus.learningHours>0]
       <tr>
-        <td colspan="2" style="text-align:left;">自主学习课时</td>
+        <td colspan="2" style="text-align:left;">自主学习学时</td>
         <td>${syllabus.learningHours}</td>
         <td colspan="3">&nbsp;</td>
       </tr>

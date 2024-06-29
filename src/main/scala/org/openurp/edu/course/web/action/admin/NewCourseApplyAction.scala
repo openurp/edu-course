@@ -26,6 +26,7 @@ import org.openurp.base.model.{Project, User}
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseApplyHour, NewCourseCategory, NewCourseDepart}
+import org.openurp.edu.course.service.NewCourseApplyService
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.time.{Instant, LocalDate}
@@ -35,6 +36,8 @@ import java.time.{Instant, LocalDate}
 class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport {
 
   override def simpleEntityName: String = "apply"
+
+  var newCourseApplyService: NewCourseApplyService = _
 
   override protected def indexSetting(): Unit = {
     given project: Project = getProject
@@ -53,20 +56,18 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
   }
 
   override def editSetting(entity: NewCourseApply): Unit = {
-    //    if(entity.status!=null && entity.status==AuditStatus.Passed){
-    //
-    //    }
     given project: Project = getProject
 
-    var departs = getDeparts.toSet
+    val departs = getDeparts.toSet
     val courseDeparts = entityDao.getAll(classOf[NewCourseDepart]).sortBy(_.code).map(_.depart).filter(x => departs.contains(x))
     put("departments", courseDeparts)
 
     put("natures", getCodes(classOf[CourseNature]))
     put("modules", getCodes(classOf[CourseModule]))
-    put("ranks", getCodes(classOf[CourseRank]).filter(_.id < 3))
+    put("ranks", entityDao.find(classOf[CourseRank], List(CourseRank.Compulsory, CourseRank.Selective)))
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     put("categories", getCodes(classOf[NewCourseCategory]))
+    put("examModes", getCodes(classOf[ExamMode]))
     put("gradingModes", getCodes(classOf[GradingMode]))
     put("tags", codeService.get(classOf[CourseTag]))
     entity.project = project
@@ -78,7 +79,7 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
 
     apply.project = project
     apply.updatedAt = Instant.now
-    if (null == apply.beginOn) {
+    if (null == apply.beginOn) { //选择最近一个没有开始的年级
       val q = OqlBuilder.from(classOf[Grade], "g")
       q.where("g.project=:project", project)
       q.where("g.beginOn >:now ", LocalDate.now)
@@ -118,6 +119,16 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
     apply.tags.clear()
     apply.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
 
-    super.saveAndRedirect(apply)
+    val errors = newCourseApplyService.check(apply)
+    if (errors.isEmpty) {
+      super.saveAndRedirect(apply)
+    } else {
+      errors foreach { error =>
+        addError(error)
+      }
+      put("apply", apply)
+      editSetting(apply)
+      forward("form")
+    }
   }
 }

@@ -34,14 +34,14 @@
               [@b.textarea label=label.name name="element"+label.id rows="2" cols="80" required="true" maxlength="2000"/]
             [/#list]
             [@b.checkboxes label="教学方法" name="teachingMethod" items=teachingMethods required="true" min="1"/]
-            [@b.field label="课时分布"]
+            [@b.field label="学时分布"]
               [#list syllabus.teachingNatures as ht]
                 <label for="teachingNature${ht.id}_p">${ht_index+1}.${ht.name}</label>
-                <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="">课时
+                <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="">学时
                 [#if ((syllabus.getHour(ht).weeks)!0)>0]<input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="">周[/#if]
               [/#list]
                <label for="learning_p">自主学习</label>
-               <input name="topic.learningHours" style="width:30px" id="learning_p" value="">课时
+               <input name="topic.learningHours" style="width:30px" id="learning_p" value="">学时
             [/@]
             [@b.checkboxes label="对应课程目标" name="objective.id" items=syllabus.objectives required="false"/]
             [@b.formfoot]

@@ -5,6 +5,7 @@
     //bar.addItem("审核通过",action.multi("audit","确认审核通过?","passed=1"));
     //bar.addItem("驳回修改",action.multi("audit","确认驳回修改?","passed=0"));
     bar.addItem("${b.text("action.modify")}",action.edit());
+    bar.addItem("选中下载",action.multi("download","选择数量较多时,下载时间较长，请稍后",null,"_blank"));
     bar.addItem("${b.text("action.delete")}",action.remove("确认删除?"));
     bar.addItem("未上传明细","notUploaded()");
     bar.addItem("${b.text("action.export")}",
@@ -26,12 +27,12 @@
       [@b.a href="!info?id="+syllabus.id target="_blank"]${syllabus.course.name}[/@]
     [/@]
     [@b.col width="5%" property="locale" title="语言"]
-      ${locales.get(syllabus.locale)}
+      ${locales.get(syllabus.docLocale)}
     [/@]
     [@b.col width="8%" property="department.name" title="开课院系"]
       ${syllabus.department.shortName!syllabus.department.name}
     [/@]
-    [@b.col width="10%" property="department.name" title="教研室"]
+    [@b.col width="10%" property="office.name" title="教研室"]
       <div class="text-ellipsis" title="负责人:${(syllabus.office.director.name)!}">${(syllabus.office.name)!}</div>
     [/@]
     [@b.col width="8%" property="writer.name" title="编写人"/]

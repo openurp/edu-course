@@ -25,6 +25,7 @@ import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
@@ -42,7 +43,6 @@ import org.openurp.starter.web.support.TeacherSupport
 import java.io.File
 import java.net.URI
 import java.time.{Instant, LocalTime}
-import java.util.Locale
 
 /** 修订授课计划表
  */
@@ -140,6 +140,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def save(): View = {
     val clazz = entityDao.get(classOf[Clazz], getLongId("clazz"))
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
 
     given project: Project = clazz.project
 
@@ -149,7 +150,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (!plan.persisted) {
       plan.clazz = clazz
       plan.semester = clazz.semester
-      plan.docLocale = Locale.SIMPLIFIED_CHINESE
     }
     (1 to 60) foreach { i =>
       val lesson = plan.lessons.find(_.idx == i).getOrElse(new Lesson)
@@ -163,7 +163,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         }
       }
       lesson.homework = get(s"lesson${i}.homework")
-      lesson.learningHours = getInt(s"lesson${i}.learningHours", 0)
+      lesson.learningHours = getFloat(s"lesson${i}.learningHours").getOrElse(0f)
       lesson.forms = get(s"lesson${i}.forms")
 
       if (lesson.contents.nonEmpty) {
@@ -175,7 +175,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         if null != lesson.plan then plan.lessons.subtractOne(lesson)
       }
     }
-    //保存课时
+    //保存学时
     val hours = plan.sections.map(x => (x.name, x)).toMap
     val sectionNames = Collections.newSet[String]
     (0 until 8) foreach { i =>
@@ -195,11 +195,14 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     plan.updatedAt = Instant.now
-    plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).headOption
+    plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).head
     plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
     }
+    plan.examHours = syllabus.examCreditHours
+    plan.lessonHours = getInt("lessonHours", 0)
+
     entityDao.saveOrUpdate(plan)
 
     val submit = getBoolean("submit", false)
@@ -216,8 +219,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
       clzs foreach { clz =>
         val p = plans.getOrElse(clz, new TeachingPlan(clz))
-        if (p.writer.isEmpty || p.writer.map(_.code).contains(me.code)) {
+        if (null == p.writer || p.writer.code == me.code) {
           plan.copyTo(p)
+          p.examHours = plan.examHours
+          p.lessonHours = plan.lessonHours
           val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
           if (submit && editables.contains(p.status)) {
             p.status = AuditStatus.Submited
@@ -239,7 +244,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def report(): View = {
     val plan = entityDao.get(classOf[TeachingPlan], getLongId("plan"))
     new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
+    val project = plan.clazz.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }
 
   def pdf(): View = {

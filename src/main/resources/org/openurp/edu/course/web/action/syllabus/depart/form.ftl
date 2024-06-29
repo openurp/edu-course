@@ -6,7 +6,7 @@
 [#assign course=syllabus.course/]
   [@b.form theme="list" action=b.rest.save(syllabus) name="syllabusForm"]
     [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分 ${syllabus.creditHours}学时[/@]
-    [@b.radios label="语言" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
+    [@b.radios label="语言" required="true" name="syllabus.docLocale"  style="width:200px;" items=locales value=(syllabus.docLocale)!/]
     [@b.field label="生效学期"]${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期[/@]
     [@b.select name="syllabus.department.id" label="开课院系" value=syllabus.department! required="true"
                style="width:200px;" items=departments option="id,name" empty="..."/]
@@ -17,6 +17,7 @@
     [@b.textfield name="syllabus.methods" label="教学方法" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
+    [@b.select name="syllabus.office.id" label="教研室" items=offices value=syllabus.office! option="id,name" empty="..." /]
     [@b.formfoot]
       [@b.submit value="保存" /]
     [/@]

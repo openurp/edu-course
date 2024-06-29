@@ -18,19 +18,25 @@
 package org.openurp.edu.course.web.action.plan
 
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.web.WebBusinessLogger
+import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
-import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
-import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
+import org.beangle.webmvc.support.action.RestfulAction
+import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.edu.course.model.TeachingPlan
 import org.openurp.edu.course.web.helper.TeachingPlanHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
-/** 学院审核教学大纲
+/** 学院审核授课计划
  */
 class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
+
+  var businessLogger: WebBusinessLogger = _
+
   override protected def indexSetting(): Unit = {
     super.indexSetting()
 
@@ -48,30 +54,57 @@ class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val query = super.getQueryBuilder
     query.where("teachingPlan.status in(:statuses)", auditStatuses)
+    queryByDepart(query, "teachingPlan.clazz.teachDepart")
     query
   }
 
   def audit(): View = {
     val statuses = auditStatuses
-    val plans = entityDao.find(classOf[TeachingPlan], getLongIds("teachingPlan")).filter(x => statuses.contains(x))
+    val plans1 = entityDao.find(classOf[TeachingPlan], getLongIds("teachingPlan"))
+    val plans = plans1.filter(x => statuses.contains(x.status))
+    val user = entityDao.findBy(classOf[User], "school" -> plans.head.clazz.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
-      plans foreach { s => s.status = status }
+      plans foreach { s =>
+        s.status = status
+        s.approver = user
+      }
     }
     entityDao.saveOrUpdate(plans)
-    redirect("search", "审核成功")
+    val list = plans.groupBy(_.status)
+    list foreach { case (status, s) =>
+      if (status == AuditStatus.PassedByDepart) {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"审核通过课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("teachingPlan" -> h.id.toString))
+        } else {
+          businessLogger.info(s"审核通过${s.size}个课程授课计划", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      } else {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"驳回了课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("teachingPlan" -> h.id.toString))
+        } else {
+          businessLogger.info(s"驳回了${s.size}个课程授课计划", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      }
+    }
+    val toInfo = getBoolean("toInfo", false)
+    if (toInfo) redirect("info", "id=" + plans1.head.id, "审核成功")
+    else redirect("search", "审核成功")
   }
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
     val plan = entityDao.get(classOf[TeachingPlan], id.toLong)
     new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/lesson/${plan.clazz.project.school.id}/${plan.clazz.project.id}/report")
+    val project = plan.clazz.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    put("auditable", auditStatuses.contains(plan.status))
+    forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }
 
   private def auditStatuses: Seq[AuditStatus] = {
-    List(AuditStatus.PassedByDirector,
-      AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart,
-      AuditStatus.Rejected, AuditStatus.Passed)
+    List(AuditStatus.PassedByDirector, AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart)
   }
 }

@@ -20,7 +20,7 @@
       [@b.a href="!info?id="+syllabus.id target="_blank"]${syllabus.course.name}[/@]
     [/@]
     [@b.col width="5%" property="locale" title="语言"]
-      ${locales.get(syllabus.locale)}
+      ${locales.get(syllabus.docLocale)}
     [/@]
     [@b.col width="8%" property="department.name" title="开课院系"]
       ${syllabus.department.shortName!syllabus.department.name}

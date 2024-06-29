@@ -2,6 +2,7 @@
 [@b.toolbar title="${clazz.course.name}(${clazz.crn})授课计划"]
   bar.addClose();
 [/@]
+[@b.messages slash="3"/]
 <style>
   .form-table td{border: solid 1px black;padding:5px;}
   .header {
@@ -193,7 +194,7 @@
       </tr>
       [#if syllabus.learningHours>0]
       <tr>
-        <td colspan="2" style="text-align:left;">自主学习课时</td>
+        <td colspan="2" style="text-align:left;">自主学习学时</td>
         <td>${syllabus.learningHours}</td>
         <td colspan="3">——</td>
       </tr>
@@ -203,8 +204,39 @@
         <td colspan="6" style="text-align:left;">注：1.如每周2次课，按照1-1和1-2填写，帮助学生了解教学进度，进行课前预习。2.本学期课程的授课计划中未扣除国定假日，如遇节假日，教学安排适当调整，并确保课程教学大纲完整执行。</td>
       </tr>
     </table>
-    <br/>
-  </div>
 
+    <div style="margin-top:30px;">
+      <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（三）课程授课计划审批</p>
+    </div>
+
+    <table style="width:400px">
+      <tr>
+        <td style="width:200px">编制人：</td>
+        <td>${plan.writer.name}</td>
+      </tr>
+      <tr>
+        <td>专业/教研室主任:</td>
+        <td>[#if plan.status.id==40||plan.status.id==50||plan.status.id==100||plan.status.id==200]${(plan.reviewer.name)!}[/#if] [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if] </td>
+      </tr>
+      <tr>
+        <td>教学院长:</td>
+        <td>[#if plan.status.id==50||plan.status.id==100||plan.status.id==200]${(plan.approver.name)!}[/#if]</td>
+      </tr>
+    </table>
+  </div>
+  [#if auditable?? && auditable]
+    [@b.form name="auditForm" action="!audit" onsubmit="confirmSubmit"]
+      <input type="hidden" name="teachingPlan.id" value="${plan.id}"/>
+      <input type="hidden" name="toInfo" value="1"/>
+      [@b.field label="状态"]${plan.status}[/@]
+      [@b.submit value="驳回修改" action="!audit?passed=0" class="btn btn-warning"/]
+      [@b.submit value="审批通过" action="!audit?passed=1" class="btn btn-success"/]
+    [/@]
+    <script>
+      function confirmSubmit(form){
+         return confirm("确认审核操作？");
+      }
+    </script>
+  [/#if]
 </div>
 [@b.foot/]

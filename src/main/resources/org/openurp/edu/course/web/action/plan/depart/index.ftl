@@ -6,11 +6,14 @@
   <div class="search-panel">
     [@b.form name="planSearchForm" action="!search" target="planlist" title="ui.searchForm" theme="search"]
       [@base.semester name="teachingPlan.semester.id" value=semester label="学年学期"/]
+      [@b.textfield name="teachingPlan.clazz.crn" label="课程序号"/]
       [@b.textfield name="teachingPlan.clazz.course.code" label="课程代码"/]
       [@b.textfield name="teachingPlan.clazz.course.name" label="课程名称"/]
       [@b.select style="width:100px" name="teachingPlan.clazz.teachDepart.id" label="开课院系" items=departs option="id,name" empty="..." /]
+      [@b.textfield name="teachingPlan.office.name" label="教研室"/]
       [@b.textfield name="teachingPlan.writer.name" label="编写人"/]
-      [@b.select  name="teachingPlan.status" label="状态" items=statuses empty="..." /]
+      [@b.select name="teachingPlan.status" label="状态" items=statuses empty="..." /]
+      [@b.select style="width:100px" name="checkHour" label="课时核对" items={"1":"偏多", "0":"吻合","-1":"偏少"} empty="..." /]
       <input type="hidden" name="orderBy" value="teachingPlan.clazz.course.code"/>
     [/@]
   </div>

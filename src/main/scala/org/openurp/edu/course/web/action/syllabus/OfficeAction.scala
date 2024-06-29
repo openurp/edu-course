@@ -19,11 +19,12 @@ package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
-import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.base.model.{AuditStatus, Project}
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
@@ -72,17 +73,22 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
       }
     }
     entityDao.saveOrUpdate(syllabuses)
-    redirect("search", "审核成功")
+    val toInfo = getBoolean("toInfo", false)
+    if (toInfo) redirect("info", "id=" + syllabuses.head.id, "审核成功")
+    else redirect("search", "审核成功")
   }
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val project = syllabus.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    put("auditable", auditStatuses.contains(syllabus.status))
+    forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
   private def auditStatuses: Seq[AuditStatus] = {
-    Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.Rejected)
+    Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart, AuditStatus.Rejected)
   }
 }

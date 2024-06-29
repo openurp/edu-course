@@ -3,7 +3,7 @@
 [@b.toolbar title="修改课程申请"]bar.addBack();[/@]
   [@b.form action=b.rest.save(apply) theme="list" onsubmit="validCreditHour"]
     [@b.textfield name="apply.name" label="名称" value="${apply.name!}" required="true" maxlength="100"/]
-    [@b.textfield name="apply.enName" label="英文名" value="${apply.enName!}" maxlength="200" style="width:500px"/]
+    [@b.textfield name="apply.enName" label="英文名" value="${apply.enName!}" maxlength="200" required="true" style="width:500px"/]
     [@b.select name="apply.department.id" label="院系" value=apply.department! required="true"
                style="width:200px;" items=departments option="id,name" empty="..."/]
     [@b.radios name="apply.module.id" label="课程模块" value=apply.module! items=modules required="true"/]
@@ -16,14 +16,14 @@
     [@b.textfield name="apply.weekHours" label="周课时" value=apply.weekHours! required="true" maxlength="20"/]
     [@b.textfield name="apply.weeks" label="周数" value=apply.weeks! maxlength="3"/]
     [#if teachingNatures?size>0]
-    [@b.field label="分类课时"]
+    [@b.field label="分类学时" required="true"]
        [#assign hours={}/]
        [#list apply.hours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
        [/#list]
        [#list teachingNatures as ht]
         <label for="teachingNature${ht.id}_p">${ht_index+1}.${ht.name}</label>
-        <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}">课时
+        <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}">学时
         <input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="${(hours[ht.id?string].weeks)!}">周
        [/#list]
     [/@]
@@ -44,7 +44,7 @@
       sumCreditHours += Number.parseFloat(form['creditHour${ht.id}'].value||'0');
       [/#list]
       if(sumCreditHours != Number.parseFloat(form['apply.creditHours'].value||'0')){
-         alert("分类课时总和"+sumCreditHours+",不等于课程学时"+form['apply.creditHours'].value);
+         alert("分类学时总和"+sumCreditHours+",不等于课程学时"+form['apply.creditHours'].value);
          return false;
       }else{
          return true;
@@ -54,7 +54,7 @@
       [/#if]
    }
    [#assign hoursPerCredit=16/]
-   [#--根据输入的学分自动计算周课时、学时和理论学时--]
+   [#--根据输入的学分自动计算周学时、学时和理论学时--]
    function autoCalcHours(creditInput){
      var form = creditInput.form;
      if(creditInput.value){

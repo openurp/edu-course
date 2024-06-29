@@ -9,7 +9,7 @@
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
     [@b.field label="Course Name"]${course.code} ${course.name} ${course.defaultCredits!} Credits ${syllabus.creditHours} Hours[/@]
-    [@b.radios label="Language" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
+    [@b.radios label="Language" required="true" name="syllabus.docLocale"  style="width:200px;" items=locales value=(syllabus.docLocale)!/]
     [@b.field label="Semester"]${syllabus.semester.schoolYear} ${syllabus.semester.name}[/@]
     [@b.select name="syllabus.department.id" label="Department" value=syllabus.department! required="true"
                style="width:200px;" items=departments option="id,name" empty="..."/]
@@ -91,7 +91,7 @@
     [/#list]
     var creditHours = form['syllabus.creditHours'].value || "0";
     if(total!= parseInt(creditHours)){
-      $("#credit_hour_tips").html("课时小计"+total+"不等于" + creditHours);
+      $("#credit_hour_tips").html("学时小计"+total+"不等于" + creditHours);
       $("#credit_hour_tips").show();
       return false;
     }
@@ -111,7 +111,7 @@
     [/#list]
     var examHours = parseInt(form['syllabus.examCreditHours'].value || "0")
     if(total != examHours){
-      $("#exam_hour_tips").html("课时小计"+total+"不等于"+examHours);
+      $("#exam_hour_tips").html("学时小计"+total+"不等于"+examHours);
       $("#exam_hour_tips").show();
       return false;
     }

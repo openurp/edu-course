@@ -1,19 +1,9 @@
 [#ftl/]
-<!DOCTYPE html>
-<html lang="zh_CN">
-  <head>
-    <title></title>
-    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta http-equiv="pragma" content="no-cache"/>
-    <meta http-equiv="cache-control" content="no-cache"/>
-    <meta http-equiv="expires" content="0"/>
-    <meta http-equiv="content-style-type" content="text/css"/>
-    <meta http-equiv="content-script-type" content="text/javascript"/>
-    ${b.static.load(["jquery","beangle","bui","bootstrap"])}
- </head>
-<body>
+[@b.head/]
+[@b.toolbar title="${syllabus.course.name}教学大纲"]
+  bar.addClose();
+[/@]
+[@b.messages slash="3"/]
 <style>
   .card-header{
     padding:.5rem 1.25rem;
@@ -298,7 +288,7 @@
       [/#if]
       [#if design.hasExperiment]
       <ul>Experiments：
-      [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
+      [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} [#if e.creditHours>0]${e.creditHours}hours [/#if]${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
       </ul>
       [/#if]
     [/#list]
@@ -437,11 +427,11 @@
       </tr>
       <tr>
         <td>Reviewer:</td>
-        <td>${(syllabus.reviewer.name)!} [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if]</td>
+        <td>[#if syllabus.status.id==40||syllabus.status.id==50||syllabus.status.id==100||syllabus.status.id==200]${(syllabus.reviewer.name)!}[/#if] [#if submitable?? && submitable]<span class="notprint">[@b.a href="!submit?syllabus.id="+syllabus.id]提交审核[/@] </span>[/#if]</td>
       </tr>
       <tr>
         <td>Approver:</td>
-        <td>${(syllabus.approver.name)!}</td>
+        <td>[#if syllabus.status.id==50||syllabus.status.id==100||syllabus.status.id==200]${(syllabus.approver.name)!}[/#if]</td>
       </tr>
       <tr>
         <td>Start using time:</td>
@@ -449,7 +439,20 @@
       </tr>
     </table>
   </div>
-
+  [#if auditable?? && auditable]
+    [@b.form name="auditForm" action="!audit" onsubmit="confirmSubmit"]
+      <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
+      <input type="hidden" name="toInfo" value="1"/>
+      [@b.field label="状态"]${syllabus.status}[/@]
+      [@b.submit value="驳回修改" action="!audit?passed=0" class="btn btn-warning"/]
+      [@b.submit value="审批通过" action="!audit?passed=1" class="btn btn-success"/]
+    [/@]
+    <script>
+      function confirmSubmit(form){
+         return confirm("确认审核操作？");
+      }
+    </script>
+  [/#if]
 </div><!--end container-->
 
 [@b.foot/]

@@ -45,7 +45,7 @@
            [#list syllabuses as syllabus]
          <tr>
            <td>${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期</td>
-           <td>${locales.get(syllabus.locale)}</td>
+           <td>${locales.get(syllabus.docLocale)}</td>
            <td>${syllabus.writer.name}</td>
            <td>${syllabus.status}</td>
            <td>${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>

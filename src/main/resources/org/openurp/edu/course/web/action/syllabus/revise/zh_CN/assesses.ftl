@@ -35,7 +35,7 @@
       [#list syllabus.getAssessments(usualType)?sort_by("idx") as a]
         [#if a.component??][#assign usualAssessments=usualAssessments +[a]/][/#if]
       [/#list]
-      [#assign sectionIndex= ["一","二","三","四","五","六","七"] /]
+      [#assign sectionIndex= ["一","二","三","四","五","六","七","八","九","十"] /]
       [#assign orderedObjectives = syllabus.objectives?sort_by("code")/]
 
       [#list usualAssessments as assessment]

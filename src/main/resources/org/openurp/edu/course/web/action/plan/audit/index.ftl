@@ -6,6 +6,7 @@
   <div class="search-panel">
     [@b.form name="planSearchForm" action="!search" target="planlist" title="ui.searchForm" theme="search"]
       [@base.semester name="teachingPlan.semester.id" value=semester label="学年学期"/]
+      [@b.textfield name="teachingPlan.clazz.crn" label="课程序号"/]
       [@b.textfield name="teachingPlan.clazz.course.code" label="课程代码"/]
       [@b.textfield name="teachingPlan.clazz.course.name" label="课程名称"/]
       [@b.select style="width:100px" name="teachingPlan.clazz.teachDepart.id" label="开课院系" items=departs option="id,name" empty="..." /]

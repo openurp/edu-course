@@ -122,7 +122,7 @@
          [#assign practicalHours = 0/]
          [#list syllabus.hours as h][#if h.nature.id=9][#assign practicalHours = practicalHours + h.creditHours/][/#if][/#list]
          if(totalHours > ${practicalHours}){
-            alert("实验项目总课时为"+totalHours+",不应超过课程实践${practicalHours}学时");
+            alert("实验项目总学时为"+totalHours+",不应超过课程实践${practicalHours}学时");
             return false;
          }
        }

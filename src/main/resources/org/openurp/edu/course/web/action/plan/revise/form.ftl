@@ -169,6 +169,10 @@
 
   <div style="text-align:center;margin:10px 0px">
     <input type="hidden" name="clazz.id" value="${clazz.id}"/>
+    [#if syllabus??]
+    <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
+    <input type="hidden" name="lessonHours" value="[#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if]"/>
+    [/#if]
     [@b.submit value="保存" class="btn btn-sm btn-outline-primary"/]
     [#if plan.reviewer??]
     [@b.submit value="提交教研室主任${plan.reviewer.name}审批" id="submit_btn" class="btn btn-sm btn-outline-success" action="!save?submit=1" /]
@@ -181,13 +185,30 @@
     function checkLessons(form){
       //check lesson
       var missingContents = [];
+      var missingLearningHours = [];
+      var fillinLearningHours=0;
       for(var i=1;i<=${plan.lessons?size};i++){
         if(!form['lesson'+i+".contents"].value || !form['lesson'+i+".forms"].value){
           missingContents.push(i);
         }
+        if(form['lesson'+i+".learning"] && form['lesson'+i+".learning"].value){
+          if(!form['lesson'+i+".learningHours"].value){
+            missingLearningHours.push(i);
+          }else{
+            fillinLearningHours += parseFloat( form['lesson'+i+".learningHours"].value)
+          }
+        }
       }
       if(missingContents.length>0){
         alert("第"+missingContents.join(",")+"次课程，缺少内容或上课形式，请填写");
+        return false;
+      }
+      if(missingLearningHours.length>0){
+        alert("第"+missingLearningHours.join(",")+"次课程，缺少自主学习学时，请填写");
+        return false;
+      }
+      if(fillinLearningHours!=${syllabus.learningHours}){
+        alert("本次填写自主学习学时为"+fillinLearningHours+"和大纲中的${syllabus.learningHours}不相符,请调整");
         return false;
       }
       //check hours
@@ -206,12 +227,13 @@
     [/#list]
       var warnings="";
       var scheduleHours = [#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if]
-      var totalHours = [#if scheduleHours == syllabus.creditHours]${syllabus.creditHours}[#else]${scheduleHours+syllabus.examCreditHours}[/#if]
+      var totalHours = ${syllabus.creditHours};
       if(hours != scheduleHours){
-        warnings ="分项累计为"+hours+"学时，不等于课堂课时"+scheduleHours;
+        warnings ="分项累计为"+hours+"学时，不等于课堂学时"+scheduleHours;
       }else if(hours + ${syllabus.examCreditHours} < totalHours){
         warnings="课堂学时+期末考核学时少于"+totalHours+"学时";
       }
+
       if(warnings){
         document.getElementById("schedule_hour_tips").innerHTML=warnings;
         document.getElementById("schedule_hour_tips").style.color="red";

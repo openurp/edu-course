@@ -25,6 +25,7 @@ import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
+import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.mapping
 import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.view.{Stream, View}
@@ -78,7 +79,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("examHours", 0)
     val first = findScheduledClazz(syllabus.course, syllabus.semester)
     first foreach { clazz =>
-      //根据排课课时测算考核课时
+      //根据排课学时测算考核学时
       val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
       if (scheduleHours <= syllabus.course.creditHours) {
         put("examHours", syllabus.course.creditHours - scheduleHours)
@@ -111,7 +112,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       entityDao.saveOrUpdate(syllabus)
       val requirements = orderedOutcomes.map(_.title)
       if (requirements.isEmpty) {
-        if (syllabus.locale == Locale.SIMPLIFIED_CHINESE) {
+        if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
           requirements.addAll(entityDao.getAll(classOf[GraduateObjective]).sortBy(_.code).map(_.name))
         } else {
           requirements.addAll(entityDao.getAll(classOf[GraduateObjective]).sortBy(_.code).map(_.enName2))
@@ -128,7 +129,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       val courseMajors = majors.filter(m => m.active && m.journals.exists(_.depart == syllabus.department))
       put("majors", courseMajors)
     }
-    val locale = syllabus.locale
+    val locale = syllabus.docLocale
     get("step") match
       case None => forward(s"${locale}/form")
       case Some(s) => forward(s"${locale}/${s}")
@@ -208,7 +209,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
           put("examHours", syllabus.examCreditHours)
         }
       case Some(clazz) =>
-        //根据排课课时测算考核课时
+        //根据排课学时测算考核学时
         val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
         if (scheduleHours < course.creditHours) {
           syllabus.examCreditHours = course.creditHours - scheduleHours
@@ -373,7 +374,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("teachingMethods", topic.syllabus.teachingMethods.map(x => (x, x)).toMap)
     put("syllabus", topic.syllabus)
 
-    forward(s"${topic.syllabus.locale}/editTopic")
+    forward(s"${topic.syllabus.docLocale}/editTopic")
   }
 
   /** 保存主题
@@ -431,7 +432,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     val methods = getAll("teachingMethod", classOf[String])
     topic.methods = None
-    val sep = if syllabus.locale == Locale.SIMPLIFIED_CHINESE then "、" else ","
+    val sep = if syllabus.docLocale == Locale.SIMPLIFIED_CHINESE then "、" else ","
     topic.methods = Some(methods.mkString(sep))
     syllabus.updatedAt = Instant.now
     entityDao.saveOrUpdate(syllabus, topic)
@@ -451,7 +452,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def topicInfo(): View = {
     val topic = entityDao.get(classOf[SyllabusTopic], getLongId("topic"))
     put("topic", topic)
-    forward(s"${topic.syllabus.locale}/topicInfo")
+    forward(s"${topic.syllabus.docLocale}/topicInfo")
   }
 
   def editDesign(): View = {
@@ -462,7 +463,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     given project: Project = design.syllabus.course.project
 
     put("experimentTypes", getCodes(classOf[ExperimentType]))
-    forward(s"${design.syllabus.locale}/editDesign")
+    forward(s"${design.syllabus.docLocale}/editDesign")
   }
 
   def submit(): View = {
@@ -535,7 +536,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (!syllabus.designs.exists(_.hasExperiment)) {
       syllabus.experiments.clear()
     }
-
+    var idx = 0
+    syllabus.designs.sortBy(_.idx) foreach { d =>
+      d.idx = idx
+      idx += 1
+    }
     entityDao.saveOrUpdate(syllabus)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
   }
@@ -557,7 +562,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
     put("endType", entityDao.get(classOf[GradeType], GradeType.End))
     put("syllabus", syllabus)
-    forward(s"${syllabus.locale}/assesses")
+    forward(s"${syllabus.docLocale}/assesses")
   }
 
   def saveAssess(): View = {
@@ -735,7 +740,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     put("submitable", isSubmitable(syllabus))
-    forward(s"/org/openurp/edu/course/syllabus/${syllabus.course.project.school.id}/${syllabus.course.project.id}/report_${syllabus.locale}")
+    val project = syllabus.course.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
   private def validate(syllabus: Syllabus): Seq[String] = {
@@ -798,11 +805,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       total += h.creditHours
     }
     if java.lang.Double.compare(total.toDouble, syllabus.creditHours * 1.0) != 0 then
-      messages += s"课程要求${syllabus.creditHours}课时，分项累计${total}课时，请检查。"
+      messages += s"课程要求${syllabus.creditHours}学时，分项累计${total}学时，请检查。"
 
     val totalExamHours = syllabus.examHours.map(_.creditHours).sum
     if java.lang.Double.compare(totalExamHours.toDouble, syllabus.examCreditHours * 1.0) != 0 then
-      messages += s"大纲考核要求${syllabus.examCreditHours}课时，分项累计${totalExamHours}课时，请检查。"
+      messages += s"大纲考核要求${syllabus.examCreditHours}学时，分项累计${totalExamHours}学时，请检查。"
 
     syllabus.hours foreach { h =>
       var t = 0f
@@ -811,7 +818,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
       t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0f)
       if (java.lang.Double.compare(t, h.creditHours) != 0) {
-        messages += s"课程要求${h.nature.name}${h.creditHours}课时，教学内容累计${t}课时，请检查。"
+        messages += s"课程要求${h.nature.name}${h.creditHours}学时，教学内容累计${t}学时，请检查。"
       }
     }
     var totalLearningHours = 0f
@@ -819,7 +826,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       totalLearningHours += t.learningHours
     }
     if (java.lang.Double.compare(totalLearningHours, syllabus.learningHours) != 0) {
-      messages += s"自主学习要求${syllabus.learningHours}课时，教学内容累计${totalLearningHours}课时，请检查。"
+      messages += s"自主学习要求${syllabus.learningHours}学时，教学内容累计${totalLearningHours}学时，请检查。"
     }
 
     syllabus.topics foreach { p =>

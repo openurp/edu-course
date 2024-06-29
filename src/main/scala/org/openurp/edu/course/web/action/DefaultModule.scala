@@ -19,7 +19,7 @@ package org.openurp.edu.course.web.action
 
 import org.beangle.cdi.bind.BindModule
 import org.openurp.edu.clazz.domain.DefaultClazzProvider
-import org.openurp.edu.course.service.impl.{CourseTaskServiceImpl, SyllabusServiceImpl}
+import org.openurp.edu.course.service.impl.{CourseTaskServiceImpl, DefaultNewCourseApplyService, SyllabusServiceImpl}
 
 class DefaultModule extends BindModule {
 
@@ -39,6 +39,7 @@ class DefaultModule extends BindModule {
 
     bind(classOf[SyllabusServiceImpl])
     bind(classOf[CourseTaskServiceImpl])
+    bind(classOf[DefaultNewCourseApplyService])
 
     bind(classOf[DefaultClazzProvider])
   }

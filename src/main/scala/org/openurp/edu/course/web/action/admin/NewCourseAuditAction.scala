@@ -17,14 +17,17 @@
 
 package org.openurp.edu.course.web.action.admin
 
-import org.beangle.commons.lang.Strings
+import org.beangle.commons.collection.Collections
+import org.beangle.commons.lang.{Numbers, Strings}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.{Course, CourseJournal}
+import org.openurp.base.model.AuditStatus.Rejected
 import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.code.edu.model.CourseRank
+import org.openurp.code.edu.model.{CourseModule, CourseNature, CourseRank, CourseTag, ExamMode, GradingMode, TeachingNature}
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseCategory, NewCourseDepart}
+import org.openurp.edu.course.service.NewCourseApplyService
 import org.openurp.starter.web.support.ProjectSupport
 
 /** 新开课程申请
@@ -32,6 +35,8 @@ import org.openurp.starter.web.support.ProjectSupport
 class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport {
 
   override def simpleEntityName: String = "apply"
+
+  var newCourseApplyService: NewCourseApplyService = _
 
   override protected def indexSetting(): Unit = {
     given project: Project = getProject
@@ -54,40 +59,70 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     queryByDepart(q, "apply.department")
   }
 
-  def audit(): View = {
+  def auditSetting(): View = {
+    given project: Project = getProject
+
     val apply = entityDao.get(classOf[NewCourseApply], getLongId("apply"))
+    put("apply", apply)
+    put("natures", getCodes(classOf[CourseNature]))
+    put("modules", getCodes(classOf[CourseModule]))
+    put("ranks", entityDao.find(classOf[CourseRank], List(CourseRank.Compulsory, CourseRank.Selective)))
+    put("teachingNatures", getCodes(classOf[TeachingNature]))
+    put("categories", getCodes(classOf[NewCourseCategory]))
+    put("examModes", getCodes(classOf[ExamMode]))
+    put("gradingModes", getCodes(classOf[GradingMode]))
+    put("tags", codeService.get(classOf[CourseTag]))
+    forward()
+  }
+
+  /** 单个课程审核
+   *
+   * @return
+   */
+  def audit(): View = {
+    val failed = Collections.newBuffer[String]
+    val apply = this.populateEntity(classOf[NewCourseApply],"apply")
     if (apply.status == AuditStatus.Passed) {
-      return redirect("search", "已经审核完毕")
+      return redirect("search", "已经通过无需再审")
     }
-    val c = new Course
-    c.project = apply.project
-    c.code = generateCode(apply)
-    c.name = apply.name
-    c.enName = apply.enName
+    val passed = getBoolean("passed", false)
+    if (passed) {
+      val errors = newCourseApplyService.check(apply)
+      if (errors.nonEmpty) {
+        return redirect("search", errors.mkString(","))
+      }
+      val c = new Course
+      c.project = apply.project
+      c.code = generateCode(apply)
+      c.name = apply.name
+      c.enName = apply.enName
 
-    c.module = apply.module
-    c.rank = apply.rank
-    c.nature = apply.nature
-    c.department = apply.department
-    c.defaultCredits = apply.defaultCredits
-    c.creditHours = apply.creditHours
-    c.weekHours = apply.weekHours
-    c.examMode = apply.examMode
-    c.gradingMode = apply.gradingMode
-    c.tags.addAll(apply.tags)
-    apply.hours foreach { h =>
-      c.addHour(h.nature, h.creditHours)
+      c.module = apply.module
+      c.rank = apply.rank
+      c.nature = apply.nature
+      c.department = apply.department
+      c.defaultCredits = apply.defaultCredits
+      c.creditHours = apply.creditHours
+      c.weekHours = apply.weekHours
+      c.examMode = apply.examMode
+      c.gradingMode = apply.gradingMode
+      c.tags.addAll(apply.tags)
+      apply.hours foreach { h =>
+        c.addHour(h.nature, h.creditHours)
+      }
+      c.beginOn = apply.beginOn
+      c.updatedAt = apply.updatedAt
+      entityDao.saveOrUpdate(c)
+      val cj = new CourseJournal(c, apply.beginOn)
+      entityDao.saveOrUpdate(cj)
+
+      apply.status = AuditStatus.Passed
+      apply.code = Some(c.code)
+      entityDao.saveOrUpdate(apply)
+    } else {
+      apply.status = Rejected
+      entityDao.saveOrUpdate(apply)
     }
-    c.beginOn = apply.beginOn
-    c.updatedAt = apply.updatedAt
-    entityDao.saveOrUpdate(c)
-    val cj = new CourseJournal(c, apply.beginOn)
-    entityDao.saveOrUpdate(cj)
-
-    apply.status = AuditStatus.Passed
-    apply.code = Some(c.code)
-    entityDao.saveOrUpdate(apply)
-
     redirect("search", "审核成功")
   }
 
@@ -101,15 +136,28 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     val rankCode = if apply.rank.get.id == CourseRank.Compulsory then "1" else "2"
     val categoryCode = apply.category.code
 
-    val codePattern = s"%${departCode}___${creditCode}${rankCode}${categoryCode}%"
-    val newCodePattern = s"%${departCode}___${creditCode}${rankCode}${categoryCode}NEW%"
+    val seqCode = getSeq(apply, 3)
+    s"${departCode}${seqCode}${creditCode}${rankCode}${categoryCode}NEW"
+  }
+
+  private def getSeq(apply: NewCourseApply, seqLength: Int): String = {
+    val departCode = entityDao.findBy(classOf[NewCourseDepart], "depart", apply.department).headOption.map(_.code).getOrElse(apply.department.code)
+    val codePattern = s"${departCode}" + ("_" * seqLength) + "%"
     val q = OqlBuilder.from[String](classOf[Course].getName, "c")
-    q.where("c.code like :pattern or c.code like :newPattern", codePattern, newCodePattern)
+    q.where("c.code like :pattern and c.name=:name", codePattern, apply.name)
+    q.where("c.project=:project", apply.project)
     q.select("c.code")
-    val codes = entityDao.search(q)
-    val seqCode =
+    val exists = entityDao.search(q)
+    if (exists.nonEmpty) {
+      exists.head.substring(departCode.length, seqLength) //从第二位开始取，取三位
+    } else {
+      val q = OqlBuilder.from[String](classOf[Course].getName, "c")
+      q.where("c.code like :pattern", codePattern)
+      q.where("c.project=:project", apply.project)
+      q.select("c.code")
+      val codes = entityDao.search(q)
       if (codes.nonEmpty) {
-        val seq = codes.map(_.substring(departCode.length, departCode.length + 3).toInt).sorted
+        val seq = codes.map(_.substring(departCode.length, departCode.length + seqLength)).filter(x => Numbers.isDigits(x)).map(_.toInt).distinct.sorted
         var start = 1
         val iter = seq.iterator
         var found = false
@@ -121,11 +169,10 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
             found = true
           }
         }
-        Strings.leftPad((start + 1).toString, 3, '0')
+        Strings.leftPad((start + 1).toString, seqLength, '0')
       } else {
-        "001"
+        Strings.leftPad("1", seqLength, '0')
       }
-    s"${departCode}${seqCode}${creditCode}${rankCode}${categoryCode}NEW"
+    }
   }
-
 }

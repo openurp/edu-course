@@ -9,7 +9,7 @@
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!save" onsubmit="checkInfo" name="syllabusForm"]
     [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分 ${syllabus.creditHours}学时[/@]
-    [@b.radios label="语言" required="true" name="syllabus.locale"  style="width:200px;" items=locales value=(syllabus.locale)!/]
+    [@b.radios label="语言" required="true" name="syllabus.docLocale"  style="width:200px;" items=locales value=(syllabus.docLocale)!/]
     [@b.field label="生效学期"]${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期[/@]
     [@b.select name="syllabus.department.id" label="开课院系" value=syllabus.department! required="true"
                style="width:200px;" items=departments option="id,name" empty="..."/]
@@ -26,7 +26,7 @@
     [@b.number label="周学时" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0" /]
     --]
     [#if teachingNatures?size>0]
-    [@b.field label="总课时分布" required="true"]
+    [@b.field label="总学时分布" required="true"]
        [#assign hours={}/]
        [#list syllabus.hours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
@@ -42,7 +42,7 @@
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
-    [@b.textfield name="syllabus.examCreditHours" label="期末考核课时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
+    [@b.textfield name="syllabus.examCreditHours" label="期末考核学时" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()" required="true"]
        学时([#assign hours={}/]
        [#list syllabus.examHours as h]
           [#assign hours=hours+{'${h.nature.id}':h} /]
@@ -55,7 +55,7 @@
        <span  style="color:red" id="exam_hour_tips" style="display:none"></span>
        <div class="text-muted" style="margin-left: 10rem;">建议${examHours}学时。理论、实践课时分布根据课程实际情况填写。当实际排课课时小于课程总学时的时候，建议填写考核课时（包括考试周统一考试，或自行组织的期末考核，一般为一个教学周与学分数相当的学时）</div>
     [/@]
-    [@b.number name="syllabus.learningHours" label="自主学习课时" value=syllabus.learningHours!/]
+    [@b.number name="syllabus.learningHours" label="自主学习学时" value=syllabus.learningHours!/]
     [@b.textarea name="syllabus.prerequisites" label="先修课程" value=syllabus.prerequisites! rows="2" cols="80"/]
     [@b.textarea name="syllabus.corequisites" label="并修课程" value=syllabus.corequisites!  rows="2" cols="80"/]
     [@b.textarea name="syllabus.subsequents" label="后续课程" value=syllabus.subsequents!  rows="2" cols="80"/]
@@ -91,7 +91,7 @@
     [/#list]
     var creditHours = form['syllabus.creditHours'].value || "0";
     if(total!= parseInt(creditHours)){
-      $("#credit_hour_tips").html("课时小计"+total+"不等于" + creditHours);
+      $("#credit_hour_tips").html("学时小计"+total+"不等于" + creditHours);
       $("#credit_hour_tips").show();
       return false;
     }
@@ -111,7 +111,7 @@
     [/#list]
     var examHours = parseInt(form['syllabus.examCreditHours'].value || "0")
     if(total != examHours){
-      $("#exam_hour_tips").html("课时小计"+total+"不等于"+examHours);
+      $("#exam_hour_tips").html("学时小计"+total+"不等于"+examHours);
       $("#exam_hour_tips").show();
       return false;
     }
