@@ -132,8 +132,11 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
       query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)
     }
     getBoolean("creditHourStatus") foreach { status =>
-      val op = if (status) "=" else "!="
-      query.where(s"journal.creditHours ${op} (select sum(h.creditHours) from journal.hours h)")
+      if (status) {
+        query.where(s"journal.creditHours = (select sum(h.creditHours) from journal.hours h)")
+      } else {
+        query.where(s"journal.creditHours <> (select sum(h.creditHours) from journal.hours h) or journal.creditHours>0 and size(journal.hours) = 0")
+      }
     }
     query
   }
