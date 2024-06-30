@@ -18,6 +18,7 @@
 package org.openurp.edu.course.web.action.admin
 
 import org.beangle.commons.activation.MediaTypes
+import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.excel.schema.ExcelSchema
 import org.beangle.doc.transfer.exporter.ExportContext
@@ -32,7 +33,6 @@ import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.{CourseTag, CourseType, ExamMode, TeachingNature}
 import org.openurp.edu.course.web.helper.{CourseJournalImportListener, CourseJournalPropertyExtractor}
-import org.openurp.edu.schedule.service.ScheduleDigestor.course
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -135,6 +135,15 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
         query.where(s"journal.creditHours = (select sum(h.creditHours) from journal.hours h)")
       } else {
         query.where(s"journal.creditHours <> (select sum(h.creditHours) from journal.hours h) or journal.creditHours>0 and size(journal.hours) = 0")
+      }
+    }
+    getBoolean("tagStatus") foreach { status =>
+      if status then query.where(s"size(journal.tags)>0")
+      else query.where(s"size(journal.tags)=0")
+    }
+    get("tagName") foreach { tagName =>
+      if (Strings.isNotBlank(tagName)) {
+        query.where(s"exists(from journal.tags as t where t.name like :tagName)", s"%$tagName%")
       }
     }
     query
