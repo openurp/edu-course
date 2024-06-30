@@ -5,9 +5,16 @@
     [@b.field  label="课程"]
        ${journal.course.code!} ${journal.course.name!} ${journal.course.defaultCredits!}学分 ${journal.creditHours}学时
     [/@]
-    [@b.select name="journal.department.id" label="院系" value=journal.department! required="true"
-               style="width:200px;" items=departments option="id,name" empty="..."/]
-    [#--[@b.textfield name="journal.creditHours" label="学时" value=journal.creditHours! required="true"  maxlength="100"/]--]
+    [#if departments?size>2]
+      [@b.textfield name="journal.name" label="名称" value=journal.name! required="true" maxlength="100"/]
+      [@b.textfield name="journal.enName" label="英文名" value=journal.enName! maxlength="200" style="width:500px"/]
+      [@b.select name="journal.department.id" label="院系" value=journal.department! required="true"
+                     style="width:200px;" items=departments option="id,name" empty="..."/]
+      [@b.textfield name="journal.creditHours" label="学时" value=journal.creditHours! required="true"  maxlength="100"/]
+    [#else]
+      [@b.field label="院系"]${journal.department.name}[/@]
+      [@b.field label="学时"]${journal.creditHours}[/@]
+    [/#if]
     [@b.textfield name="journal.weekHours" label="周课时" value=journal.weekHours! required="true" maxlength="20"/]
     [@b.textfield name="journal.weeks" label="周数" value=journal.weeks! maxlength="3"/]
     [#if teachingNatures?size>0]
@@ -26,14 +33,17 @@
     [/@]
     [/#if]
     [@b.radios name="journal.examMode.id" label="考核方式" value=journal.examMode! required="true" items=examModes /]
+    [@b.select name="journal.beginOn" label="生效日期" value=journal.beginOn?string required="true"  items=grades empty="..."/]
     [@b.checkboxes name="tag.id" label="课程标签" values=journal.course.tags! items=tags  required="false" /]
+
     [@b.formfoot]
       [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
     [/@]
   [/@]
 <script>
    function validCreditHour(form){
-      var creditHours = "${journal.creditHours}";
+      var creditHours ="${journal.creditHours}";
+      if(form['journal.creditHours']) creditHours = form['journal.creditHours'].value;
       [#if teachingNatures?size>0]
       var sumCreditHours=0;
       [#list teachingNatures as ht]

@@ -36,6 +36,7 @@ import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time.LocalDate
+import scala.collection.SortedMap
 
 /** 课程日志
  */
@@ -63,6 +64,12 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     put("courseTypes", getCodes(classOf[CourseType]))
     put("examModes", getCodes(classOf[ExamMode]))
     put("departments", getDeparts)
+
+    val query = OqlBuilder.from(classOf[Grade], "g")
+    query.where("g.project=:project", project)
+    query.orderBy("g.code desc")
+    val grades = entityDao.search(query)
+    put("grades", SortedMap.from(grades.map(x => (x.beginOn.toString, x.beginOn.toString)).sortBy(_._1).reverse))
     super.editSetting(entity)
   }
 
@@ -93,10 +100,25 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     val course = entityDao.get(classOf[Course], journal.course.id)
     course.tags.clear()
     course.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
-    entityDao.saveOrUpdate(course)
+    entityDao.saveOrUpdate(journal, course)
+
+    //计算journals的结束日期
+    val jq = OqlBuilder.from(classOf[CourseJournal], "j")
+    jq.where("j.course=:course", course)
+    jq.orderBy("j.beginOn")
+    val journals = entityDao.search(jq)
+    if (journals.size > 1) {
+      var i = 0
+      while (i < journals.length - 1) { //最后一个不处理
+        val j = journals(i)
+        val jNext = journals(i + 1)
+        j.endOn = Some(jNext.beginOn.minusMonths(1))
+        i += 1
+      }
+      entityDao.saveOrUpdate(journals)
+    }
     databus.publish(DataEvent.update(journal))
     databus.publish(DataEvent.update(course))
-
     super.saveAndRedirect(journal)
   }
 
@@ -104,9 +126,15 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     given project: Project = getProject
 
     put("teachingNatures", getCodes(classOf[TeachingNature]))
-    val grade = entityDao.get(classOf[Grade], getLongId("grade"))
     val query = super.getQueryBuilder
-    query.where("journal.beginOn=:beginOn", grade.beginOn)
+    getLong("grade.id") foreach { gradeId =>
+      val grade = entityDao.get(classOf[Grade], gradeId)
+      query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)
+    }
+    getBoolean("creditHourStatus") foreach { status =>
+      val op = if (status) "=" else "!="
+      query.where(s"journal.creditHours ${op} (select sum(h.creditHours) from journal.hours h)")
+    }
     query
   }
 

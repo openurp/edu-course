@@ -89,22 +89,19 @@
             barWidth:30,
             stack: 'x',
             smooth:true,
-              itemStyle: {
-                  normal: {
-                    lineStyle:{
-                      color:'#E87C25'
-                    },
-                    [#if counter==0]
-                    label: {
-                      show: true,
-                      position: 'top',
-                      formatter: '{c}'
-                    },
-                    [/#if]
-                    color:"[#if counter=0]#50c878[#else]orange[/#if]"
-                  }
-              },
-            data:[[#list datas as d][#if counter==0]${d.counters[1]}[#else]${d.counters[0]-d.counters[1]}[/#if][#sep],[/#list]]
+            itemStyle: {
+              normal: {
+                lineStyle:{
+                  color:'#E87C25'
+                },
+                color:"[#if counter=0]#50c878[#else]orange[/#if]"
+              }
+            },
+            label: {
+              show: true,
+              position:'insideBottom'
+            },
+            data:[[#list datas as d][#if counter==0]${displayCounter(d.counters[1])}[#else]${displayCounter(d.counters[0]-d.counters[1])}[/#if][#sep],[/#list]]
           }[#if counter_has_next],[/#if]
         [/#list]
         ]
@@ -117,6 +114,10 @@
   <div style="padding:100px; font-size:20px; text-align:center">暂无数据</div>
   [/#if]
   [/#macro]
+  [#--将0转换成空字符串，防止echarts展示出来--]
+  [#function displayCounter c]
+    [#if c>0][#return c/][#else][#return ''/][/#if]
+  [/#function]
   <table class="table table-sm">
     <thead>
       <tr>
