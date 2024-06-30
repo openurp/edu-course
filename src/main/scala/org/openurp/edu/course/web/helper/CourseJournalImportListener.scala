@@ -75,8 +75,8 @@ class CourseJournalImportListener(entityDao: EntityDao, grade: Grade,
         jt.addOne(tag)
       }
     }
-    journal.course.tags.clear()
-    journal.course.tags.addAll(jt)
+    journal.tags.clear()
+    journal.tags.addAll(jt)
     journal.updatedAt = Instant.now
     entityDao.saveOrUpdate(journal.course, journal)
   }

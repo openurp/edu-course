@@ -27,11 +27,12 @@ import org.beangle.event.bus.{DataEvent, DataEventBus}
 import org.beangle.web.action.annotation.response
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
-import org.openurp.base.edu.model.{Course, CourseJournal, CourseJournalHour}
+import org.openurp.base.edu.model.{CourseJournal, CourseJournalHour}
 import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.{CourseTag, CourseType, ExamMode, TeachingNature}
 import org.openurp.edu.course.web.helper.{CourseJournalImportListener, CourseJournalPropertyExtractor}
+import org.openurp.edu.schedule.service.ScheduleDigestor.course
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -97,14 +98,13 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     journal.weeks = week.getOrElse(0)
     val orphan = journal.hours.filter(x => !teachingNatures.contains(x.nature))
     journal.hours --= orphan
-    val course = entityDao.get(classOf[Course], journal.course.id)
-    course.tags.clear()
-    course.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
-    entityDao.saveOrUpdate(journal, course)
+    journal.tags.clear()
+    journal.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
+    entityDao.saveOrUpdate(journal)
 
     //计算journals的结束日期
     val jq = OqlBuilder.from(classOf[CourseJournal], "j")
-    jq.where("j.course=:course", course)
+    jq.where("j.course=:course", journal.course)
     jq.orderBy("j.beginOn")
     val journals = entityDao.search(jq)
     if (journals.size > 1) {
@@ -118,7 +118,6 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
       entityDao.saveOrUpdate(journals)
     }
     databus.publish(DataEvent.update(journal))
-    databus.publish(DataEvent.update(course))
     super.saveAndRedirect(journal)
   }
 

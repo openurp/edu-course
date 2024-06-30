@@ -24,7 +24,7 @@
     [/@]
     [@b.col width="8%" property="examMode.name" title="考核方式"/]
     [@b.col title="课程标签"]
-      <div class="text-ellipsis">[#list journal.course.tags as t]${t.name}[#sep]&nbsp;[/#list]</div>
+      <div class="text-ellipsis">[#list journal.tags as t]${t.name}[#sep]&nbsp;[/#list]</div>
     [/@]
     [@b.col width="10%" property="beginOn" title="有效期"]${journal.beginOn?string("yy-MM")}~${(journal.endOn?string("yy-MM"))!}[/@]
   [/@]
