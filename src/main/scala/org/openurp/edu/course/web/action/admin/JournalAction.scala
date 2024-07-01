@@ -78,24 +78,22 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     given project: Project = getProject
 
     val teachingNatures = getCodes(classOf[TeachingNature])
-    val week: Option[Int] = getInt("week" + TeachingNature.Practice)
     teachingNatures foreach { ht =>
       val creditHour = getInt("creditHour" + ht.id)
       journal.hours find (h => h.nature == ht) match {
         case Some(hour) =>
-          if (week.isEmpty && creditHour.isEmpty) {
+          if (creditHour.isEmpty) {
             journal.hours -= hour
           } else {
             hour.creditHours = creditHour.getOrElse(0)
           }
         case None =>
-          if (!(week.isEmpty && creditHour.isEmpty)) {
+          if (creditHour.nonEmpty) {
             val newHour = new CourseJournalHour(journal, ht, creditHour.getOrElse(0))
             journal.hours += newHour
           }
       }
     }
-    journal.weeks = week.getOrElse(0)
     val orphan = journal.hours.filter(x => !teachingNatures.contains(x.nature))
     journal.hours --= orphan
     journal.tags.clear()
