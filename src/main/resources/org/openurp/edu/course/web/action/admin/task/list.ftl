@@ -2,7 +2,7 @@
 [@b.head/]
 [@b.grid items=courseTasks var="courseTask"]
   [@b.gridbar]
-    [#if (Parameters['syllabus_status']!) == "" && (Parameters['plan_status']!) == ""]
+    [#if (Parameters['hideMenus']!) == ""]
     bar.addItem("${b.text("action.modify")}",action.edit());
     bar.addItem("批量修改",action.multi("batchEdit"));
     bar.addItem("自动指定负责人",action.multi('autoAssign'));

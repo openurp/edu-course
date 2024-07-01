@@ -35,6 +35,7 @@
 [/@]
 [@b.form name="courseTaskForm" action="/admin/task/search"]
   <input type="hidden" name="plan_status" value="0"/>
+  <input type="hidden" name="hideMenus" value="1"/>
   <input type="hidden" name="courseTask.semester.id" value="${Parameters['teachingPlan.semester.id']!}"/>
   <input type="hidden" name="courseTask.department.id" value="${Parameters['teachingPlan.clazz.teachDepart.id']!}"/>
 [/@]

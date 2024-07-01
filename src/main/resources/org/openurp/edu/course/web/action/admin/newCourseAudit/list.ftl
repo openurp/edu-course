@@ -2,7 +2,8 @@
 [@b.head/]
 [@b.grid items=applies var="apply"]
   [@b.gridbar]
-    bar.addItem("审核...",action.single("auditSetting"));
+    var m = bar.addMenu("审核...",action.single("auditSetting"));
+    m.addItem("重新生成代码",action.single("regen"));
   [/@]
   [@b.row]
     [@b.boxcol /]
@@ -27,10 +28,10 @@
     [@b.col width="5%" property="examMode.name" title="考核方式"/]
     [@b.col width="7%" property="applicant.name" title="申请人"/]
     [@b.col width="10%" property="status" title="状态"]
-      [#if apply.status.id==100]
+      [#if apply.status.id==100 || apply.status.id==1]
       ${apply.status}
       [#else]
-      <div title="${apply.opinions!}" class="text-ellipsis" style="color:red">${apply.opinions!}</div>
+      <div title="${apply.opinions!}" class="text-ellipsis" style="color:red">${apply.opinions!} ${apply.status}</div>
       [/#if]
     [/@]
   [/@]

@@ -10,6 +10,7 @@
         [@b.select name="apply.department.id" label="所属院系" items=departments option="id,name" empty="..." /]
         [@b.select items=ranks name="apply.rank.id" label="课程属性" empty="..." /]
         [@b.select items=categories name="apply.category.id" label="课程分类" empty="..." /]
+        [@b.select name="apply.status" label="状态" items=statuses empty="..." /]
         <input type="hidden" name="orderBy" value="apply.code"/>
       [/@]
     </div>

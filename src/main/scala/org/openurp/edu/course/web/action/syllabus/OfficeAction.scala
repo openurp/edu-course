@@ -58,6 +58,9 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val offices = getOffices(project)
     val query = super.getQueryBuilder
     query.where("syllabus.course.project=:project", project)
+    if (offices.nonEmpty) {
+      query.where("syllabus.office in(:offices)", offices)
+    }
     query.where("syllabus.reviewer.code=:reviewerCode", Securities.user)
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     query

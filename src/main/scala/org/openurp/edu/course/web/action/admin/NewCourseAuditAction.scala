@@ -23,9 +23,9 @@ import org.beangle.data.dao.OqlBuilder
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.{Course, CourseJournal}
-import org.openurp.base.model.AuditStatus.Rejected
+import org.openurp.base.model.AuditStatus.{Passed, Rejected}
 import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.code.edu.model.{CourseModule, CourseNature, CourseRank, CourseTag, ExamMode, GradingMode, TeachingNature}
+import org.openurp.code.edu.model.*
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseCategory, NewCourseDepart}
 import org.openurp.edu.course.service.NewCourseApplyService
 import org.openurp.starter.web.support.ProjectSupport
@@ -49,6 +49,7 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     put("departments", departs)
     put("categories", getCodes(classOf[NewCourseCategory]))
     put("ranks", getCodes(classOf[CourseRank]).filter(_.id < 3))
+    put("statuses", Seq(AuditStatus.Submited, AuditStatus.Passed, AuditStatus.Rejected))
     super.indexSetting()
   }
 
@@ -75,18 +76,41 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     forward()
   }
 
+  def regen(): View = {
+    val apply = entityDao.get(classOf[NewCourseApply], getLongId("apply"))
+    if (apply.code.isEmpty) {
+      redirect("search", "请选择审批通过的申请")
+    } else {
+      val oldCode = apply.code.get
+      val newCode = generateCode(apply)
+      apply.code = Some(newCode)
+      val courses = entityDao.findBy(classOf[Course], "project" -> apply.project, "code" -> oldCode)
+      courses foreach { c =>
+        c.code = newCode
+      }
+      entityDao.saveOrUpdate(courses)
+      entityDao.saveOrUpdate(apply)
+      redirect("search", "生成完成")
+    }
+  }
+
   /** 单个课程审核
    *
    * @return
    */
   def audit(): View = {
     val failed = Collections.newBuffer[String]
-    val apply = this.populateEntity(classOf[NewCourseApply],"apply")
+    val apply = this.populateEntity(classOf[NewCourseApply], "apply")
     if (apply.status == AuditStatus.Passed) {
       return redirect("search", "已经通过无需再审")
     }
     val passed = getBoolean("passed", false)
     if (passed) {
+      if (apply.code.nonEmpty) {
+        apply.status = Passed
+        entityDao.saveOrUpdate(apply)
+        return redirect("search", "审核成功")
+      }
       val errors = newCourseApplyService.check(apply)
       if (errors.nonEmpty) {
         return redirect("search", errors.mkString(","))
@@ -149,7 +173,7 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     q.select("c.code")
     val exists = entityDao.search(q)
     if (exists.nonEmpty) {
-      exists.head.substring(departCode.length, seqLength) //从第二位开始取，取三位
+      exists.head.substring(departCode.length, departCode.length + seqLength) //从第二位开始取，取三位
     } else {
       val q = OqlBuilder.from[String](classOf[Course].getName, "c")
       q.where("c.code like :pattern", codePattern)

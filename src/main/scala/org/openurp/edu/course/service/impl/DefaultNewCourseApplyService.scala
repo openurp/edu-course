@@ -29,21 +29,31 @@ class DefaultNewCourseApplyService extends NewCourseApplyService {
 
   var entityDao: EntityDao = _
 
-  /** 其他学院如果开设了同名课程，则不允许申请
+  /** 本学院没有开过，但是其他学院如果开设了同名课程，则不允许申请
+   *
    * @param apply
    * @return
    */
   override def check(apply: NewCourseApply): Seq[String] = {
-    val query = OqlBuilder.from(classOf[Course], "c")
-    query.where("c.project=:project", apply.project)
-    query.where("c.department != :depart", apply.department)
-    query.where("c.name=:name", apply.name)
-    val otherCourses = entityDao.search(query)
-    if (otherCourses.nonEmpty) {
-      val h = otherCourses.head
-      Seq(s"${h.department.name}已经开设了类似课程${h.code} ${h.name}")
-    } else {
+    val query1 = OqlBuilder.from(classOf[Course], "c")
+    query1.where("c.project=:project", apply.project)
+    query1.where("c.department = :depart", apply.department)
+    query1.where("c.name=:name", apply.name)
+    val ownCourses = entityDao.search(query1)
+    if (ownCourses.nonEmpty) {
       Seq.empty
+    } else {
+      val query = OqlBuilder.from(classOf[Course], "c")
+      query.where("c.project=:project", apply.project)
+      query.where("c.department != :depart", apply.department)
+      query.where("c.name=:name", apply.name)
+      val otherCourses = entityDao.search(query)
+      if (otherCourses.nonEmpty) {
+        val h = otherCourses.head
+        Seq(s"${h.department.name}已经开设了类似课程${h.code} ${h.name}")
+      } else {
+        Seq.empty
+      }
     }
   }
 }
