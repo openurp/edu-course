@@ -28,7 +28,7 @@ import org.beangle.event.bus.{DataEvent, DataEventBus}
 import org.beangle.web.action.annotation.response
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
-import org.openurp.base.edu.model.{CourseJournal, CourseJournalHour}
+import org.openurp.base.edu.model.{Course, CourseJournal, CourseJournalHour}
 import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.{CourseTag, CourseType, ExamMode, TeachingNature}
@@ -122,8 +122,11 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
   override def getQueryBuilder: OqlBuilder[CourseJournal] = {
     given project: Project = getProject
 
+    val departs = getDeparts
+    put("departs", departs)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
+    query.where("journal.department in(:departs)", departs)
     getLong("grade.id") foreach { gradeId =>
       val grade = entityDao.get(classOf[Grade], gradeId)
       query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)
@@ -145,6 +148,34 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
       }
     }
     query
+  }
+
+  def init(): View = {
+    given project: Project = getProject
+
+    val grade = entityDao.get(classOf[Grade], getLong("grade.id").get)
+    val query = OqlBuilder.from(classOf[Course], "c")
+    query.where("c.project=:project and c.endOn is null", project)
+    query.where("not exists(from c.journals j where j.beginOn=:beginOn)", grade.beginOn)
+    val courses = entityDao.search(query)
+    courses.foreach { c =>
+      val j = c.getJournal(grade)
+      if (!j.persisted) {
+        c.journals.addOne(j)
+        var i = 0
+        val journals = c.journals.sortBy(_.beginOn)
+        while (i < journals.length - 1) { //最后一个不处理
+          val j = journals(i)
+          val jNext = journals(i + 1)
+          j.endOn = Some(jNext.beginOn.minusMonths(1))
+          i += 1
+        }
+        entityDao.saveOrUpdate(journals)
+      }
+    }
+    val journals = courses.map(c => c.getJournal(grade))
+    entityDao.saveOrUpdate(journals)
+    redirect("search", "操作成功")
   }
 
   @response

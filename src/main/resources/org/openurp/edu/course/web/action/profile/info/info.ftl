@@ -156,7 +156,7 @@
         [#if !semesters?seq_contains(clazzInfo.semester)][#assign semesters=semesters+[clazzInfo.semester]/] [/#if]
         [#assign totalClazzCount=totalClazzCount + clazzInfo.clazzCount/]
       [/#list]
-      <p class="card-title">近五年开课信息</p>
+      <p class="card-title">近十年开课信息</p>
       <span class="badge badge-primary">${semesters?size}个学期，共计${totalClazzCount}个班次</span>
     </div>
       <table class="table table-hover table-sm table-striped">

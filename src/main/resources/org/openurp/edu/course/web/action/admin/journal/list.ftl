@@ -4,6 +4,9 @@
   [@b.gridbar]
     bar.addItem("${b.text("action.modify")}",action.edit());
     bar.addItem("导入",action.method('importForm'));
+    [#if departs?size>2]
+    bar.addItem("初始化",action.method("init"));
+    [/#if]
     bar.addItem("${b.text("action.export")}",
                 action.exportData("course.code:课程代码,course.name:课程名称,department.name:开课院系,"+
                 "course.defaultCredits:学分,creditHours:学时,[#list teachingNatures as n]hour.${n.id}:${n.name},[/#list]"+

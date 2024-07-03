@@ -71,7 +71,12 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
 
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
+    getBoolean("hasTopics") foreach { hasTopics =>
+      if hasTopics then query.where("size(syllabus.topics)>0")
+      else query.where("size(syllabus.topics)=0")
+    }
     queryByDepart(query, "syllabus.department")
+
   }
 
   def audit(): View = {
