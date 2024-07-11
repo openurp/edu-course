@@ -51,6 +51,37 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   var businessLogger: WebBusinessLogger = _
   var courseTaskService: CourseTaskService = _
 
+  /** 查询修订任务对应的教学任务
+   *
+   * @param task
+   * @param teacher
+   * @return
+   */
+  private def getCourseTaskClazzes(task: CourseTask): Iterable[Clazz] = {
+    val clazzes = Collections.newSet[Clazz]
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", task.course.project)
+    q.where("c.semester=:semester", task.semester)
+    q.where("c.course=:course", task.course)
+    q.where("c.id != :taskId", task.id)
+    val otherCourseTasks = entityDao.search(q)
+    val query = OqlBuilder.from(classOf[Clazz], "clazz")
+    query.where("clazz.project=:project and clazz.semester=:semester", task.course.project, task.semester)
+    query.where("clazz.course =:course", task.course)
+    val courseClazzes = entityDao.search(query)
+    if (otherCourseTasks.isEmpty) { // 只有本人负责该课程
+      clazzes.addAll(courseClazzes)
+    } else {
+      courseClazzes foreach { clazz =>
+        val clazzTeachers = clazz.teachers.toSet
+        if (clazzTeachers.subsetOf(task.teachers)) {
+          clazzes.addOne(clazz)
+        }
+      }
+    }
+    clazzes
+  }
+
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
     val semester = getSemester
     put("semester", semester)
@@ -60,15 +91,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course.project=:project", project)
-    q.where("c.director=:me", teacher)
     q.where("c.semester=:semester", semester)
-    val directCourses = entityDao.search(q).map(_.course)
+    q.where("c.director=:me", teacher)
+    val tasks = entityDao.search(q)
 
-    if (directCourses.nonEmpty) {
-      val query = OqlBuilder.from(classOf[Clazz], "clazz")
-      query.where("clazz.project=:project and clazz.semester=:semester", project, semester)
-      query.where("clazz.course in(:courses)", directCourses)
-      clazzes.addAll(entityDao.search(query))
+    if (tasks.nonEmpty) {
+      tasks foreach { task => clazzes.addAll(getCourseTaskClazzes(task)) }
     }
 
     val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
@@ -206,25 +234,25 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     entityDao.saveOrUpdate(plan)
 
     val submit = getBoolean("submit", false)
-    val isDirector = courseTaskService.isDirector(clazz.course, me)
+
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.semester=:semester", clazz.semester)
+    q.where("c.course=:course and c.director=:me", clazz.course, me)
+    val tasks = entityDao.search(q)
+    val isDirector = tasks.nonEmpty
     //课程负责人
     if (isDirector) {
-      val cq = OqlBuilder.from(classOf[Clazz], "clz")
-      cq.where("clz.project=:project", clazz.project)
-      cq.where("clz.course=:course", clazz.course)
-      cq.where("clz.semester=:semester", clazz.semester)
-      cq.where("clz.id!=:clazzId", clazz.id)
-      val clzs = entityDao.search(cq)
+      val clzs = getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
       val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
 
+      val writerCodes = clzs.flatMap(_.teachers.map(_.code)).toSet
       clzs foreach { clz =>
         val p = plans.getOrElse(clz, new TeachingPlan(clz))
-        if (null == p.writer || p.writer.code == me.code) {
-          plan.copyTo(p)
-          p.examHours = plan.examHours
-          p.lessonHours = plan.lessonHours
+        val clazzTeachers = clazz.teachers.toSet
+        if (null == p.writer || p.writer.code == me.code || !writerCodes.contains(p.writer.code)) {
           val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
           if (submit && editables.contains(p.status)) {
+            plan.copyTo(p)
             p.status = AuditStatus.Submited
           }
           entityDao.saveOrUpdate(p)

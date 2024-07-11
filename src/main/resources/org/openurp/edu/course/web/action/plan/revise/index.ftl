@@ -15,6 +15,7 @@
         [@b.col width="5%" title="学分"]${clazz.course.defaultCredits}[/@]
         [@b.col width="5%" title="总学时"]${(clazz.course.creditHours)?if_exists}[/@]
         [@b.col width="5%" title="学生数"]${clazz.enrollment.courseTakers?size}[/@]
+        [@b.col width="10%" title="任课教师"][#list clazz.teachers as t]${t.name}[#sep] [/#list][/@]
         [@b.col width="19%" title="操作"]
           [#if syllabusCourses?seq_contains(clazz.course)]
              [#if !plans.get(clazz)?? || editables?seq_contains(plans.get(clazz).status)][@b.a href="!edit?clazz.id="+clazz.id target="_blank"]编写 <span class="text-muted">${(plans.get(clazz).status)!'--'}</span>[/@][#else]${(plans.get(clazz).status)!'--'}[/#if]

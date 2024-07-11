@@ -10,7 +10,6 @@
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">${course.code} ${course.name}</h4>
-      [#--[@b.a class="btn btn-primary btn-sm" href="!edit?id=" +course.id style="float:right"]修改[/@]--]
     </div>
     <table class="infoTable">
       <tr>
@@ -37,8 +36,10 @@
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">教学大纲</h4>
-       [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" + course.id + "&locale=en_US"  target="_blank" style="float:right;margin-left:20px"]新增英文大纲[/@]
-       [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" +course.id target="_blank" style="float:right"]新增中文大纲[/@] &nbsp;
+      [#if task??]
+        [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" + course.id + "&semester.id=" + semester.id + "&locale=en_US"  target="_blank" style="float:right;margin-left:20px"]新增英文大纲[/@]
+        [@b.a class="btn btn-primary btn-sm" href="!editNew?course.id=" + course.id + "&semester.id=" + semester.id target="_blank" style="float:right"]新增中文大纲[/@] &nbsp;
+      [/#if]
     </div>
       <div class="card-body" style="padding-top: 0px;">
        <table class="table table-hover table-sm table-striped">
@@ -50,7 +51,7 @@
            <td>${syllabus.status}</td>
            <td>${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
            <td>
-             [#if editables?seq_contains(syllabus.status)]
+             [#if task?? && editables?seq_contains(syllabus.status)]
              [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
              [@b.a href="!remove?id=${syllabus.id}" onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
              [/#if]

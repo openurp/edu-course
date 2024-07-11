@@ -19,8 +19,9 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
+import org.openurp.base.model.AuditStatus
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
+import org.openurp.edu.course.model.{CourseTask, Syllabus, TeachingPlan}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 
 import java.time.{LocalDate, LocalTime}
@@ -29,19 +30,45 @@ import java.util.Locale
 class TeachingPlanHelper(entityDao: EntityDao) {
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")
-    query.where("s.docLocale=:locale", Locale.SIMPLIFIED_CHINESE)
     query.where("s.course=:course", clazz.course)
     query.where("s.semester=:semester", clazz.semester)
-
     val syllabuses = entityDao.search(query)
-    if (syllabuses.isEmpty) {
-      val query = OqlBuilder.from(classOf[Syllabus], "s")
-      query.where("s.docLocale=:locale", new Locale("en", "US"))
-      query.where("s.course=:course", clazz.course)
-      query.where("s.semester=:semester", clazz.semester)
-      entityDao.search(query).headOption
-    } else {
+    if (syllabuses.size == 1) { //大纲只有一份
       syllabuses.headOption
+    } else {
+      //从修订任务中查找符合该课程的修订任务
+      val q = OqlBuilder.from(classOf[CourseTask], "t")
+      q.where("t.course=:course", clazz.course)
+      q.where("t.semester=:semester", clazz.semester)
+      val clazzTeachers = clazz.teachers.toSet
+
+      val tasks = entityDao.search(q).filter(x => clazzTeachers.subsetOf(x.teachers))
+      if (tasks.isEmpty) {
+        chooseZhFirst(syllabuses)
+      } else {
+        val writerCodes = tasks.flatMap(_.director.map(_.code)).toSet
+        val taskSyllabuses = syllabuses.filter(x => writerCodes.contains(x.writer.code))
+        chooseZhFirst(taskSyllabuses)
+      }
+    }
+  }
+
+  /** 优先选择中文大纲
+   *
+   * @param syllabuses
+   * @return
+   */
+  private def chooseZhFirst(syllabuses: Iterable[Syllabus]): Option[Syllabus] = {
+    if (syllabuses.size < 2) {
+      syllabuses.headOption
+    } else {
+      val zh = Locale.SIMPLIFIED_CHINESE
+      val nonDraft = syllabuses.filter(_.status != AuditStatus.Draft)
+      if (nonDraft.nonEmpty) {
+        nonDraft.find(_.docLocale == zh).orElse(nonDraft.headOption)
+      } else {
+        syllabuses.find(_.docLocale == zh).orElse(syllabuses.headOption)
+      }
     }
   }
 

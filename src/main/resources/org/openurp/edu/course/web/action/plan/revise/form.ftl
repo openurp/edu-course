@@ -187,7 +187,7 @@
       var missingContents = [];
       var missingLearningHours = [];
       var fillinLearningHours=0;
-      for(var i=1;i<=${plan.lessons?size};i++){
+      for(var i=1;i<=${schedules?size};i++){
         if(!form['lesson'+i+".contents"].value || !form['lesson'+i+".forms"].value){
           missingContents.push(i);
         }

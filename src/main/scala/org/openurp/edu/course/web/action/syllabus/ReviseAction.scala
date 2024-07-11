@@ -35,6 +35,7 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
 import org.openurp.base.model.AuditStatus.Submited
 import org.openurp.code.edu.model.*
+import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
@@ -52,18 +53,39 @@ import java.util.Locale
  * 教师修订教学大纲
  */
 class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
+  var clazzProvider: ClazzProvider = _
 
   var businessLogger: WebBusinessLogger = _
 
   var courseTaskService: CourseTaskService = _
 
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
+    val semester = getSemester
+
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course.project=:project", project)
+    q.where("c.semester=:semester", semester)
     q.where("c.director=:me", teacher)
-    val tasks = entityDao.search(q)
-    val courses = tasks.map(_.course)
-    put("courses", courses)
+
+    val taskCourses = entityDao.search(q).map(_.course)
+    val clazzCourses = clazzProvider.getClazzes(semester, teacher, project).map(_.course).toBuffer.subtractAll(taskCourses)
+
+    val query2 = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
+    query2.join("c.teachers", "t")
+    query2.where("c.semester.beginOn <= :today", semester.beginOn)
+    query2.where("t.staff.code=:me", Securities.user)
+    query2.select("distinct c.course")
+    query2.orderBy("c.course.code")
+    val hisCourses = Collections.newBuffer(entityDao.search(query2))
+    hisCourses.subtractAll(clazzCourses)
+    hisCourses.subtractAll(taskCourses)
+
+    put("taskCourses", taskCourses)
+    put("clazzCourses", clazzCourses)
+    put("hisCourses", hisCourses)
+    put("courses", taskCourses ++ clazzCourses)
+    put("project", project)
+    put("semester", semester)
     forward()
   }
 
@@ -174,7 +196,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     given project: Project = course.project
 
     putBasicDatas(course)
-    val semester = getSemester
+
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     val syllabus = newSyllabus(course, semester)
     put("course", course)
     put("syllabus", syllabus)
@@ -570,15 +593,15 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.updatedAt = Instant.now()
     val usualType = entityDao.get(classOf[GradeType], GradeType.Usual)
     val endType = entityDao.get(classOf[GradeType], GradeType.End)
-    popluateAssessment(syllabus, endType, 0, None)
-    popluateAssessment(syllabus, usualType, 0, None)
+    populateAssessment(syllabus, endType, 0, None)
+    populateAssessment(syllabus, usualType, 0, None)
 
     //max 7
     (0 to 6) foreach { i =>
       val component = get(s"grade${usualType.id}_${i}.component", "")
       val percent = getInt(s"grade${usualType.id}_${i}.scorePercent", 0)
       if (percent > 0 && Strings.isNotBlank(component)) {
-        popluateAssessment(syllabus, usualType, i, Some(component))
+        populateAssessment(syllabus, usualType, i, Some(component))
       }
     }
     entityDao.saveOrUpdate(syllabus)
@@ -615,7 +638,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     redirect("assesses", s"syllabus.id=${syllabus.id}", "info.save.success")
   }
 
-  private def popluateAssessment(syllabus: Syllabus, gradeType: GradeType, index: Int, componentName: Option[String]): SyllabusAssessment = {
+  private def populateAssessment(syllabus: Syllabus, gradeType: GradeType, index: Int, componentName: Option[String]): SyllabusAssessment = {
     val assessment =
       if componentName.isEmpty then syllabus.getAssessment(gradeType, null).getOrElse(new SyllabusAssessment(syllabus, gradeType, None))
       else syllabus.getUsualAssessment(index).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
@@ -681,7 +704,16 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def course(): View = {
     val course = entityDao.get(classOf[Course], getLongId("course"))
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course=:course", course)
+    q.where("c.semester=:semester", semester)
+    q.where("c.director.staff.code=:me", Securities.user)
+    val tasks = entityDao.search(q)
+    put("task", tasks.headOption)
     put("course", course)
+    put("semester", semester)
 
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val syllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
