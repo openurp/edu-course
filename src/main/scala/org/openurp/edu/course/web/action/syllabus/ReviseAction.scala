@@ -39,7 +39,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.course.web.helper.{SyllabusCopyHelper, SyllabusHelper}
 import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
@@ -62,12 +62,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
     val semester = getSemester
 
-    val q = OqlBuilder.from(classOf[CourseTask], "c")
-    q.where("c.course.project=:project", project)
-    q.where("c.semester=:semester", semester)
-    q.where("c.director=:me", teacher)
-
-    val taskCourses = entityDao.search(q).map(_.course)
+    val tasks = courseTaskService.getTasks(project, semester, teacher)
+    val taskCourses = tasks.map(_.course)
     val clazzCourses = clazzProvider.getClazzes(semester, teacher, project).map(_.course).toBuffer.subtractAll(taskCourses)
 
     val query2 = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
@@ -119,7 +115,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         val books = materials.flatMap(_.books).distinct
         syllabus.textbooks.addAll(books)
       }
-      put("director", courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester))
+      put("director", courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department))
       put("me", Securities.user)
       put("warningMessages", validate(syllabus))
     }
@@ -679,9 +675,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.materials = get("syllabus.materials")
     syllabus.bibliography = get("syllabus.bibliography")
     syllabus.website = get("syllabus.website")
-    syllabus.office = courseTaskService.getOffice(syllabus.course, syllabus.department, syllabus.semester)
+    syllabus.office = courseTaskService.getOffice(syllabus.semester, syllabus.course, syllabus.department)
     syllabus.office foreach { o =>
-      syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.course, syllabus.department, syllabus.semester)
+      syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department)
     }
     entityDao.saveOrUpdate(syllabus)
     getBoolean("submit") foreach { s =>
@@ -896,5 +892,40 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)
 
     Stream(pdf, syllabus.course.code + "_" + syllabus.course.name + " 教学大纲.pdf").cleanup(() => pdf.delete())
+  }
+
+  def copySetting(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    put("syllabus", syllabus)
+
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", syllabus.course.project)
+    q.where("c.semester=:semester", semester)
+    q.where("c.director.staff.code=:me", Securities.user)
+    q.where(s"not exists(from ${classOf[Syllabus].getName} s where s.semester=c.semester and s.course=c.course and s.docLocale=:docLocale)", syllabus.docLocale)
+
+    val taskCourses = entityDao.search(q).map(_.course)
+    put("taskCourses", taskCourses)
+    forward()
+  }
+
+  def copy(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+
+    val teacher = getTeacher
+    val course = entityDao.get(classOf[Course], getLongId("course"))
+    val isDirector = courseTaskService.isDirector(semester, course, teacher)
+    if (isDirector) {
+      val me = entityDao.findBy(classOf[User], "code", Securities.user).head
+      val newSyllabus = SyllabusCopyHelper.copy(syllabus, semester, course)
+      newSyllabus.writer = me
+      entityDao.saveOrUpdate(newSyllabus)
+      businessLogger.info(s"复制了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))
+      redirect("course", s"&semester.id=${semester.id}&course.id=${syllabus.course.id}", "复制成功")
+    } else {
+      redirect("course", s"&semester.id=${semester.id}&course.id=${syllabus.course.id}", "不是负责人，无法复制")
+    }
   }
 }

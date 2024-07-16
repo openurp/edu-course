@@ -6,7 +6,7 @@
     }
   </style>
 <div class="container">
-
+  [@b.messages slash="3"/]
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">${course.code} ${course.name}</h4>
@@ -51,6 +51,7 @@
            <td>${syllabus.status}</td>
            <td>${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
            <td>
+             <a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>
              [#if task?? && editables?seq_contains(syllabus.status)]
              [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
              [@b.a href="!remove?id=${syllabus.id}" onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
@@ -64,5 +65,40 @@
       </div>
   </div>
 
+  <div class="modal fade" id="courseListDialog" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">选择复制到具体课程</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" style="padding-top:0px;">
+          <div id='courseListDiv' style="width:100%"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">放弃复制</button>
+          <button class="btn btn-sm btn-outline-primary" onclick="return doCopy();">开始复制</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    beangle.load(["jquery-colorbox"]);
+    function copySetting(syllabusId){
+      bg.Go('${b.url('!copySetting?semester.id='+Parameters['semester.id'])}'+"&syllabus.id="+syllabusId,"courseListDiv")
+      jQuery("#courseListDialog").modal('show');
+      return false;
+    }
+    function doCopy(){
+      jQuery("#courseListDialog").modal('hide');
+      //如果立马提交，半透明遮罩层没有去除
+      setTimeout(function(){
+        bg.form.submit(document.copyCourseForm);
+      },500);
+      return false;
+    }
+  </script>
 </div>
 [@b.foot/]

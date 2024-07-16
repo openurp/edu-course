@@ -159,9 +159,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val hours = plan.sections.map(x => (x.name, x.creditHours)).toMap
     put("hours", hours)
     put("schedules", schedules)
-    plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
+    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course, clazz.teachDepart)
     plan.office foreach { o =>
-      plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
+      plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
     forward()
   }
@@ -224,9 +224,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     plan.updatedAt = Instant.now
     plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).head
-    plan.office = courseTaskService.getOffice(clazz.course, clazz.teachDepart, clazz.semester)
+    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course, clazz.teachDepart)
     plan.office foreach { o =>
-      plan.reviewer = courseTaskService.getOfficeDirector(clazz.course, clazz.teachDepart, clazz.semester)
+      plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
     plan.examHours = syllabus.examCreditHours
     plan.lessonHours = getInt("lessonHours", 0)

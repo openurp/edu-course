@@ -32,7 +32,8 @@
       </tr>
       <tr>
         <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${t.name}[#sep],[/#list]</td>
-        <td style="text-align:right;">教  学  班：</td><td style="border-bottom: solid 1px black;">${clazz.clazzName}(${clazz.crn})</td>
+        <td style="text-align:right;">教  学  班：</td>
+        <td style="border-bottom: solid 1px black;display:flex;"><div>(${clazz.crn})</div><div class="text-ellipsis" style="max-width:350px;">${clazz.clazzName}</div></td>
       </tr>
       <tr>
         <td style="text-align:right;">授课时间：</td><td style="border-bottom: solid 1px black;">${schedule_time}</td>
