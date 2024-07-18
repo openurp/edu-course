@@ -39,7 +39,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{SyllabusCopyHelper, SyllabusHelper}
+import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
@@ -920,7 +920,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val isDirector = courseTaskService.isDirector(semester, course, teacher)
     if (isDirector) {
       val me = entityDao.findBy(classOf[User], "code", Securities.user).head
-      val newSyllabus = SyllabusCopyHelper.copy(syllabus, semester, course)
+      val newSyllabus = Syllabus.copy(syllabus, semester, course)
       newSyllabus.writer = me
       entityDao.saveOrUpdate(newSyllabus)
       businessLogger.info(s"复制了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))

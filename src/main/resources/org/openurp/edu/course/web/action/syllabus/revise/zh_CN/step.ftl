@@ -72,13 +72,11 @@ ol {
 .ui-step-6 li { width: 20%; }
 .ui-step-7 li { width: 16.6%; }
 
-.step-active .ui-step-line { background-color: #e0e0e0; }
 .step-done .ui-step-cont-number { background-color: #667ba4; }
 .step-done .ui-step-cont-text { color: #667ba4; }
 .step-done .ui-step-line { background-color: #4c99e6; }
 .step-active .ui-step-cont-number { background-color: #3c8dbc; }
 .step-active .ui-step-cont-text { color: #3c8dbc;font-weight: bold; }
-.step-active .ui-step-line { background-color: #e0e0e0; }
 
   fieldset.listset li > label.title{
     min-width: 10rem;
@@ -93,7 +91,7 @@ ol {
                   "!edit?id=${syllabus.id}&step=designs","!assesses?syllabus.id=${syllabus.id}",
                   "!edit?id=${syllabus.id}&step=textbook"] /]
   [/#if]
-  [#assign doneIndex=0 /]
+  [#assign doneIndex = -1 /]
 
   [#if syllabus.topics?size>0][#assign doneIndex=3 /][/#if]
   [#if syllabus.designs?size>0][#assign doneIndex=4 /][/#if]
@@ -104,7 +102,7 @@ ol {
     <ol class="ui-step ui-step-${stepNames?size} ui-step-blue">
         [#list stepNames as data]
         [#assign stepDone = (data_index < step_index || data_index < doneIndex + 1 ) /]
-      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index==step_index] step-active[#elseif stepDone] step-done[/#if]">
+      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index==step_index] step-active[/#if][#if stepDone] step-done[/#if]">
         <div class="ui-step-line"></div>
         <div class="ui-step-cont">
           [#if links?size > data_index && stepDone]
