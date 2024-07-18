@@ -79,21 +79,43 @@ ol {
 .step-active .ui-step-cont-number { background-color: #3c8dbc; }
 .step-active .ui-step-cont-text { color: #3c8dbc;font-weight: bold; }
 .step-active .ui-step-line { background-color: #e0e0e0; }
+
   fieldset.listset li > label.title{
     min-width: 10rem;
     max-width: 10rem;
   }
 </style>
   [#assign stepNames=['填写基本信息','介绍和目标、价值引领','对毕业要求的支撑','课程教学内容与教学安排','学验并重的教学设计','课程考核方式与评分标准','教材和教学资源']/]
+  [#assign links=[]/]
+  [#if syllabus.id??]
+  [#assign links=["!edit?id=${syllabus.id}","!edit?id=${syllabus.id}&step=objectives",
+                  "!edit?id=${syllabus.id}&step=requirements","!edit?id=${syllabus.id}&step=topics",
+                  "!edit?id=${syllabus.id}&step=designs","!assesses?syllabus.id=${syllabus.id}",
+                  "!edit?id=${syllabus.id}&step=textbook"] /]
+  [/#if]
+  [#assign doneIndex=0 /]
+
+  [#if syllabus.topics?size>0][#assign doneIndex=3 /][/#if]
+  [#if syllabus.designs?size>0][#assign doneIndex=4 /][/#if]
+  [#if syllabus.assessments?size>0][#assign doneIndex=6 /][/#if]
+
   [#macro displayStep step_index]
   <div style="width:90%; margin:25px auto;margin-bottom: 50px;">
     <ol class="ui-step ui-step-${stepNames?size} ui-step-blue">
         [#list stepNames as data]
-      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
+        [#assign stepDone = (data_index < step_index || data_index < doneIndex + 1 ) /]
+      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index==step_index] step-active[#elseif stepDone] step-done[/#if]">
         <div class="ui-step-line"></div>
         <div class="ui-step-cont">
+          [#if links?size > data_index && stepDone]
+          [@b.a href=links[data_index]]
           <span class="ui-step-cont-number">${data_index+1}</span>
           <span class="ui-step-cont-text">${data}</span>
+          [/@]
+          [#else]
+          <span class="ui-step-cont-number">${data_index+1}</span>
+          <span class="ui-step-cont-text">${data}</span>
+          [/#if]
         </div>
       </li>
       [/#list]

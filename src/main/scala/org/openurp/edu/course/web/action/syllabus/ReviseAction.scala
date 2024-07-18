@@ -155,12 +155,13 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def remove(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     if (syllabus.writer.code == Securities.user) {
       entityDao.remove(syllabus)
       businessLogger.info(s"删除课程教学大纲:${syllabus.course.name}", syllabus.id, Map("syllabus" -> syllabus.id.toString))
-      redirect("course", s"course.id=${syllabus.course.id}", "删除成功")
+      redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "删除成功")
     } else {
-      redirect("course", s"course.id=${syllabus.course.id}", "只能删除自己编写的大纲")
+      redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "只能删除自己编写的大纲")
     }
   }
 

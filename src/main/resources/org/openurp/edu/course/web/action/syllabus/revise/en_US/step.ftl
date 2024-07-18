@@ -86,15 +86,36 @@ ol {
   }
 </style>
   [#assign stepNames=['Basic information','Introduction and objectives','Graduation requirements','Topics and Schedule','Teaching designs','Assessments','Textbook and Resources']/]
+  [#assign links=[]/]
+  [#if syllabus.id??]
+  [#assign links=["!edit?id=${syllabus.id}","!edit?id=${syllabus.id}&step=objectives",
+                  "!edit?id=${syllabus.id}&step=requirements","!edit?id=${syllabus.id}&step=topics",
+                  "!edit?id=${syllabus.id}&step=designs","!assesses?syllabus.id=${syllabus.id}",
+                  "!edit?id=${syllabus.id}&step=textbook"] /]
+  [/#if]
+  [#assign doneIndex=0 /]
+
+  [#if syllabus.topics?size>0][#assign doneIndex=3 /][/#if]
+  [#if syllabus.designs?size>0][#assign doneIndex=4 /][/#if]
+  [#if syllabus.assessments?size>0][#assign doneIndex=6 /][/#if]
+
   [#macro displayStep step_index]
   <div style="width:90%; margin:25px auto;margin-bottom: 50px;">
     <ol class="ui-step ui-step-${stepNames?size} ui-step-blue">
         [#list stepNames as data]
-      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index<step_index] step-done[#elseif data_index==step_index] step-active[/#if]">
+        [#assign stepDone = (data_index < step_index || data_index < doneIndex + 1 ) /]
+      <li class="[#if data_index==0]step-start[#elseif data_index+1=stepNames?size]step-end[/#if] [#if data_index==step_index] step-active[#elseif stepDone] step-done[/#if]">
         <div class="ui-step-line"></div>
         <div class="ui-step-cont">
+          [#if links?size > data_index && stepDone]
+          [@b.a href=links[data_index]]
           <span class="ui-step-cont-number">${data_index+1}</span>
           <span class="ui-step-cont-text">${data}</span>
+          [/@]
+          [#else]
+          <span class="ui-step-cont-number">${data_index+1}</span>
+          <span class="ui-step-cont-text">${data}</span>
+          [/#if]
         </div>
       </li>
       [/#list]

@@ -54,7 +54,7 @@
              <a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>
              [#if task?? && editables?seq_contains(syllabus.status)]
              [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
-             [@b.a href="!remove?id=${syllabus.id}" onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
+             [@b.a href="!remove?id=${syllabus.id}&semester.id="+semester.id onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
              [/#if]
            </td>
            <td>[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]</td>
