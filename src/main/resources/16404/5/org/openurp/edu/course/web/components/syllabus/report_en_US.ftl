@@ -454,5 +454,5 @@
     </script>
   [/#if]
 </div><!--end container-->
-
+[#include "/org/openurp/edu/course/web/components/gotoNav.ftl"/]
 [@b.foot/]
