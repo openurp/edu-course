@@ -4,6 +4,7 @@
 <div class="search-container">
   <div class="search-panel">
     [@b.form name="directorSearchForm" action="!search" target="directorlist" title="ui.searchForm" theme="search"]
+      [@base.semester name="semester.id" value=semester label="学年学期" required="false"/]
       [@b.textfield name="director.course.code" label="代码"/]
       [@b.textfield name="director.course.name" label="名称"/]
       [@b.select style="width:100px" name="director.course.department.id" label="所属院系" items=departments option="id,name" empty="..." /]
@@ -17,7 +18,7 @@
     [/@]
   </div>
   <div class="search-list">
-    [@b.div id="directorlist" href="!search?orderBy=director.course.code asc"/]
+    [@b.div id="directorlist" href="!search?semester.id=${semester.id}&orderBy=director.course.code asc"/]
   </div>
 </div>
 [@b.foot/]

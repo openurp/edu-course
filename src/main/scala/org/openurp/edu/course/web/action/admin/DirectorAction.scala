@@ -23,6 +23,8 @@ import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.{Course, CourseDirector, TeachingOffice}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Department, Project}
+import org.openurp.edu.clazz.model.Clazz
+import org.openurp.edu.course.model.CourseTask
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.time.LocalDate
@@ -37,6 +39,7 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
     val departs = getDeparts
     put("teachingOffices", getOffices(project, departs))
     put("departments", departs)
+    put("semester", getSemester)
     put("project", project)
     forward()
   }
@@ -50,11 +53,17 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
   }
 
   override protected def getQueryBuilder: OqlBuilder[CourseDirector] = {
+    given project: Project = getProject
+
     val query = super.getQueryBuilder
+    query.where("director.course.project=:project", project)
     queryByDepart(query, "director.course.department")
     getBoolean("assigned").foreach {
       case true => query.where("director.director is not null")
       case false => query.where("director.director is null")
+    }
+    getInt("semester.id") foreach { semesterId =>
+      query.where(s"exists(from ${classOf[Clazz].getName} clz where clz.course=director.course and clz.semester.id=:semesterId)", semesterId)
     }
     query
   }
@@ -118,6 +127,30 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
     }
     entityDao.saveOrUpdate(directors)
     redirect("search", "批量成功")
+  }
+
+  /** 自动学习指定负责人和教研室
+   *
+   * @return
+   */
+  def autoAssisgn(): View = {
+    val directors = entityDao.find(classOf[CourseDirector], getLongIds("director"))
+    directors foreach { director =>
+      val q = OqlBuilder.from(classOf[CourseTask], "task")
+      q.where("task.course=:course", director.course)
+      q.where("task.director is not null")
+      q.orderBy("task.semester.beginOn desc")
+      entityDao.first(q) foreach { last =>
+        last.director foreach { d =>
+          director.director = Some(d)
+        }
+        last.office foreach { o =>
+          director.office = Some(o)
+        }
+      }
+      entityDao.saveOrUpdate(director)
+    }
+    redirect("search", "批量设置成功")
   }
 
   override protected def simpleEntityName: String = "director"

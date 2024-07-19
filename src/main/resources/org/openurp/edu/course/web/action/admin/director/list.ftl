@@ -4,6 +4,7 @@
   [@b.gridbar]
     bar.addItem("${b.text("action.modify")}",action.edit());
     bar.addItem("批量修改",action.multi("batchEdit"));
+    bar.addItem("从最近学期中提取",action.multi("autoAssisgn"));
     bar.addItem("导入课程",action.method("autoImport"));
   [/@]
   [@b.row]

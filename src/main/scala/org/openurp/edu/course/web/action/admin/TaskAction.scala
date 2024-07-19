@@ -151,7 +151,15 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
             d.director foreach { dd =>
               if t.teachers.contains(dd) then t.director = Some(dd)
             }
+            d.office foreach { o =>
+              t.office = Some(o)
+            }
           }
+        }
+      }
+      if (t.office.isEmpty) {
+        entityDao.findBy(classOf[CourseDirector], "course", t.course).foreach { d =>
+          d.office foreach { o => t.office = Some(o) }
         }
       }
     }
