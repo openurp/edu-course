@@ -62,17 +62,6 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     dQuery.where("c.status in(:statuses)", statuses)
     put("departStat", entityDao.search(dQuery))
 
-    //    val tQuery = OqlBuilder.from(classOf[Syllabus].getName, "c")
-    //    tQuery.where("c.course.project=:project", project)
-    //    tQuery.where("c.semester=:semester", semester)
-    //    tQuery.join("c.course.tags", "tag")
-    //    //dQuery.where("c.endOn is null or c.endOn > :now", LocalDate.now)
-    //    tQuery.select("tag.id,tag.name,count(*)")
-    //    tQuery.groupBy("tag.id,tag.code,tag.name")
-    //    tQuery.orderBy("count(*) desc,tag.name")
-    //    tQuery.where("c.status in(:statuses)", Seq(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published))
-    //    put("tagStat", entityDao.search(tQuery))
-
     forward()
   }
 

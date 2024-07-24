@@ -61,6 +61,16 @@
 <p style="white-space: preserve;">${contents}[#nested/]</p>
 [/#macro]
 
+[#macro multi_line_p contents=""]
+  [#assign cnts]${contents!}[#nested/][/#assign]
+  [#if cnts?length>0]
+    [#assign ps = cnts?split("\n")]
+    [#list ps as p]
+    <p style="white-space: preserve;" class="mb-0">${p}</p>
+    [/#list]
+  [/#if]
+[/#macro]
+
 [#assign course=syllabus.course/]
 
 <div class="container" style="font-family: 'Times New Roman',宋体;font-size: 12pt;padding:0px 0px;">
@@ -139,20 +149,20 @@
 
   <section style="margin-top:30px;">
     [@header_title "${numSeq[2]}、Course introduction and objectives"/]
-    <p style="white-space: preserve;">${syllabus.description}[#list syllabus.objectives?sort_by("code") as co]<br>    Course objective ${co.code}：${co.contents}[/#list]</p>
+    <p style="white-space: preserve;">${syllabus.description}[#list syllabus.objectives?sort_by("code") as co]<br>Course objective ${co.code}：${co.contents}[/#list]</p>
   </section>
 
   <section style="margin-top:30px;">
     [@header_title "${numSeq[3]}、Course leading value"/]
-    <p style="white-space: preserve;">    ${(syllabus.getText('values').contents)!}</p>
+    <p style="white-space: preserve;">${(syllabus.getText('values').contents)!}</p>
   </section>
 
   <div style="margin-top:30px;">
     [@header_title "${numSeq[4]}、Course supporting to graduation requirements"/]
     <p style="white-space: preserve;">[#t/]
-    Supports of the course to graduation requirements：
+Supports of the course to graduation requirements：
 [#list syllabus.outcomes?sort_by(["idx"]) as o]
-    Graduation requirements【${o.title}】：${o.contents}
+Graduation requirements【${o.title}】：${o.contents}
 [/#list]
     </p>[#t/]
     [#assign orderedCourseObjectives = syllabus.objectives?sort_by('code')/]
@@ -182,7 +192,7 @@
   <div style="margin-top:30px;">
     [@header_title "${numSeq[5]}、Course contents and schedule"/]
     [@header_title "（${numSeq[1]}）Course contents"/]
-    <table class="info-table" style="table-layout:fixed;page-break-inside:auto;">
+    <table class="info-table" style="table-layout:fixed;page-break-inside:auto;word-break: break-word;">
       <caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Course contents (Practical project) and students’ learning outcome</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
@@ -194,7 +204,7 @@
       [#list syllabus.topics?sort_by("idx") as topic]
         <tr>
           <td>${topic.name}</td>
-          <td>
+          <td style="padding-left: 5px;">
           <p style="white-space: preserve;" class="m-0">${topic.contents}</p>
           [#list topic.elements?sort_by(["label","code"]) as elem]
           <p style="white-space: preserve;" class="m-0"><span style="font-weight:bold;">${elem.label.enName}：<br/></span>${elem.contents}</p>
@@ -206,7 +216,7 @@
     </table>
     <div style="margin-top: 20px;">&nbsp;</div>
     [@header_title "（${numSeq[2]}）Course schedule"/]
-    [#assign teachingNatures = syllabus.teachingNatures/]
+    [#assign teachingNatures = syllabus.teachingNatures?sort_by('code')/]
     <table class="info-table" style="table-layout:fixed;text-align: center;">
       <caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Course schedule</caption>
       [#assign tableIndex=tableIndex+1/]
@@ -226,7 +236,7 @@
       [#assign totalLearningHours=0 /]
       [#list syllabus.topics?sort_by("idx") as topic]
         <tr>
-          <td style="text-align:left;">${topic.name}</td>
+          <td style="text-align:left;padding-left: 5px;">${topic.name}</td>
           <td>
           [#assign creditHours=0/]
           [#list topic.hours as h]
@@ -314,7 +324,7 @@
     table for the composition of usual score.
     [/@]
 
-    <table class="info-table" style="table-layout:fixed;text-align: center;">
+    <table class="info-table" style="text-align: center;">
       <caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Course assessment and learning objective achievement design</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
@@ -392,7 +402,7 @@
       [@header_title title/]
       [@p a.description!/]
       [#if a.scoreTable??]
-        [#assign caption]<caption style="caption-side: top;text-align: center;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
+        [#assign caption]<caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Scoring standard of ${a.component}</caption>[/#assign]
         [#assign tableIndex = tableIndex+1 /]
         [#assign scoreTable=a.updateScoreTable("<table class='score-table' style='text-align: left;'>",caption)/]
         ${scoreTable}

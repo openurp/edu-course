@@ -9,7 +9,7 @@
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form theme="list" action="!saveOutcomes"]
     [#list syllabus.outcomes?sort_by("idx") as r]
-      [@b.textarea label=r.title name="R${r.id}.contents" value=(r.contents)! cols="100" rows="3" maxlength="1000" /]
+      [@b.textarea label=r.title name="R${r.id}.contents" value=(r.contents)! cols="100" rows="3" maxlength="1000" required="true"/]
     [/#list]
     [@b.field label="支撑矩阵"]
       [#assign orderedCourseObjectieves = syllabus.objectives?sort_by('code')/]

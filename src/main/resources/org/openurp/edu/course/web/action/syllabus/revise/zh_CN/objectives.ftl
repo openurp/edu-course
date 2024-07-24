@@ -10,7 +10,7 @@
   [#assign placeholders=["思想政治素质目标","诚信品质"]/]
   [@b.form theme="list" action="!saveObjectives"]
     [@b.textarea label="课程介绍" name="syllabus.description" value=syllabus.description! cols="100" rows="5"
-      maxlength="3000" comment=tips['syllabus.description']!/]
+      maxlength="3000" comment=tips['syllabus.description']! required="true"/]
     [@b.textarea label="课程的价值引领"  name="values" value="${(syllabus.getText('values').contents)!}" cols="100" rows="4" placeholder="经世济民、诚信服务等职业素养，课程根据思政教育和课程思政的安排，在本课程中融入的课程思政教学内容。"
       maxlength="500" required="true"]
       <div style="display:inline-block;max-width:155px;">${tips['values']!}</div>

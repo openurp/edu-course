@@ -22,7 +22,7 @@
        <label for="learning_p">Autonomous learning</label>
        <input name="topic.learningHours" style="width:30px" id="learning_p" value="${topic.learningHours}"> hours
     [/@]
-    [@b.checkboxes label="Course objective" name="objective.id" items=syllabus.objectives values=topic.matchedObjectives required="false"/]
+    [@b.checkboxes label="Course objective" name="objective.id" items=syllabus.objectives values=topic.matchedObjectives required="true"/]
     [@b.formfoot]
       <input type="hidden" name="topic.id" value="${topic.id}"/>
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>

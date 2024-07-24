@@ -39,7 +39,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
 import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
@@ -117,7 +117,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
       put("director", courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department))
       put("me", Securities.user)
-      put("warningMessages", validate(syllabus))
+      put("warningMessages", SyllabusValidator.validate(syllabus))
     }
     if (get("step").contains("requirements")) {
       val orderedOutcomes = syllabus.outcomes.sortBy(_.idx)
@@ -140,7 +140,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     if (get("step").contains("topics")) {
       put("teachingMethods", syllabus.teachingMethods.map(x => (x, x)).toMap)
-      put("validateHourMessages", validateHours(syllabus))
+      put("validateHourMessages", SyllabusValidator.validateHours(syllabus) ++ SyllabusValidator.validateObjectives(syllabus))
     }
     if (get("step").isEmpty) {
       val majors = entityDao.findBy(classOf[Major], "project" -> syllabus.course.project)
@@ -175,7 +175,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("examModes", getCodes(classOf[ExamMode]))
     put("gradingModes", getCodes(classOf[GradingMode]))
     put("courseModules", getCodes(classOf[CourseModule]))
-    put("courseRanks", getCodes(classOf[CourseRank]))
+    put("courseRanks", getCodes(classOf[CourseRank]).filter(_.id != CourseRank.Selective))
     put("experimentTypes", getCodes(classOf[ExperimentType]))
 
     val s = OqlBuilder.from(classOf[CalendarStage], "s")
@@ -243,7 +243,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     given project: Project = course.project
 
-    val me = entityDao.findBy(classOf[User], "code", Securities.user).head
     val syllabus = populateEntity()
     if (null == syllabus.beginOn) {
       syllabus.beginOn = entityDao.get(classOf[Semester], syllabus.semester.id).beginOn
@@ -253,7 +252,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     if null == syllabus.description then syllabus.description = "--"
     populateHours(syllabus)
-    syllabus.writer = me
+    if (null == syllabus.writer) {
+      val me = entityDao.findBy(classOf[User], "code", Securities.user).head
+      syllabus.writer = me
+    }
     syllabus.updatedAt = Instant.now
     syllabus.creditHours = course.creditHours
 
@@ -306,6 +308,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.examHours.subtractAll(deprecated2)
   }
 
+  private def cleanText(contents: String): String = {
+    var c = Strings.replace(contents, "\r", "")
+    c = Strings.replace(c, "\n", "")
+    c
+  }
+
   def saveObjectives(): View = {
     val syllabus = populateEntity()
     syllabus.updatedAt = Instant.now
@@ -317,7 +325,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     (1 to 8) foreach { i =>
       val code = s"CO${i}"
-      val contents = get(code, "")
+      val contents = cleanText(get(code, ""))
       syllabus.getObjective(code) match {
         case None =>
           if Strings.isNotBlank(contents) then
@@ -330,6 +338,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             o.contents = contents
       }
     }
+    new SyllabusHelper(entityDao).cleanMissingObjectives(syllabus)
     entityDao.saveOrUpdate(syllabus)
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=objectives", "info.save.success")
@@ -345,7 +354,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.updatedAt = Instant.now
     (1 to 12) foreach { idx =>
       val code = s"R${idx}"
-      val name = get(code, "")
+      var name = get(code, "")
+      name = Strings.replace(name, "【", "")
+      name = Strings.replace(name, "】", "")
       if (Strings.isNotEmpty(name)) {
         syllabus.outcomes.find(_.idx == idx) match
           case None =>
@@ -373,7 +384,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.outcomes foreach { r =>
       val prefix = s"R${r.id}"
       val cos = Strings.split(get(prefix + ".courseObjectives", "")).toSeq.sorted.mkString(",")
-      val contents = get(prefix + ".contents", "")
+      val contents = cleanText(get(prefix + ".contents", ""))
       r.contents = contents
       r.courseObjectives = cos
     }
@@ -437,7 +448,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
-          if (!creditHour.isEmpty) {
+          if (creditHour.nonEmpty) {
             topic.hours += new SyllabusTopicHour(topic, ht, creditHour.getOrElse(0f))
           }
       }
@@ -448,7 +459,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val objectives = entityDao.find(classOf[SyllabusObjective], getLongIds("objective"))
     topic.objectives = None
     if (objectives.nonEmpty) {
-      topic.objectives = Some(objectives.map(_.code).mkString(","))
+      topic.objectives = Some(objectives.map(_.code).sorted.mkString(","))
     }
     val methods = getAll("teachingMethod", classOf[String])
     topic.methods = None
@@ -774,109 +785,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
-  private def validate(syllabus: Syllabus): Seq[String] = {
-    val messages = Collections.newBuffer[String]
-    if (syllabus.creditHours > 0 && syllabus.topics.isEmpty) {
-      messages += "缺少课程主题"
-    }
-    if (syllabus.designs.isEmpty) {
-      messages += "缺少教学设计"
-    }
-
-    messages ++= validateHours(syllabus)
-    messages ++= validAssessment(syllabus)
-    messages.toSeq
-  }
-
-  /** 验证考核比例
-   *
-   * @param syllabus
-   * @return
-   */
-  private def validAssessment(syllabus: Syllabus): Seq[String] = {
-    val messages = Collections.newBuffer[String]
-    val usualType = entityDao.get(classOf[GradeType], GradeType.Usual)
-    val endType = entityDao.get(classOf[GradeType], GradeType.End)
-    val endAssessment = syllabus.getAssessment(endType, null)
-    val usualPercent = syllabus.getAssessment(usualType, null).map(_.scorePercent).getOrElse(0)
-    val endPercent = endAssessment.map(_.scorePercent).getOrElse(0)
-    if (usualPercent + endPercent != 100) {
-      messages.addOne(s"平时期末百分比合计为${usualPercent + endPercent}，应等于100.")
-    }
-    endAssessment foreach { a =>
-      if (a.scorePercent > 0) {
-        val s = a.objectivePercentMap.values.sum
-        if (s != 100) {
-          messages.addOne(s"期末成绩对课程目标的占比合计为${s}，应等于100.")
-        }
-      }
-    }
-    if (usualPercent > 0) {
-      val usualAssessments = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty)
-      val usualTotal = usualAssessments.map(_.scorePercent).sum
-      if (usualTotal != 100) {
-        messages.addOne(s"平时成绩，各个环节合计占比为${usualTotal}，应等于100.")
-      }
-      usualAssessments foreach { a =>
-        val s = a.objectivePercentMap.values.sum
-        if (s != a.scorePercent) {
-          messages.addOne(s"平时成绩--${a.component.get}的课程目标的占比合计为${s}，应等于${a.scorePercent}.")
-        }
-      }
-    }
-    messages.toSeq
-  }
-
-  private def validateHours(syllabus: Syllabus): Seq[String] = {
-    val messages = Collections.newBuffer[String]
-    var total = 0f
-    syllabus.hours foreach { h =>
-      total += h.creditHours
-    }
-    if java.lang.Double.compare(total.toDouble, syllabus.creditHours * 1.0) != 0 then
-      messages += s"课程要求${syllabus.creditHours}学时，分项累计${total}学时，请检查。"
-
-    val totalExamHours = syllabus.examHours.map(_.creditHours).sum
-    if java.lang.Double.compare(totalExamHours.toDouble, syllabus.examCreditHours * 1.0) != 0 then
-      messages += s"大纲考核要求${syllabus.examCreditHours}学时，分项累计${totalExamHours}学时，请检查。"
-
-    syllabus.hours foreach { h =>
-      var t = 0f
-      syllabus.topics foreach { p =>
-        t += p.getHour(h.nature).map(_.creditHours).getOrElse(0f)
-      }
-      t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0f)
-      if (java.lang.Double.compare(t, h.creditHours) != 0) {
-        messages += s"课程要求${h.nature.name}${h.creditHours}学时，教学内容累计${t}学时，请检查。"
-      }
-    }
-    var totalLearningHours = 0f
-    syllabus.topics foreach { t =>
-      totalLearningHours += t.learningHours
-    }
-    if (java.lang.Double.compare(totalLearningHours, syllabus.learningHours) != 0) {
-      messages += s"自主学习要求${syllabus.learningHours}学时，教学内容累计${totalLearningHours}学时，请检查。"
-    }
-
-    syllabus.topics foreach { p =>
-      val hours = p.hours.map(_.creditHours).sum
-      if (hours == 0) {
-        if (p.hours.isEmpty) {
-          messages += s"教学主题:${p.name},缺少学时分布"
-        } else {
-          messages += s"教学主题:${p.name},学时为0"
-        }
-      }
-
-      if (p.methods.isEmpty) {
-        messages += s"教学主题:${p.name},缺少教学方法"
-      }
-    }
-    messages.toSeq
-  }
-
   private def isSubmitable(syllabus: Syllabus): Boolean = {
-    val rs = validate(syllabus)
+    val rs = SyllabusValidator.validate(syllabus)
     if rs.isEmpty then
       val submitables = Set(AuditStatus.Draft, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart, AuditStatus.Rejected)
       submitables.contains(syllabus.status) && syllabus.reviewer.nonEmpty

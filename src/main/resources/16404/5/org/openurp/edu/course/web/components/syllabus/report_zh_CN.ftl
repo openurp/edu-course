@@ -57,11 +57,20 @@
 [#assign numSeq= ["一","二","三","四","五","六","七","八","九","十"] /]
 [#assign tableIndex=1/]
 [#macro header_title title]
-  <p style="width:100%;font-weight:bold;font-family: 宋体;font-size: 14pt;">${title}</p>
+  <p style="width:100%;font-weight:bold;font-family: 宋体;font-size: 14pt;margin:0.5rem 0rem 0.5rem 0rem;">${title}</p>
 [/#macro]
 
 [#macro p contents=""]
-<p style="white-space: preserve;">${contents}[#nested/]</p>
+<p style="white-space: preserve;text-indent:2em;"  class="mb-0">${contents}[#nested/]</p>
+[/#macro]
+[#macro multi_line_p contents=""]
+  [#assign cnts]${contents!}[#nested/][/#assign]
+  [#if cnts?length>0]
+    [#assign ps = cnts?split("\n")]
+    [#list ps as p]
+    <p style="white-space: preserve;text-indent:2em;" class="mb-0">${p}</p>
+    [/#list]
+  [/#if]
 [/#macro]
 
 [#assign course=syllabus.course/]
@@ -87,7 +96,7 @@
     </table>
   </div>
 
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "一、基本信息"/]
     [@header_title "（一）课程基本情况"/]
   </div>
@@ -146,17 +155,18 @@
     </table>
   </div>
 
-  <section style="margin-top:30px;">
+  <section>
     [@header_title "二、课程介绍和目标"/]
-    <p style="white-space: preserve;">${syllabus.description}[#list syllabus.objectives?sort_by("code") as co]<br>    课程目标${co.code}：${co.contents}[/#list]</p>
+    [@multi_line_p syllabus.description/]
+    [#list syllabus.objectives?sort_by("code") as co][@p]课程目标${co.code}：${co.contents}[/@][/#list]
   </section>
 
-  <section style="margin-top:30px;">
+  <section>
     [@header_title "三、课程的价值引领"/]
-    <p style="white-space: preserve;">    ${(syllabus.getText('values').contents)!}</p>
+    [@multi_line_p (syllabus.getText('values').contents)!/]
   </section>
 
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "四、课程对毕业要求的支撑"/]
     <p style="white-space: preserve;">[#t/]
     本课程对毕业要求的支撑：
@@ -166,7 +176,7 @@
     </p>[#t/]
     [#assign orderedCourseObjectives = syllabus.objectives?sort_by('code')/]
     <table class="info-table" style="text-align:center;table-layout:fixed;">
-      <caption style="caption-side: top;text-align: center;">表 ${tableIndex}：课程目标和毕业要求的对应关系和支撑矩阵</caption>
+      <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程目标和毕业要求的对应关系和支撑矩阵</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr>
@@ -188,11 +198,11 @@
   </div>
 
   [#--教学内容--]
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "五、课程教学内容与教学安排"/]
     [@header_title "（一）课程教学内容"/]
     <table class="info-table" style="table-layout:fixed;page-break-inside:auto;">
-      <caption style="caption-side: top;text-align: center;">表 ${tableIndex}：本课程教学内容（实践项目）和学习成效</caption>
+      <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：本课程教学内容（实践项目）和学习成效</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr style="text-align:center;">
@@ -203,7 +213,7 @@
       [#list syllabus.topics?sort_by("idx") as topic]
         <tr>
           <td>${topic.name}</td>
-          <td>
+          <td style="padding-left:5px;">
           <p style="white-space: preserve;" class="m-0">${topic.contents}</p>
           [#list topic.elements?sort_by(["label","code"]) as elem]
           <p style="white-space: preserve;" class="m-0"><span style="font-weight:bold;">${elem.label.name}：</span><br/>${elem.contents}</p>
@@ -213,11 +223,10 @@
         </tr>
       [/#list]
     </table>
-    <div style="margin-top: 20px;">&nbsp;</div>
     [@header_title "（二）教学安排"/]
-    [#assign teachingNatures = syllabus.teachingNatures/]
+    [#assign teachingNatures = syllabus.teachingNatures?sort_by('code')/]
     <table class="info-table" style="table-layout:fixed;text-align: center;">
-      <caption style="caption-side: top;text-align: center;">表 ${tableIndex}：课程教学安排</caption>
+      <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程教学安排</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr style="text-align:center;">
@@ -235,7 +244,7 @@
       [#assign totalLearningHours=0 /]
       [#list syllabus.topics?sort_by("idx") as topic]
         <tr>
-          <td style="text-align:left;">${topic.name}</td>
+          <td style="text-align:left;padding-left:5px;">${topic.name}</td>
           <td>
           [#assign creditHours=0/]
           [#list topic.hours as h]
@@ -253,7 +262,7 @@
       [#if syllabus.examCreditHours>0]
        [#assign totalCreditHours=totalCreditHours + syllabus.examCreditHours/]
       <tr>
-        <td style="text-align:left;">期末考核</td>
+        <td style="text-align:left;padding-left:5px;">期末考核</td>
         <td>${syllabus.examCreditHours}</td>
         [#list teachingNatures as nature]
           <td>[#list syllabus.examHours as eh][#if eh.nature==nature && eh.creditHours>0]${eh.creditHours}[#break/][/#if][/#list]</td>
@@ -276,12 +285,12 @@
   </div>
 
   [#--教学内容--]
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "六、学验并重的教学设计"/]
     [#list syllabus.designs?sort_by("idx") as design]
       [#assign title]（${numSeq[design.idx]}）${design.name}[/#assign]
       [@header_title title/]
-      [@p design.contents/]
+      [@multi_line_p design.contents/]
       [#if design.hasCase]
       <ul>案例：
       [#list syllabus.cases as c]<li>${c.idx+1}:${c.name}</li>[/#list]
@@ -304,16 +313,14 @@
     [#assign usualAssess = syllabus.getAssessment(usualType,null)/]
     [#assign endAssess = syllabus.getAssessment(endType,null)/]
     [#assign endPercentMap = endAssess.objectivePercentMap/]
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "七、课程考核方式与评分标准"/]
     [@header_title "（一）课程考核方式"/]
     [@header_title "&nbsp;&nbsp;1.课程成绩构成"/]
-    [@p]
-    本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${usualAssess.scorePercent}%，期末成绩占${endAssess.scorePercent}%。平时成绩构成见下表。
-    [/@]
+    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${usualAssess.scorePercent}%，期末成绩占${endAssess.scorePercent}%。平时成绩构成见下表。[/@]
 
     <table class="info-table" style="table-layout:fixed;text-align: center;">
-      <caption style="caption-side: top;text-align: center;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
+      <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr style="text-align:center;">
@@ -371,7 +378,7 @@
         </tr>
       </thead>
     </table>
-      平时成绩考核评定依据如下:
+      [@p]平时成绩考核评定依据如下:[/@]
       <ul style="list-style: none;">
       [#list usualAssessments as a]
         <li>（${a_index+1}）${a.component}${a.scorePercent}%，${a.assessCount}次。</li>
@@ -385,9 +392,9 @@
       [#assign title]${assessIdx+1}.${a.component}的评分标准[/#assign]
       [#assign assessIdx=assessIdx+1/]
       [@header_title title/]
-      [@p a.description!/]
+      [@multi_line_p a.description!/]
       [#if a.scoreTable??]
-        [#assign caption]<caption style="caption-side: top;text-align: center;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
+        [#assign caption]<caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：${a.component}评分表</caption>[/#assign]
         [#assign tableIndex = tableIndex+1 /]
         [#assign scoreTable=a.updateScoreTable("<table class='score-table' style='text-align: left;'>",caption)/]
         ${scoreTable}
@@ -396,24 +403,24 @@
   </div>
 
   [#--教材和教学资源--]
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "八、教材和教学资源"/]
     [@header_title "（一）本课程使用教材"/]
       [#if syllabus.textbooks?size>0]
         [#list syllabus.textbooks as textbook]
-          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}
+          [@p]${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}[/@]
         [/#list]
       [#else]
-        使用其他教学资料
+        [@p]使用其他教学资料[/@]
       [/#if]
     [@header_title "（二）参考书目"/]
-    [@p syllabus.bibliography!"无"/]
+    [@multi_line_p syllabus.bibliography!"无"/]
     [@header_title "（三）本课程使用其他教学资源"/]
-    [@p syllabus.materials!"无"/]
+    [@multi_line_p syllabus.materials!"无"/]
   </div>
 
   [#--课程教学大纲的审批--]
-  <div style="margin-top:30px;">
+  <div>
     [@header_title "九、课程教学大纲的审批"/]
     <table style="width:400px">
       <tr>

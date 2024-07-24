@@ -18,6 +18,7 @@
 package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
+import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.EntityDao
 import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
@@ -33,5 +34,22 @@ class SyllabusHelper(entityDao: EntityDao) {
     datas.put("endType", entityDao.get(classOf[GradeType], GradeType.End))
     datas.put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     datas
+  }
+
+  def cleanMissingObjectives(syllabus: Syllabus): Unit = {
+    syllabus.outcomes foreach { o =>
+      if (Strings.isNotBlank(o.courseObjectives)) {
+        val a = Strings.split(o.courseObjectives).toBuffer
+        val missed = a.filter(x => !syllabus.objectives.exists(_.name == x))
+        o.courseObjectives = a.subtractAll(missed).sorted.mkString(",")
+      }
+    }
+    syllabus.topics foreach { topic =>
+      topic.objectives foreach { objectives =>
+        val a = Strings.split(objectives).toBuffer
+        val missed = a.filter(x => !syllabus.objectives.exists(_.name == x))
+        topic.objectives = Some(a.subtractAll(missed).sorted.mkString(","))
+      }
+    }
   }
 }

@@ -23,7 +23,7 @@ import org.beangle.commons.concurrent.Workers
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.Files
 import org.beangle.commons.lang.SystemInfo
-import org.beangle.data.dao.OqlBuilder
+import org.beangle.data.dao.{OqlBuilder, QueryPage}
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.doc.transfer.exporter.ExportContext
@@ -207,4 +207,21 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     put("items", items.sorted(PropertyOrdering.by("entry(code)")))
     forward()
   }
+
+  def revise(): View = {
+    val id = getLongId("syllabus")
+    redirect(to(classOf[ReviseAction], "edit", s"syllabus.id=${id}"), null)
+  }
+
+  def fix(): View = {
+    val query = OqlBuilder.from(classOf[Syllabus])
+    val page = QueryPage(query, entityDao)
+    val helper = new SyllabusHelper(entityDao)
+    page foreach { syllabus =>
+      helper.cleanMissingObjectives(syllabus)
+      entityDao.saveOrUpdate(syllabus)
+    }
+    return null;
+  }
+
 }
