@@ -19,6 +19,7 @@ package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
+import org.beangle.commons.lang.time.Weeks
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
@@ -713,19 +714,31 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def course(): View = {
     val course = entityDao.get(classOf[Course], getLongId("course"))
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    val teacher = getTeacher
 
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course=:course", course)
     q.where("c.semester=:semester", semester)
-    q.where("c.director.staff.code=:me", Securities.user)
+    q.where("c.director=:me", teacher)
     val tasks = entityDao.search(q)
+
     put("task", tasks.headOption)
     put("course", course)
     put("semester", semester)
 
+    val allTasks = courseTaskService.getTasks(course.project, semester, teacher)
+    val allCourses = allTasks.map(_.course).toSet
+    if (allCourses.nonEmpty) {
+      //3年内的大纲
+      val others = entityDao.findBy(classOf[Syllabus], "course", allCourses).filter(x => Math.abs(Weeks.between(x.beginOn, semester.beginOn)) <= 3 * 53)
+      put("others", others.sortBy(_.updatedAt).reverse)
+    }
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
-    val syllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
+    val allSyllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
+    val syllabuses = allSyllabuses.filter(_.semester == semester)
+    val histories = allSyllabuses.filter(_.semester != semester)
     put("syllabuses", syllabuses)
+    put("histories", histories)
     put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
 
     val last = entityDao.findBy(classOf[CourseProfile], "course", course).sortBy(_.beginOn).lastOption
@@ -834,9 +847,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       newSyllabus.writer = me
       entityDao.saveOrUpdate(newSyllabus)
       businessLogger.info(s"复制了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))
-      redirect("course", s"&semester.id=${semester.id}&course.id=${syllabus.course.id}", "复制成功")
+      redirect("course", s"&semester.id=${semester.id}&course.id=${course.id}", "复制成功")
     } else {
-      redirect("course", s"&semester.id=${semester.id}&course.id=${syllabus.course.id}", "不是负责人，无法复制")
+      redirect("course", s"&semester.id=${semester.id}&course.id=${course.id}", "不是负责人，无法复制")
     }
   }
 }

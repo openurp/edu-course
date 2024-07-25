@@ -25,10 +25,10 @@ ThisBuild / description := "The OpenURP Edu Course"
 ThisBuild / homepage := Some(url("http://openurp.github.io/edu-course/index.html"))
 ThisBuild / resolvers += Resolver.mavenLocal
 
-val apiVer = "0.40.2"
-val starterVer = "0.3.35"
-val baseVer = "0.4.30"
-val eduCoreVer = "0.2.10"
+val apiVer = "0.40.4-SNAPSHOT"
+val starterVer = "0.3.36"
+val baseVer = "0.4.31"
+val eduCoreVer = "0.2.11"
 
 val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer
 val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer

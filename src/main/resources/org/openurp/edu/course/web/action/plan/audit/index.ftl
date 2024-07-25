@@ -16,7 +16,7 @@
     [/@]
   </div>
   <div class="search-list">
-    [@b.div id="planlist" href="!search?teachingplan.semester.id=${semester.id}&orderBy=teachingPlan.clazz.course.code asc"/]
+    [@b.div id="planlist" href="!search?teachingPlan.semester.id=${semester.id}&orderBy=teachingPlan.clazz.course.code asc"/]
   </div>
 </div>
 [@b.foot/]
