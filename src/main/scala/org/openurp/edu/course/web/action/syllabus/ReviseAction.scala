@@ -748,13 +748,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("course", course)
     put("semester", semester)
 
-    val allTasks = courseTaskService.getTasks(course.project, semester, teacher)
-    val allCourses = allTasks.map(_.course).toSet
-    if (allCourses.nonEmpty) {
-      //3年内的大纲
-      val others = entityDao.findBy(classOf[Syllabus], "course", allCourses).filter(x => Math.abs(Weeks.between(x.beginOn, semester.beginOn)) <= 3 * 53)
-      put("others", others.sortBy(_.updatedAt).reverse)
-    }
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val allSyllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
     val syllabuses = allSyllabuses.filter(_.semester == semester)

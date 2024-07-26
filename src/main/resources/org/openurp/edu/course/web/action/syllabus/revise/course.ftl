@@ -44,16 +44,7 @@
     <nav class="navbar navbar-expand">
       <h4 class="card-title" style="padding: .5rem 1.25rem;">教学大纲</h4>
       [#if task??]
-      [#if others?size>0]
       <ul class="nav navbar-nav ml-auto">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">[#list 1..40 as i]&nbsp;[/#list]从近三年大纲中复制...</a>
-          <div class="dropdown-menu">
-            [#list others as g]
-              [@b.a class="nav-link" href="!copy?course.id=${course.id}&syllabus.id=${g.id}&semester.id=${semester.id}" target="course_list"]${g.semester.schoolYear} ${g.semester.name} ${g.course.code} ${g.course.name} ${locales.get(g.docLocale)}[/@]
-            [/#list]
-          </div>
-        </li>
         <li class="nav-item">
           [@b.a class="btn btn-outline-primary btn-sm" href="!editNew?course.id=" + course.id + "&semester.id=" + semester.id target="_blank" style="float:right"]新增中文大纲[/@] &nbsp;
         </li>
@@ -61,7 +52,6 @@
           [@b.a class="btn btn-outline-primary btn-sm" href="!editNew?course.id=" + course.id + "&semester.id=" + semester.id + "&locale=en_US"  target="_blank" style="float:right;margin-left:20px"]新增英文大纲[/@]
         </li>
       </ul>
-      [/#if]
       [/#if]
     </nav>
     <div class="card-body" style="padding-top: 0px;">

@@ -4,7 +4,7 @@
   bar.addClose();
 [/@]
 [#if messages?? && messages?size>0]
-<div class="alert alert-warning">
+<div class="alert alert-warning notprint">
    [#list messages as msg]${msg}<br>[/#list]
 </div>
 [/#if]

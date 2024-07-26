@@ -3,6 +3,11 @@
 [@b.toolbar title="${syllabus.course.name}教学大纲"]
   bar.addClose();
 [/@]
+[#if messages?? && messages?size>0]
+<div class="alert alert-warning notprint">
+   [#list messages as msg]${msg}<br>[/#list]
+</div>
+[/#if]
 [@b.messages slash="3"/]
 <style>
   .card-header{
@@ -219,7 +224,7 @@ Graduation requirements【${o.title}】：${o.contents}
     <div style="margin-top: 20px;">&nbsp;</div>
     [@header_title "（${numSeq[2]}）Course schedule"/]
     [#assign teachingNatures = syllabus.teachingNatures?sort_by('code')/]
-    <table class="info-table" style="table-layout:fixed;text-align: center;">
+    <table class="info-table" style="text-align: center;">
       <caption style="caption-side: top;text-align: center;">Table ${tableIndex}：Course schedule</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
@@ -231,7 +236,7 @@ Graduation requirements【${o.title}】：${o.contents}
           <th rowspan="2" style="width:22mm">Sub-total</th><th style="width:${21*teachingNatures?size}mm" colspan="${teachingNatures?size}">Among them：</th>
         </tr>
         <tr>
-          [#list teachingNatures as nature]<th style="width:22mm">${nature.enName!}</th>[/#list]
+          [#list teachingNatures as nature]<th style="width:40mm">${nature.enName!}</th>[/#list]
         </tr>
       </thead>
       [#assign totalCreditHours=0 /]

@@ -22,6 +22,8 @@ import org.beangle.commons.lang.Strings
 import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 
+import java.util.Locale
+
 object SyllabusValidator {
 
   def validate(syllabus: Syllabus): Seq[String] = {
@@ -45,7 +47,8 @@ object SyllabusValidator {
       if (Strings.isBlank(o.contents)) {
         messages.addOne(s"毕业要求【${o.title}】缺少内容")
       }
-      if (o.title.length > 30) {
+      val max = if syllabus.docLocale == Locale.SIMPLIFIED_CHINESE then 30 else 150
+      if (o.title.length > max) {
         messages.addOne(s"毕业要求[${o.idx}]的标题过长：【${o.title}】")
       }
     }

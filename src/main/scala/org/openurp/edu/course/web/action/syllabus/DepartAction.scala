@@ -37,7 +37,7 @@ import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
-import org.openurp.edu.course.model.{CourseTask, Syllabus, SyllabusTopic, SyllabusTopicHour}
+import org.openurp.edu.course.model.{CourseTask, Syllabus}
 import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor, SyllabusValidator}
 import org.openurp.starter.web.support.ProjectSupport
 
@@ -216,30 +216,20 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   }
 
   def fix(): View = {
-    val query = OqlBuilder.from(classOf[Syllabus])
+    val query = OqlBuilder.from(classOf[Syllabus], "s").where("s.complete=false")
+    getLong("syllabus.id") foreach { id =>
+      query.where("s.id=:id", id)
+    }
     val page = QueryPage(query, entityDao)
     val helper = new SyllabusHelper(entityDao)
+    var i = 0;
     page foreach { syllabus =>
-      val messages = SyllabusValidator.validate(syllabus)
-      if (syllabus.examCreditHours > 0) {
-        val topic = new SyllabusTopic()
-        topic.syllabus = syllabus
-        topic.idx = 99
-        topic.exam = true
-        if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
-          topic.name = "期末考核"
-          topic.contents = "  "
-        } else {
-          topic.name = "Course assessments"
-          topic.contents = "  "
-        }
-        syllabus.examHours foreach { eh =>
-          val topicHour = new SyllabusTopicHour(topic, eh.nature, eh.creditHours)
-          topic.hours += topicHour
-        }
-        syllabus.topics.addOne(topic)
+      if (!syllabus.complete) {
+        val messages = SyllabusValidator.validate(syllabus)
+        syllabus.complete = messages.isEmpty
+        println(s"${i} ${syllabus.id} ${syllabus.complete}" + messages.mkString(","))
+        i += 1
       }
-      syllabus.complete = messages.isEmpty
       entityDao.saveOrUpdate(syllabus)
     }
     return null;
