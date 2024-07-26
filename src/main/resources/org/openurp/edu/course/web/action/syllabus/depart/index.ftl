@@ -17,6 +17,7 @@
       [@b.textfield name="syllabus.writer.name" label="编写人"/]
       [@b.select  name="syllabus.status" label="状态" items=statuses empty="..." /]
       [@b.select style="width:100px" name="hasTopics" label="教学主题" items={"1":"有", "0":"无"} empty="..." /]
+      [@b.select style="width:100px" name="syllabus.complete" label="是否完整" items={"1":"是", "0":"否"} empty="..." /]
       <input type="hidden" name="orderBy" value="syllabus.course.code"/>
     [/@]
   </div>

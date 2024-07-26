@@ -280,6 +280,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val majorIds = getLongIds("major")
     syllabus.majors.clear()
     syllabus.majors.addAll(entityDao.find(classOf[Major], majorIds))
+    syllabus.complete = SyllabusValidator.validate(syllabus).isEmpty
     entityDao.saveOrUpdate(syllabus)
     businessLogger.info(s"保存了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))
     toStep(syllabus)
@@ -712,6 +713,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.office foreach { o =>
       syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department)
     }
+    syllabus.complete = SyllabusValidator.validate(syllabus).isEmpty
     entityDao.saveOrUpdate(syllabus)
     getBoolean("submit") foreach { s =>
       syllabus.status = Submited
@@ -815,6 +817,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("submitable", isSubmitable(syllabus))
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    val messages = SyllabusValidator.validate(syllabus)
+    put("messages", messages)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 

@@ -28,7 +28,7 @@ import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.TeachingNature
 import org.openurp.edu.course.model.Syllabus
-import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusPropertyExtractor}
+import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusPropertyExtractor, SyllabusValidator}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -105,6 +105,8 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     put("auditable", auditStatuses.contains(syllabus.status))
+    val messages = SyllabusValidator.validate(syllabus)
+    put("messages", messages)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 

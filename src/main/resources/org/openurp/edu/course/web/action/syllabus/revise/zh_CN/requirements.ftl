@@ -24,7 +24,7 @@
     </div>
     [/@]
     [#list 1..12 as i]
-    [@b.textfield name="R${i}" label="毕业要求R${i}" value=(requirements[i-1])!/]
+    [@b.textfield name="R${i}" label="毕业要求R${i}" value=(requirements[i-1])! maxlength="20" style="width:400px" comment="word文档【】内的标题"/]
     [/#list]
     [@b.formfoot]
       <input type="hidden" name="course.id" value="${course.id}"/>

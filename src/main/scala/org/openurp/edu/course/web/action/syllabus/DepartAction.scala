@@ -127,6 +127,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    val messages = SyllabusValidator.validate(syllabus)
+    put("messages", messages)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
@@ -226,10 +228,10 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
         topic.exam = true
         if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
           topic.name = "期末考核"
-          topic.contents = "--"
+          topic.contents = "  "
         } else {
           topic.name = "Course assessments"
-          topic.contents = "--"
+          topic.contents = "  "
         }
         syllabus.examHours foreach { eh =>
           val topicHour = new SyllabusTopicHour(topic, eh.nature, eh.creditHours)
@@ -238,7 +240,6 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
         syllabus.topics.addOne(topic)
       }
       syllabus.complete = messages.isEmpty
-
       entityDao.saveOrUpdate(syllabus)
     }
     return null;

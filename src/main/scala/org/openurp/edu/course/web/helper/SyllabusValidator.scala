@@ -32,9 +32,23 @@ object SyllabusValidator {
     if (syllabus.designs.isEmpty) {
       messages += "缺少教学设计"
     }
+    messages ++= validateRequirements(syllabus)
     messages ++= validateObjectives(syllabus)
     messages ++= validateHours(syllabus)
     messages ++= validAssessment(syllabus)
+    messages.toSeq
+  }
+
+  def validateRequirements(syllabus: Syllabus): Seq[String] = {
+    val messages = Collections.newBuffer[String]
+    syllabus.outcomes foreach { o =>
+      if (Strings.isBlank(o.contents)) {
+        messages.addOne(s"毕业要求【${o.title}】缺少内容")
+      }
+      if (o.title.length > 30) {
+        messages.addOne(s"毕业要求[${o.idx}]的标题过长：【${o.title}】")
+      }
+    }
     messages.toSeq
   }
 

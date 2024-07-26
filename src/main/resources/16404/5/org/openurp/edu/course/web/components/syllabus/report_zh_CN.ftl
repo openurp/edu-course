@@ -3,6 +3,11 @@
 [@b.toolbar title="${syllabus.course.name}教学大纲"]
   bar.addClose();
 [/@]
+[#if messages?? && messages?size>0]
+<div class="alert alert-warning">
+   [#list messages as msg]${msg}<br>[/#list]
+</div>
+[/#if]
 [@b.messages slash="3"/]
 <style>
   .card-header{
