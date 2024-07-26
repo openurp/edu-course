@@ -211,6 +211,7 @@
         </tr>
       </thead>
       [#list syllabus.topics?sort_by("idx") as topic]
+        [#if !topic.exam]
         <tr>
           <td>${topic.name}</td>
           <td style="padding-left:5px;">
@@ -221,11 +222,12 @@
           </td>
           <td>${topic.methods!}</td>
         </tr>
+        [/#if]
       [/#list]
     </table>
     [@header_title "（二）教学安排"/]
     [#assign teachingNatures = syllabus.teachingNatures?sort_by('code')/]
-    <table class="info-table" style="table-layout:fixed;text-align: center;">
+    <table class="info-table" style="text-align: center;">
       <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程教学安排</caption>
       [#assign tableIndex=tableIndex+1/]
       <thead>
@@ -256,21 +258,9 @@
           [#list teachingNatures as nature]<td>${(topic.getHour(nature).creditHours)!}</td>[/#list]
           <td>[#if topic.learningHours>0]${topic.learningHours}[/#if]</td>
           [#assign totalLearningHours=totalLearningHours + topic.learningHours/]
-          <td>${(topic.objectives?replace(","," "))!}</td>
+          <td>[#if topic.exam]——[#else]${(topic.objectives?replace(","," "))!}[/#if]</td>
         </tr>
       [/#list]
-      [#if syllabus.examCreditHours>0]
-       [#assign totalCreditHours=totalCreditHours + syllabus.examCreditHours/]
-      <tr>
-        <td style="text-align:left;padding-left:5px;">期末考核</td>
-        <td>${syllabus.examCreditHours}</td>
-        [#list teachingNatures as nature]
-          <td>[#list syllabus.examHours as eh][#if eh.nature==nature && eh.creditHours>0]${eh.creditHours}[#break/][/#if][/#list]</td>
-        [/#list]
-        <td></td>
-        <td>——</td>
-      </tr>
-      [/#if]
       <tr>
         <td>合计</td>
         <td>${totalCreditHours}</td>

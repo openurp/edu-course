@@ -37,8 +37,8 @@ import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
-import org.openurp.edu.course.model.{CourseTask, Syllabus}
-import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor}
+import org.openurp.edu.course.model.{CourseTask, Syllabus, SyllabusTopic, SyllabusTopicHour}
+import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor, SyllabusValidator}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -218,7 +218,27 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val page = QueryPage(query, entityDao)
     val helper = new SyllabusHelper(entityDao)
     page foreach { syllabus =>
-      helper.cleanMissingObjectives(syllabus)
+      val messages = SyllabusValidator.validate(syllabus)
+      if (syllabus.examCreditHours > 0) {
+        val topic = new SyllabusTopic()
+        topic.syllabus = syllabus
+        topic.idx = 99
+        topic.exam = true
+        if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
+          topic.name = "期末考核"
+          topic.contents = "--"
+        } else {
+          topic.name = "Course assessments"
+          topic.contents = "--"
+        }
+        syllabus.examHours foreach { eh =>
+          val topicHour = new SyllabusTopicHour(topic, eh.nature, eh.creditHours)
+          topic.hours += topicHour
+        }
+        syllabus.topics.addOne(topic)
+      }
+      syllabus.complete = messages.isEmpty
+
       entityDao.saveOrUpdate(syllabus)
     }
     return null;

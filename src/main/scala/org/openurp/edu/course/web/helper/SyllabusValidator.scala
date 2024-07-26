@@ -128,16 +128,11 @@ object SyllabusValidator {
     if java.lang.Double.compare(total.toDouble, syllabus.creditHours * 1.0) != 0 then
       messages += s"课程要求${syllabus.creditHours}学时，分项累计${total}学时，请检查。"
 
-    val totalExamHours = syllabus.examHours.map(_.creditHours).sum
-    if java.lang.Double.compare(totalExamHours.toDouble, syllabus.examCreditHours * 1.0) != 0 then
-      messages += s"大纲考核要求${syllabus.examCreditHours}学时，分项累计${totalExamHours}学时，请检查。"
-
     syllabus.hours foreach { h =>
       var t = 0f
       syllabus.topics foreach { p =>
         t += p.getHour(h.nature).map(_.creditHours).getOrElse(0f)
       }
-      t += syllabus.examHours.find(_.nature == h.nature).map(_.creditHours).getOrElse(0f)
       if (java.lang.Double.compare(t, h.creditHours) != 0) {
         messages += s"课程要求${h.nature.name}${h.creditHours}学时，教学内容累计${t}学时，请检查。"
       }
@@ -160,7 +155,7 @@ object SyllabusValidator {
         }
       }
 
-      if (p.methods.isEmpty) {
+      if (!p.exam && p.methods.isEmpty) {
         messages += s"教学主题:${p.name},缺少教学方法"
       }
     }

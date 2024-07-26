@@ -95,19 +95,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     given project: Project = syllabus.course.project
 
-    put("examHours", 0)
-    val first = findScheduledClazz(syllabus.course, syllabus.semester)
-    first foreach { clazz =>
-      //根据排课学时测算考核学时
-      val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
-      if (scheduleHours <= syllabus.course.creditHours) {
-        put("examHours", syllabus.course.creditHours - scheduleHours)
-      }
-    }
-
-    //topic item
-    put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
-
     //textbook item
     if (get("step").contains("textbook")) {
       put("textbooks", entityDao.getAll(classOf[Textbook]))
@@ -140,6 +127,36 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       put("requirements", requirements)
     }
     if (get("step").contains("topics")) {
+      if (syllabus.topics.isEmpty) {
+        var examHours = 0
+        val first = findScheduledClazz(syllabus.course, syllabus.semester)
+        first foreach { clazz =>
+          //根据排课学时测算考核学时
+          val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
+          if (scheduleHours <= syllabus.course.creditHours) {
+            examHours = syllabus.course.creditHours - scheduleHours
+          }
+        }
+        if (examHours > 0) {
+          val examTopic = new SyllabusTopic
+          examTopic.syllabus = syllabus
+          examTopic.idx = 99
+          examTopic.exam = true
+          if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
+            examTopic.name = "期末考核"
+            examTopic.contents = "--"
+          } else {
+            examTopic.name = "Course assessments"
+            examTopic.contents = "--"
+          }
+          syllabus.examCreditHours = examHours
+          syllabus.topics.addOne(examTopic)
+          entityDao.saveOrUpdate(syllabus)
+          put("examTopic", examTopic)
+        }
+      }
+      //topic item
+      put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
       put("teachingMethods", syllabus.teachingMethods.map(x => (x, x)).toMap)
       put("validateHourMessages", SyllabusValidator.validateHours(syllabus) ++ SyllabusValidator.validateObjectives(syllabus))
     }
@@ -289,24 +306,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     val deprecated = syllabus.hours.filter(x => !teachingNatures.contains(x.nature))
     syllabus.hours.subtractAll(deprecated)
-
-    teachingNatures foreach { ht =>
-      val creditHour = getFloat("examHour" + ht.id)
-      syllabus.examHours find (h => h.nature == ht) match {
-        case Some(hour) =>
-          if (creditHour.isEmpty) {
-            syllabus.examHours -= hour
-          } else {
-            hour.creditHours = creditHour.getOrElse(0f)
-          }
-        case None =>
-          if (creditHour.isDefined) {
-            syllabus.examHours += new SyllabusExamHour(syllabus, ht, creditHour.getOrElse(0))
-          }
-      }
-    }
-    val deprecated2 = syllabus.examHours.filter(x => !teachingNatures.contains(x.nature))
-    syllabus.examHours.subtractAll(deprecated2)
   }
 
   private def cleanText(contents: String): String = {
@@ -395,11 +394,31 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     else toStep(syllabus)
   }
 
+  def newTopic(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+
+    given project: Project = syllabus.course.project
+
+    val topic = new SyllabusTopic
+    topic.exam = getBoolean("topic.exam", false)
+    topic.idx = (syllabus.topics.size + 1).toShort
+    put("teachingNatures", getCodes(classOf[TeachingNature]))
+    put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
+    put("topic", topic)
+    put("teachingMethods", syllabus.teachingMethods.map(x => (x, x)).toMap)
+    put("syllabus", syllabus)
+
+    forward(s"${syllabus.docLocale}/editTopic")
+  }
+
   def editTopic(): View = {
     val topic = entityDao.get(classOf[SyllabusTopic], getLongId("topic"))
 
     given project: Project = topic.syllabus.course.project
 
+    getBoolean("topic.exam") foreach { exam =>
+      topic.exam = exam
+    }
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     put("topicLabels", getCodes(classOf[SyllabusTopicLabel]))
     put("topic", topic)
@@ -466,6 +485,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     topic.methods = None
     val sep = if syllabus.docLocale == Locale.SIMPLIFIED_CHINESE then "、" else ","
     topic.methods = Some(methods.mkString(sep))
+    if (null == topic.contents) topic.contents = " "
     syllabus.updatedAt = Instant.now
     entityDao.saveOrUpdate(syllabus, topic)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")

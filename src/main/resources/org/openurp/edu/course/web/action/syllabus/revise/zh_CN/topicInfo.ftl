@@ -17,7 +17,9 @@
         [/@]
        [/@]
       <div class="card-body">
-        <p style="white-space: preserve;">教学内容：${topic.contents}</p>
+        [#if topic.exam]<p style="white-space: preserve;">内容：${topic.contents}</p>
+        [#else]<p style="white-space: preserve;">教学内容：${topic.contents}</p>
+        [/#if]
         [#list topic.elements?sort_by(["label","code"]) as elem]
         <p style="white-space: preserve;">${elem.label.name}：${elem.contents}</p>
         [/#list]

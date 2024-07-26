@@ -26,8 +26,9 @@
             </button>
           [/@]
         [/@]
-        <div class="card-body" style="padding-top: 0px;[#if validateHourMessages?size==0]display:none;[/#if]">
-          [@b.form theme="list" action="!saveTopic" target="_self"]
+        <div class="card-body" style="padding-top: 0px;[#if validateHourMessages?size==0]display:none;[/#if]" id="new_topic_card">
+          [@b.form theme="list" name="newTopicForm" action="!saveTopic" target="_self"]
+            [@b.radios label="教学环节" name="topic.exam" value="0" items="0:课堂教学,1:考查考试" onclick="changeTopicExam(this.value);"/]
             [@b.textfield label="主题名" name="topic.name" required="true"  style="width:300px" comment="第几章 XXXXXX"/]
             [@b.textarea label="教学内容" name="topic.contents" rows="5" cols="80" required="true" maxlength="3000"/]
             [#list topicLabels as label]
@@ -50,6 +51,11 @@
               <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
               [@b.submit value="保存" /]
             [/@]
+            <script>
+               function changeTopicExam(examValue){
+                 bg.Go("${b.url("!newTopic?syllabus.id=${syllabus.id}")}&topic.exam="+examValue,"new_topic_card");
+               }
+            </script>
           [/@]
         </div>
     </div>
@@ -61,9 +67,7 @@
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
     <input type="hidden" name="step" value="designs"/>
     [@b.a href="!edit?syllabus.id=${syllabus.id}&step=outcomes" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>上一步[/@]
-    [#if syllabus.topics?size>0]
-    [@b.submit value="下一步" /]
-    [/#if]
+    [#if syllabus.topics?size>0][@b.submit value="下一步" /][/#if]
   [/@]
 [/@]
 </div>

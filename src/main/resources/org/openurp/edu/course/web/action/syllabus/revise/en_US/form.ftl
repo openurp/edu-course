@@ -21,10 +21,6 @@
     [@b.textfield name="syllabus.methods" label="Teaching Manners" value=syllabus.methods! required="true" style="width:500px" comment="多个方式请用,或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="Examination/Test" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="Grading Mode" items=gradingModes value=syllabus.gradingMode!/]
-    [#--
-    [@b.number label="Credit Hours" name="syllabus.creditHours" value=syllabus.creditHours required="true" max=course.creditHours min="0"/]
-    [@b.number label="Week Hours" name="syllabus.weekHours" value=syllabus.weekHours required="true" min="0"/]
-    --]
     [#if teachingNatures?size>0]
     [@b.field label="Credit Hours"]
        [#assign hours={}/]
@@ -42,19 +38,6 @@
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>
     [/@]
     [/#if]
-    [@b.textfield name="syllabus.examCreditHours" label="Final Exam Hours" value=syllabus.examCreditHours! style="width:50px" onchange="checkExamHours()"]
-       学时([#assign hours={}/]
-       [#list syllabus.examHours as h]
-          [#assign hours=hours+{'${h.nature.id}':h} /]
-       [/#list]
-       [#list teachingNatures as ht]
-        <label for="examHour${ht.id}_p" style="font-weight:normal;">${ht.name}</label>
-        <input name="examHour${ht.id}" style="width:30px" id="examHour{ht.id}_p" value="${(hours[ht.id?string].creditHours)!}" onchange="checkExamHours()">
-        [#sep],
-       [/#list])
-       <span  style="color:red" id="exam_hour_tips" style="display:none"></span>
-       <div class="text-muted" style="margin-left: 10rem;">建议${examHours}学时。理论、实践课时分布根据课程实际情况填写。当实际排课课时小于课程总学时的时候，建议填写考核课时（包括考试周统一考试，或自行组织的期末考核，一般为一个教学周与学分数相当的学时）</div>
-    [/@]
     [@b.number name="syllabus.learningHours" label="Autonomous Learning Hours" value=syllabus.learningHours!/]
     [@b.textarea name="syllabus.prerequisites" label="Prerequisite course(s)" value=syllabus.prerequisites! rows="2" cols="80"/]
     [@b.textarea name="syllabus.corequisites" label="Corequisites course(s)" value=syllabus.corequisites!  rows="2" cols="80"/]
@@ -74,7 +57,7 @@
 </div>
 <script>
   function checkInfo(form){
-    if(!checkCreditHours() || !checkExamHours()){
+    if(!checkCreditHours()){
       return false;
     }
     return true;
@@ -97,30 +80,6 @@
     }
     $("#credit_hour_tips").html("");
     $("#credit_hour_tips").hide();
-    return true;
-  }
-  function checkExamHours(){
-    var form = document.syllabusForm;
-    var h="";
-    var total=0;
-    [#list teachingNatures as ht]
-    h = form['examHour${ht.id}'].value
-    if(h){
-      total += Number.parseInt(h);
-    }
-    [/#list]
-    var examHours = parseInt(form['syllabus.examCreditHours'].value || "0")
-    if(total != examHours){
-      $("#exam_hour_tips").html("学时小计"+total+"不等于"+examHours);
-      $("#exam_hour_tips").show();
-      return false;
-    }
-    if(examHours==0 && ${examHours}>0){
-      $("#exam_hour_tips").html("建议填写");
-    }else{
-      $("#exam_hour_tips").html("");
-      $("#exam_hour_tips").hide();
-    }
     return true;
   }
   checkInfo();

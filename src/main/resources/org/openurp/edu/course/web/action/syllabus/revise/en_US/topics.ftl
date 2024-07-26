@@ -28,6 +28,7 @@
         [/@]
         <div class="card-body" style="display:none">
           [@b.form theme="list" action="!saveTopic" target="_self"]
+            [@b.radios label="Section" name="topic.exam" value="0" items="0:Lecture,1:Exam" onclick="changeTopicExam(this.value);"/]
             [@b.textfield label="Topic Name" name="topic.name" required="true"  style="width:500px" comment="Chapter 1: xxx "/]
             [@b.textarea label="Contents" name="topic.contents" rows="5" cols="80" required="true" maxlength="3000"/]
             [#list topicLabels as label]
@@ -50,6 +51,11 @@
               <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
               [@b.submit value="Save" /]
             [/@]
+            <script>
+               function changeTopicExam(examValue){
+                 bg.Go("${b.url("!newTopic?syllabus.id=${syllabus.id}")}&topic.exam="+examValue,"new_topic_card");
+               }
+            </script>
           [/@]
         </div>
     </div>

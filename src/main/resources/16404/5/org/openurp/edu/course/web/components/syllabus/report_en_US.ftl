@@ -202,6 +202,7 @@ Graduation requirements【${o.title}】：${o.contents}
         </tr>
       </thead>
       [#list syllabus.topics?sort_by("idx") as topic]
+        [#if !topic.exam]
         <tr>
           <td>${topic.name}</td>
           <td style="padding-left: 5px;">
@@ -212,6 +213,7 @@ Graduation requirements【${o.title}】：${o.contents}
           </td>
           <td>${topic.methods!}</td>
         </tr>
+        [/#if]
       [/#list]
     </table>
     <div style="margin-top: 20px;">&nbsp;</div>
@@ -248,21 +250,9 @@ Graduation requirements【${o.title}】：${o.contents}
           [#list teachingNatures as nature]<td>${(topic.getHour(nature).creditHours)!}</td>[/#list]
           <td>[#if topic.learningHours>0]${topic.learningHours}[/#if]</td>
           [#assign totalLearningHours=totalLearningHours + topic.learningHours/]
-          <td>${(topic.objectives?replace(","," "))!}</td>
+          <td>[#if topic.exam]——[#else]${(topic.objectives?replace(","," "))!}[/#if]</td>
         </tr>
       [/#list]
-      [#if syllabus.examCreditHours>0]
-       [#assign totalCreditHours=totalCreditHours + syllabus.examCreditHours/]
-      <tr>
-        <td style="text-align:left;">Course assessments</td>
-        <td>${syllabus.examCreditHours}</td>
-        [#list teachingNatures as nature]
-          <td>[#list syllabus.examHours as eh][#if eh.nature==nature && eh.creditHours>0]${eh.creditHours}[#break/][/#if][/#list]</td>
-        [/#list]
-        <td></td>
-        <td>——</td>
-      </tr>
-      [/#if]
       <tr>
         <td>Total</td>
         <td>${totalCreditHours}</td>
