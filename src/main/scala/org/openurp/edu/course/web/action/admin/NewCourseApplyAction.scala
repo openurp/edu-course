@@ -19,10 +19,11 @@ package org.openurp.edu.course.web.action.admin
 
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
+import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.model.AuditStatus.Submited
-import org.openurp.base.model.{Project, User}
+import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseApplyHour, NewCourseCategory, NewCourseDepart}
@@ -53,6 +54,18 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
 
     val q = super.getQueryBuilder
     queryByDepart(q, "apply.department")
+  }
+
+  @mapping(value = "{id}/edit")
+  override def edit(@param("id") id: String): View = {
+    val entity = getModel(id)
+    if (entity.status == AuditStatus.Passed) {
+      redirect("info", s"id=${id}", "新课申请已经审批通过，如需更改，请到课程信息维护中，直接更改。")
+    } else {
+      editSetting(entity)
+      put(simpleEntityName, entity)
+      forward()
+    }
   }
 
   override def editSetting(entity: NewCourseApply): Unit = {

@@ -79,8 +79,8 @@ ol {
 .step-active .ui-step-cont-text { color: #3c8dbc;font-weight: bold; }
 
   fieldset.listset li > label.title{
-    min-width: 10rem;
-    max-width: 10rem;
+    min-width: 11rem;
+    max-width: 11rem;
   }
 </style>
   [#assign stepNames=['Basic information','Introduction and objectives','Graduation requirements','Topics and Schedule','Teaching designs','Assessments','Textbook and Resources']/]

@@ -19,7 +19,6 @@ package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
-import org.beangle.commons.lang.time.Weeks
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
@@ -144,10 +143,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
           examTopic.exam = true
           if (syllabus.docLocale == Locale.SIMPLIFIED_CHINESE) {
             examTopic.name = "期末考核"
-            examTopic.contents = "--"
+            examTopic.contents = " "
           } else {
             examTopic.name = "Course assessments"
-            examTopic.contents = "--"
+            examTopic.contents = " "
           }
           syllabus.examCreditHours = examHours
           syllabus.topics.addOne(examTopic)
@@ -212,8 +211,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     putBasicDatas(course)
 
+    val teacher = getTeacher
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
-    val syllabus = newSyllabus(course, semester)
+    val task = courseTaskService.getTask(semester, course, teacher).get
+    val syllabus = newSyllabus(task)
     put("course", course)
     put("syllabus", syllabus)
     val locale = get("locale", classOf[Locale]).getOrElse(Locale.SIMPLIFIED_CHINESE)
@@ -230,9 +231,26 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     entityDao.findBy(classOf[Clazz], "course" -> course, "semester" -> semester).find(_.schedule.activities.nonEmpty)
   }
 
-  private def newSyllabus(course: Course, semester: Semester): Syllabus = {
+  private def newSyllabus(task: CourseTask): Syllabus = {
+    val course = task.course
+    val semester = task.semester
     val syllabus = new Syllabus
     syllabus.course = course
+    //根据课程类别，猜测模块，必修，阶段以及理论和实践
+    val ct = task.courseType
+    ct.module foreach { m => syllabus.module = m }
+    ct.rank foreach { m => syllabus.rank = m }
+    if (ct.name.contains("-")) {
+      val prefix = Strings.substringBefore(ct.name, "-")
+      val stages = attribute("calendarStages", classOf[Seq[CalendarStage]])
+      stages.find(_.name.startsWith(prefix)) foreach { stage =>
+        syllabus.stage = Some(stage)
+      }
+    }
+    if (null != syllabus.module && syllabus.module.practical) {
+      val natures = attribute("courseNatures", classOf[Seq[CourseNature]])
+      syllabus.nature = natures.find(_.practical).get
+    }
     syllabus.department = course.department
     syllabus.examMode = course.examMode
     syllabus.gradingMode = course.gradingMode
@@ -268,7 +286,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (!syllabus.persisted) {
       syllabus.course = course
     }
-    if null == syllabus.description then syllabus.description = "--"
+    if null == syllabus.description then syllabus.description = " "
     populateHours(syllabus)
     if (null == syllabus.writer) {
       val me = entityDao.findBy(classOf[User], "code", Securities.user).head
@@ -290,18 +308,16 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
       val creditHour = getFloat("creditHour" + ht.id)
-      val week = getInt("week" + ht.id)
       syllabus.hours find (h => h.nature == ht) match {
         case Some(hour) =>
-          if (week.isEmpty && creditHour.isEmpty) {
+          if (creditHour.isEmpty) {
             syllabus.hours -= hour
           } else {
-            hour.weeks = week.getOrElse(0)
             hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
-          if (!(week.isEmpty && creditHour.isEmpty)) {
-            syllabus.hours += new SyllabusCreditHour(syllabus, ht, creditHour.getOrElse(0f), week.getOrElse(0))
+          if (creditHour.nonEmpty) {
+            syllabus.hours += new SyllabusHour(syllabus, ht, creditHour.getOrElse(0f))
           }
       }
     }
@@ -309,19 +325,31 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.hours.subtractAll(deprecated)
   }
 
+  /**
+   * 清理文本内容，移除换行符和回车符。
+   *
+   * 该函数的目的是为了处理文本，确保文本中不包含任何的回车符(\r)或换行符(\n)。
+   * 这对于一些需要统一文本格式的场景非常有用，比如处理从不同来源获取的文本数据。
+   *
+   * @param contents 待清理的文本字符串。
+   * @return 清理后的文本字符串，不包含任何回车符或换行符。
+   */
   private def cleanText(contents: String): String = {
+    // 移除文本中的回车符
     var c = Strings.replace(contents, "\r", "")
+    // 移除文本中的换行符
     c = Strings.replace(c, "\n", "")
     c
   }
+
 
   def saveObjectives(): View = {
     val syllabus = populateEntity()
     syllabus.updatedAt = Instant.now
     syllabus.getText("values") match
-      case Some(values) => values.contents = get("values", "--")
+      case Some(values) => values.contents = get("values", " ")
       case None =>
-        val v = new SyllabusText(syllabus, "2", "values", get("values", "--"))
+        val v = new SyllabusText(syllabus, "2", "values", get("values", " "))
         syllabus.texts.addOne(v)
 
     (1 to 8) foreach { i =>
@@ -737,14 +765,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val course = entityDao.get(classOf[Course], getLongId("course"))
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     val teacher = getTeacher
+    val task = courseTaskService.getTask(semester, course, teacher)
 
-    val q = OqlBuilder.from(classOf[CourseTask], "c")
-    q.where("c.course=:course", course)
-    q.where("c.semester=:semester", semester)
-    q.where("c.director=:me", teacher)
-    val tasks = entityDao.search(q)
-
-    put("task", tasks.headOption)
+    put("task", task)
     put("course", course)
     put("semester", semester)
 

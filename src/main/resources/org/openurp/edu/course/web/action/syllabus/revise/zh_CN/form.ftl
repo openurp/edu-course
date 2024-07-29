@@ -30,9 +30,6 @@
        [#list teachingNatures as ht]
         <label for="teachingNature${ht.id}_p" style="font-weight:normal;">${ht.name}</label>
         <input name="creditHour${ht.id}" style="width:30px" id="teachingNature${ht.id}_p" value="${(hours[ht.id?string].creditHours)!}" onchange="checkCreditHours()">
-        [#if ht.category.title=="实践"]
-        ，总实践周<input name="week${ht.id}" style="width:30px" id="teachingNature${ht.id}_w" value="${(hours[ht.id?string].weeks)!}">
-        [/#if]
         [#sep],
        [/#list]
        <span style="color:red" id="credit_hour_tips" style="display:none"></span>

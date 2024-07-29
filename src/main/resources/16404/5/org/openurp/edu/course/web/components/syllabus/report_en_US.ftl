@@ -121,7 +121,7 @@
       </tr>
       <tr>
         <td>②Total practical weeks：</td>
-        <td class="center">[#assign weeks=0][#list syllabus.hours as h][#assign weeks=weeks+h.weeks][/#list][#if weeks>0]${weeks}Weeks[/#if]</td>
+        <td class="center">[#if syllabus.weeks?? && syllabus.weeks>0]${syllabus.weeks}Weeks[/#if]</td>
       </tr>
       <tr>
         <td>Course nature：</td>

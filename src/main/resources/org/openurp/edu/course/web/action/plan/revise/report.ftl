@@ -67,7 +67,7 @@
       </tr>
       <tr>
         <td>②总实践周：</td>
-        <td>[#assign weeks=0][#list syllabus.hours as h][#assign weeks=weeks+h.weeks][/#list][#if weeks>0]${weeks}周[/#if]</td>
+        <td>[#if syllabus.weeks?? && syllabus.weeks>0]${syllabus.weeks}周[/#if]</td>
       </tr>
       <tr>
         <td>课程性质</td>

@@ -18,7 +18,7 @@
 [/#if]
 
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
-  [@b.form name="assessForm" theme="list" action="!saveAssess"]
+  [@b.form name="assessForm" theme="list" action="!saveAssess" onsubmit="validateForm"]
     [@b.textfield name="grade${usualType.id}.scorePercent" label="平时成绩百分比" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
     [@b.textfield name="grade${endType.id}.scorePercent" label="期末成绩百分比" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
     [@b.field label="期末对课程目标支撑比例"]
@@ -53,15 +53,17 @@
            [/@]
           <div class="card-body">
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="平时环节"+rn value=assessment.component required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value=assessment.scorePercent comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value=assessment.scorePercent comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
             [@b.field label="对课程目标支撑比例"]
               [#assign objectivePercentMap=assessment.objectivePercentMap/]
               [#list orderedObjectives as co]
-                <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" value="${objectivePercentMap[co.code]!}" style="width:50px" onchange="checkUsualCoPercent(${rnIndex})">
+                <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" value="${objectivePercentMap[co.code]!}" style="width:50px" onchange="checkUsual(${rnIndex})">
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value=assessment.assessCount /]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value=assessment.assessCount ]
+              <span id="UsualAssessCountTip${rnIndex}"></span>
+            [/@]
             [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value=assessment.description! required="false"]
               <a class="btn btn-sm btn-outline-primary" onclick="return toggleScoreTable(this)">
                 [#if assessment.scoreTable??]<i class="fa fa-minus"></i>评分表[#else]<i class="fa fa-plus"></i>评分表[/#if]
@@ -85,14 +87,16 @@
            [/@]
           <div class="card-body">
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="平时环节"+rn value="" required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value="" comment="%" required="false" onchange="checkUsualCoPercent(${rnIndex})"/]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="占平时成绩比例" value="" comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
             [@b.field label="对课程目标支撑比例"]
               [#list orderedObjectives as co]
-                <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" style="width:50px" onchange="checkUsualCoPercent(${rnIndex})">
+                <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" style="width:50px" onchange="checkUsual(${rnIndex})">
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" /]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" ]
+              <span id="UsualAssessCountTip${rnIndex}"></span>
+            [/@]
             [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"]
               <a class="btn btn-sm btn-outline-primary" onclick="return toggleScoreTable(this)"><i class="fa fa-plus"></i>评分表</a>
             [/@]
@@ -110,8 +114,11 @@
     [/@]
   [/@]
   <script>
-    function checkUsualCoPercent(idx){
+    var errors=0;
+    function checkUsual(idx){
       var form = document.assessForm;
+      var name=form["grade${usualType.id}_"+idx+".component"].value;
+      if(name.length==0) return;
       var percent=form["grade${usualType.id}_"+idx+".scorePercent"].value;
       var totalPercent=Number.parseInt(percent);
       var coTotalPercent=0;
@@ -129,9 +136,26 @@
       }else if(totalPercent!=coTotalPercent){
         document.getElementById("UsualCoTip"+idx).innerHTML="分项累计为"+coTotalPercent+"%和该项占比"+totalPercent+"%不相等";
         document.getElementById("UsualCoTip"+idx).style.color="red";
+        errors += 1;
       }else{
         document.getElementById("UsualCoTip"+idx).innerHTML="分项累计为"+coTotalPercent+"%和该项占比"+totalPercent+"%相等";
         document.getElementById("UsualCoTip"+idx).style.color="green";
+      }
+      var tips="";
+      var cnt = form["grade${usualType.id}_"+idx+".assessCount"].value;
+      if(cnt.length==0 || Number.isNaN(cnt) || Number.parseInt(cnt)<=0){
+        tips="需要填写考核次数（大于0）"
+        errors += 1;
+      }
+      var description = form["grade${usualType.id}_"+idx+".description"].value;
+      if(description.length==0){
+        if(tips =="") tips="需要填写评分标准";
+        else tips+=",需要填写评分标准"
+        errors += 1;
+      }
+      document.getElementById("UsualAssessCountTip"+idx).innerHTML=tips;
+      if(tips.length>0){
+        document.getElementById("UsualAssessCountTip"+idx).style.color="red";
       }
     }
     function checkEndCoPercent(){
@@ -157,6 +181,7 @@
         if(coTotalPercent!=100){
           document.getElementById("EndCoTip").innerHTML="期末成绩设置支撑比例总和应为100%，现在为"+coTotalPercent+"%";
           document.getElementById("EndCoTip").style.color="red";
+          errors += 1;
         }else{
           document.getElementById("EndCoTip").innerHTML="支撑比例综合100%";
           document.getElementById("EndCoTip").style.color="green";
@@ -175,8 +200,9 @@
         totalPercent += Number.parseInt(percent);
       }
       if(totalPercent!=100){
-        document.getElementById("end_comment").innerHTML="期末平时累计"+totalPercent+"%不等于100%";
+        document.getElementById("end_comment").innerHTML="期末+平时累计"+totalPercent+"%不等于100%";
         document.getElementById("end_comment").style.color="red";
+        errors += 1;
       }else{
         document.getElementById("end_comment").innerHTML="";
       }
@@ -214,9 +240,24 @@
       }
     }
     [#list usualAssessments as ua]
-      checkUsualCoPercent(${ua_index});
-      checkEndCoPercent();
+      checkUsual(${ua_index});
     [/#list]
+    checkEndCoPercent();
+    checkPercent();
+    function validateForm(form){
+       errors = 0;
+      [#list 0..6 as ua]
+      checkUsual(${ua});
+      [/#list]
+      checkEndCoPercent();
+      checkPercent();
+      if(errors>0){
+        alert("请查看页面红色的提示，检查输入的数据是否正确。");
+        return false;
+      }else{
+        return true;
+      }
+    }
   </script>
   </div>
 </div>

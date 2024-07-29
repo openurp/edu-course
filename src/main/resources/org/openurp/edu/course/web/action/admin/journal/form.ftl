@@ -12,6 +12,7 @@
                      style="width:200px;" items=departments option="id,name" empty="..."/]
       [@b.textfield name="journal.creditHours" label="学时" value=journal.creditHours! required="true"  maxlength="100"/]
     [#else]
+      [@b.textfield name="journal.enName" label="英文名" value=journal.enName! maxlength="200" style="width:500px"/]
       [@b.field label="院系"]${journal.department.name}[/@]
       [@b.field label="学时"]${journal.creditHours}[/@]
     [/#if]

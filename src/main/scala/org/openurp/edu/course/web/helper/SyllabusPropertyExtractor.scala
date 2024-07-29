@@ -42,7 +42,7 @@ class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
           case Some(a) =>
             val components = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty).sortBy(_.idx)
             components.map(x => x.component.get + " " + x.scorePercent + "%").mkString(",")
-      }else{
+      } else {
         ""
       }
     } else if (property.startsWith("hour.")) {
@@ -50,7 +50,9 @@ class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
       syllabus.hours.find(x => x.nature.id.toString == natureId) match
         case None => ""
         case Some(h) => h.creditHours
-    }
-    else super.get(target, property)
+    } else if ("uncompleteReason" == property) {
+      if (syllabus.complete) then ""
+      else SyllabusValidator.validate(syllabus).mkString(";")
+    } else super.get(target, property)
   }
 }

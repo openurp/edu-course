@@ -18,6 +18,9 @@
        [/@]
       <div class="card-body">
         [#if topic.exam]<p style="white-space: preserve;">内容：${topic.contents}</p>
+        [#if topic.exam && topic.hours?size==0]
+         <p style="color:red;">建议${syllabus.examCreditHours}学时。理论、实践课时分布根据课程实际情况填写。当实际排课课时小于课程总学时的时候，建议填写考核课时（包括考试周统一考试，或自行组织的期末考核，一般为一个教学周与学分数相当的学时）</p>
+        [/#if]
         [#else]<p style="white-space: preserve;">教学内容：${topic.contents}</p>
         [/#if]
         [#list topic.elements?sort_by(["label","code"]) as elem]

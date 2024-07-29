@@ -30,6 +30,9 @@
       [/#list]
        <label for="learning_p">自主学习</label>
        <input name="topic.learningHours" style="width:30px" id="learning_p" value="${topic.learningHours}">学时
+       [#if topic.exam && topic.idx>90]
+       <div class="text-muted" style="display: block;margin-left: 10rem;">建议${syllabus.examCreditHours}学时。理论、实践课时分布根据课程实际情况填写。当实际排课课时小于课程总学时的时候，建议填写考核课时（包括考试周统一考试，或自行组织的期末考核，一般为一个教学周与学分数相当的学时）</div>
+       [/#if]
     [/@]
   [#if !topic.exam]
     [@b.checkboxes label="对应课程目标" name="objective.id" items=syllabus.objectives?sort_by("code") values=topic.matchedObjectives required="true"/]
