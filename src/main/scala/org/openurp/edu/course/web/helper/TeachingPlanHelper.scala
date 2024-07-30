@@ -31,7 +31,8 @@ class TeachingPlanHelper(entityDao: EntityDao) {
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")
     query.where("s.course=:course", clazz.course)
-    query.where("s.semester=:semester", clazz.semester)
+    query.where("s.beginOn<=:beginOn and (s.endOn is null or s.endOn >:endOn)", clazz.semester.beginOn, clazz.semester.beginOn)
+    query.orderBy("s.beginOn desc")
     val syllabuses = entityDao.search(query)
     if (syllabuses.size == 1) { //大纲只有一份
       syllabuses.headOption

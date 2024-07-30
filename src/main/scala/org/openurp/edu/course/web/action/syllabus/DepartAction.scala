@@ -76,13 +76,12 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
       else query.where("size(syllabus.topics)=0")
     }
     queryByDepart(query, "syllabus.department")
-
   }
 
   def audit(): View = {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
     getBoolean("passed") foreach { passed =>
-      val status = if passed then AuditStatus.Passed else AuditStatus.Rejected
+      val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
       syllabuses foreach { s => s.status = status }
     }
     entityDao.saveOrUpdate(syllabuses)

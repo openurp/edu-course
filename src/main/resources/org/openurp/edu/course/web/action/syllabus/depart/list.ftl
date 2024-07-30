@@ -2,8 +2,8 @@
 [@b.head/]
 [@b.grid items=syllabuses var="syllabus"]
   [@b.gridbar]
-    //bar.addItem("审核通过",action.multi("audit","确认审核通过?","passed=1"));
-    //bar.addItem("驳回修改",action.multi("audit","确认驳回修改?","passed=0"));
+    bar.addItem("审核通过",action.multi("audit","确认审核通过?","passed=1"));
+    bar.addItem("驳回修改",action.multi("audit","确认驳回修改?","passed=0"));
     bar.addItem("${b.text("action.modify")}",action.edit());
     bar.addItem("调整方案",action.single("revise",null,null,"_blank"));
     bar.addItem("选中下载",action.multi("download","选择数量较多时,下载时间较长，请稍后",null,"_blank"));

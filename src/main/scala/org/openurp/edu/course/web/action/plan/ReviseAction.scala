@@ -103,7 +103,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (scheduled.nonEmpty) {
       put("plans", entityDao.findBy(classOf[TeachingPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
     }
-    val syllabusCourses = entityDao.findBy(classOf[Syllabus], "course", clazzes.map(_.course)).map(_.course)
+    val query = OqlBuilder.from(classOf[Syllabus], "s")
+    query.where("s.course in(:courses)", clazzes.map(_.course))
+    query.where("s.beginOn<=:beginOn and (s.endOn is null or s.endOn >:endOn)", semester.beginOn, semester.beginOn)
+    query.orderBy("s.beginOn desc")
+
+    val syllabusCourses = entityDao.search(query).map(_.course)
     put("syllabusCourses", syllabusCourses)
     put("clazzes", scheduled)
     put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
@@ -129,6 +134,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clazz)
     val plan = plans.headOption.getOrElse(new TeachingPlan)
+    getLong("copyFrom.id") foreach { id =>
+      val copyFrom = entityDao.get(classOf[TeachingPlan], id)
+      copyFrom.copyTo(plan)
+    }
     put("plan", plan)
     put("clazz", clazz)
     put("schedule_time", ScheduleDigestor.digest(clazz, ":day :units :weeks"))
@@ -163,6 +172,14 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
+    val q = OqlBuilder.from(classOf[TeachingPlan], "p")
+    q.where("p.clazz.course=:course", clazz.course)
+    q.where("p.semester.beginOn <:beginOn", semester.beginOn)
+    val historyPlans = entityDao.search(q)
+    val lastBeginOn = historyPlans.map(_.semester.beginOn).toSet.max
+    //每个人只选一个
+    val lastPlans = historyPlans.filter(_.semester.beginOn == lastBeginOn).groupBy(_.writer).map(_._2.head)
+    put("lastPlans", lastPlans)
     forward()
   }
 

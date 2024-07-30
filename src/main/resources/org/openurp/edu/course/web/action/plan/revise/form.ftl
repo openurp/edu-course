@@ -5,6 +5,20 @@
 <style>
   .form-table td{border: solid 1px black;padding:5px;}
 </style>
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+  <h4 class="card-title" style="padding: .5rem 1.25rem;">授课计划编写</h4>
+  <span>110020310 会计学原理（${clazz.crn}）</span>
+  <ul class="nav navbar-nav ml-auto">
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中选择复制...</a>
+      <div class="dropdown-menu">
+        [#list lastPlans as p]
+          [@b.a href="!edit?clazz.id=${clazz.id}&copyFrom.id=${p.id}" class="nav-link" onclick="return bg.Go(this,null,'复制后仍需要进行保存或提交，确认复制?');" ] ${p.semester.schoolYear} ${p.semester.name} ${p.clazz.crn} ${(p.writer.name)!}[/@]
+        [/#list]
+      </div>
+    </li>
+  </ul>
+</nav>
 <div class="container" style="font-family: 宋体;font-size: 12pt;">
   <div style="width:100%;text-align:center;">
     <p style="font-weight:bold;font-family: 宋体;font-size: 16pt;">《${clazz.course.code} ${clazz.course.name}》</p>
@@ -20,7 +34,8 @@
       </tr>
       <tr>
         <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${(t.name)!}[#sep],[/#list]</td>
-        <td style="text-align:right;">教  学  班：</td><td style="border-bottom: solid 1px black;">${clazz.clazzName}</td>
+        <td style="text-align:right;">教  学  班：</td>
+        <td style="border-bottom: solid 1px black;display:flex;"><div>(${clazz.crn})</div><div class="text-ellipsis" style="max-width:350px;">${clazz.clazzName}</div></td>
       </tr>
       <tr>
         <td style="text-align:right;">授课时间：</td><td style="border-bottom: solid 1px black;">${schedule_time}</td>
@@ -54,7 +69,7 @@
       </tr>
       <tr>
         <td>②总实践周：</td>
-        <td>[#if syllabus.weeks>0]${syllabus.weeks}周[/#if]</td>
+        <td>[#if syllabus.weeks?? && syllabus.weeks>0]${syllabus.weeks}周[/#if]</td>
       </tr>
       <tr>
         <td>课程性质</td>
