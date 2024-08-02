@@ -17,6 +17,7 @@
     [@b.textfield name="syllabus.methods" label="教学方法" value=syllabus.methods! required="true" style="width:300px" comment="多个方式请用、或者逗号隔开"/]
     [@b.radios name="syllabus.examMode.id" label="考核方式" value=syllabus.examMode! items=examModes /]
     [@b.radios name="syllabus.gradingMode.id" label="成绩记录方式" items=gradingModes value=syllabus.gradingMode!/]
+    [@b.textfield name="syllabus.weeks" label="总实践周" value=syllabus.weeks!/]
     [@b.select name="syllabus.office.id" label="教研室" items=offices value=syllabus.office! option="id,name" empty="..." /]
     [@b.formfoot]
       [@b.submit value="保存" /]

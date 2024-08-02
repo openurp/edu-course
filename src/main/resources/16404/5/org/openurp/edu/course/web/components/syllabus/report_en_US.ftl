@@ -288,12 +288,12 @@ Graduation requirements【${o.title}】：${o.contents}
       [@p design.contents/]
       [#if design.hasCase]
       <ul>Cases：
-      [#list syllabus.cases as c]<li>${c.idx+1}:${c.name}</li>[/#list]
+      [#list syllabus.cases?sort_by("idx") as c]<li>${c.idx+1}:${c.name}</li>[/#list]
       </ul>
       [/#if]
       [#if design.hasExperiment]
       <ul>Experiments：
-      [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} [#if e.creditHours>0]${e.creditHours}hours [/#if]${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
+      [#list syllabus.experiments?sort_by("idx") as e]<li>${e.idx+1}:${e.name} [#if e.creditHours>0]${e.creditHours}hours [/#if]${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
       </ul>
       [/#if]
     [/#list]

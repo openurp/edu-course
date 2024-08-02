@@ -61,7 +61,7 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     if (offices.nonEmpty) {
       query.where("syllabus.office in(:offices)", offices)
     }
-    query.where("syllabus.reviewer.code=:reviewerCode", Securities.user)
+    //query.where("syllabus.reviewer.code=:reviewerCode", Securities.user)
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     query
   }
