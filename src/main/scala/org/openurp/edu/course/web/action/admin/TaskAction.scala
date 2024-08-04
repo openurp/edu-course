@@ -33,7 +33,7 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature}
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseTask, Syllabus, TeachingPlan}
+import org.openurp.edu.course.model.{CourseTask, Syllabus, ClazzPlan}
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.{CourseTaskImportListener, CourseTaskPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
@@ -82,12 +82,12 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
       case _ =>
     }
     get("plan_status").foreach {
-      case "1" => query.where(s"exists(from ${classOf[TeachingPlan].getName} s where s.clazz.course=courseTask.course" +
+      case "1" => query.where(s"exists(from ${classOf[ClazzPlan].getName} s where s.clazz.course=courseTask.course" +
         s" and s.semester=courseTask.semester and s.status in (:statuses))",
         List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
       case "0" =>
         query.where("courseTask.syllabusRequired=true")
-        query.where(s"not exists(from ${classOf[TeachingPlan].getName} s where s.clazz.course=courseTask.course" +
+        query.where(s"not exists(from ${classOf[ClazzPlan].getName} s where s.clazz.course=courseTask.course" +
           s" and s.semester=courseTask.semester and s.status in (:statuses))",
           List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
       case _ =>

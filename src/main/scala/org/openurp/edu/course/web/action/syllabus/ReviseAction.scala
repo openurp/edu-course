@@ -342,7 +342,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     c
   }
 
-
   def saveObjectives(): View = {
     val syllabus = populateEntity()
     syllabus.updatedAt = Instant.now

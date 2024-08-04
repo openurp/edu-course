@@ -15,14 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.info
+package org.openurp.edu.course.web.action.program
 
-import org.beangle.data.dao.EntityDao
-import org.beangle.web.action.support.ActionSupport
-import org.beangle.webmvc.support.action.EntityAction
-import org.openurp.edu.course.model.ClazzPlan
+class DepartAction {
 
-class PlanAction extends ActionSupport, EntityAction[ClazzPlan] {
-
-  var entityDao: EntityDao = _
 }

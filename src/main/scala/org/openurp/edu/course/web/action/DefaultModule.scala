@@ -25,15 +25,18 @@ class DefaultModule extends BindModule {
 
   override protected def binding(): Unit = {
     bind(classOf[profile.ReviseAction], classOf[profile.InfoAction])
+
     bind(classOf[admin.DepartAction], classOf[admin.TaskAction])
     bind(classOf[admin.DirectorAction], classOf[admin.JournalAction])
     bind(classOf[admin.NewCourseApplyAction], classOf[admin.NewCourseAuditAction])
 
+    bind(classOf[syllabus.ReviseAction], classOf[syllabus.OfficeAction])
+    bind(classOf[syllabus.AuditAction], classOf[syllabus.DepartAction])
+
     bind(classOf[plan.ReviseAction], classOf[plan.OfficeAction])
     bind(classOf[plan.AuditAction], classOf[plan.DepartAction])
 
-    bind(classOf[syllabus.ReviseAction], classOf[syllabus.OfficeAction])
-    bind(classOf[syllabus.AuditAction], classOf[syllabus.DepartAction])
+    bind(classOf[program.ReviseAction], classOf[program.DepartAction])
 
     bind(classOf[info.SyllabusAction])
 

@@ -36,7 +36,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.TeachingPlanHelper
+import org.openurp.edu.course.web.helper.ClazzPlanHelper
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -46,7 +46,7 @@ import java.time.{Instant, LocalTime}
 
 /** 修订授课计划表
  */
-class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
+class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
   var clazzProvider: ClazzProvider = _
   var businessLogger: WebBusinessLogger = _
   var courseTaskService: CourseTaskService = _
@@ -101,7 +101,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
     if (scheduled.nonEmpty) {
-      put("plans", entityDao.findBy(classOf[TeachingPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
+      put("plans", entityDao.findBy(classOf[ClazzPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
     }
     val query = OqlBuilder.from(classOf[Syllabus], "s")
     query.where("s.course in(:courses)", clazzes.map(_.course))
@@ -118,7 +118,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def clazz(): View = {
     val clazz = entityDao.get(classOf[Clazz], getLongId("clazz"))
-    val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clazz)
+    val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz)
     if (plans.isEmpty) {
       redirect("edit", s"&clazz.id=${clazz.id}", "")
     } else {
@@ -132,10 +132,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     given project: Project = clazz.project
 
-    val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clazz)
-    val plan = plans.headOption.getOrElse(new TeachingPlan)
+    val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz)
+    val plan = plans.headOption.getOrElse(new ClazzPlan)
     getLong("copyFrom.id") foreach { id =>
-      val copyFrom = entityDao.get(classOf[TeachingPlan], id)
+      val copyFrom = entityDao.get(classOf[ClazzPlan], id)
       copyFrom.copyTo(plan)
     }
     put("plan", plan)
@@ -146,7 +146,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val sections = getCodes(classOf[TeachingSection]).map(_.name)
     val sectionNames = Collections.newBuffer[String]
-    sectionNames ++= plan.sections.map(_.name)
+    sectionNames ++= plan.hours.map(_.name)
     sections foreach { s => if !sectionNames.contains(s) then sectionNames.addOne(s) }
     put("sectionNames", sectionNames.slice(0, 6))
 
@@ -154,7 +154,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val beginAt = semester.beginOn.atTime(LocalTime.MIN)
     val endAt = semester.endOn.atTime(LocalTime.MAX)
 
-    put("syllabus", new TeachingPlanHelper(entityDao).findSyllabus(clazz))
+    put("syllabus", new ClazzPlanHelper(entityDao).findSyllabus(clazz))
     val schedules = LessonSchedule.convert(clazz)
 
     val scheduleHours = schedules.map(_.hours).sum
@@ -165,21 +165,25 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       lesson.idx = i
       plan.lessons.addOne(lesson)
     }
-    val hours = plan.sections.map(x => (x.name, x.creditHours)).toMap
+    val hours = plan.hours.map(x => (x.name, x.creditHours)).toMap
     put("hours", hours)
     put("schedules", schedules)
     plan.office = courseTaskService.getOffice(clazz.semester, clazz.course, clazz.teachDepart)
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
-    val q = OqlBuilder.from(classOf[TeachingPlan], "p")
+    val q = OqlBuilder.from(classOf[ClazzPlan], "p")
     q.where("p.clazz.course=:course", clazz.course)
     q.where("p.semester.beginOn <:beginOn", semester.beginOn)
     val historyPlans = entityDao.search(q)
-    val lastBeginOn = historyPlans.map(_.semester.beginOn).toSet.max
-    //每个人只选一个
-    val lastPlans = historyPlans.filter(_.semester.beginOn == lastBeginOn).groupBy(_.writer).map(_._2.head)
-    put("lastPlans", lastPlans)
+    if (historyPlans.nonEmpty) {
+      val lastBeginOn = historyPlans.map(_.semester.beginOn).toSet.max
+      //每个人只选一个
+      val lastPlans = historyPlans.filter(_.semester.beginOn == lastBeginOn).groupBy(_.writer).map(_._2.head)
+      put("lastPlans", lastPlans)
+    } else {
+      put("lastPlans", List.empty)
+    }
     forward()
   }
 
@@ -190,12 +194,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     given project: Project = clazz.project
 
     val me = getTeacher
-    val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clazz)
-    val plan = plans.headOption.getOrElse(new TeachingPlan)
-    if (!plan.persisted) {
-      plan.clazz = clazz
-      plan.semester = clazz.semester
-    }
+    val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz)
+    val plan = plans.headOption.getOrElse(new ClazzPlan(clazz))
     (1 to 60) foreach { i =>
       val lesson = plan.lessons.find(_.idx == i).getOrElse(new Lesson)
       lesson.idx = i
@@ -221,21 +221,21 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     //保存学时
-    val hours = plan.sections.map(x => (x.name, x)).toMap
+    val hours = plan.hours.map(x => (x.name, x)).toMap
     val sectionNames = Collections.newSet[String]
     (0 until 8) foreach { i =>
       get(s"section${i}.name") foreach { name => sectionNames.addOne(name) }
     }
-    plan.reserveSections(sectionNames)
+    plan.reserveHours(sectionNames)
     (0 until 8) foreach { i =>
       val creditHours = getInt(s"section${i}.creditHours", 0)
       get(s"section${i}.name") foreach { name =>
         if (creditHours > 0) {
-          plan.addSection(name, creditHours)
+          plan.addHour(name, creditHours)
         } else {
           hours.get(name) match
             case None =>
-            case Some(s) => plan.sections.subtractOne(s)
+            case Some(s) => plan.hours.subtractOne(s)
         }
       }
     }
@@ -260,19 +260,19 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     //课程负责人
     if (isDirector) {
       val clzs = getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
-      val plans = entityDao.findBy(classOf[TeachingPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
+      val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
 
       val writerCodes = clzs.flatMap(_.teachers.map(_.code)).toSet
       clzs foreach { clz =>
-        val p = plans.getOrElse(clz, new TeachingPlan(clz))
+        val p = plans.getOrElse(clz, new ClazzPlan(clz))
         val clazzTeachers = clazz.teachers.toSet
         if (null == p.writer || p.writer.code == me.code || !writerCodes.contains(p.writer.code)) {
           val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
           if (submit && editables.contains(p.status)) {
             plan.copyTo(p)
             p.status = AuditStatus.Submited
+            entityDao.saveOrUpdate(p)
           }
-          entityDao.saveOrUpdate(p)
         }
       }
     }
@@ -287,8 +287,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   }
 
   def report(): View = {
-    val plan = entityDao.get(classOf[TeachingPlan], getLongId("plan"))
-    new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
+    val plan = entityDao.get(classOf[ClazzPlan], getLongId("plan"))
+    new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
@@ -296,7 +296,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def pdf(): View = {
     val id = getLongId("plan")
-    val plan = entityDao.get(classOf[TeachingPlan], id)
+    val plan = entityDao.get(classOf[ClazzPlan], id)
     val url = Ems.base + ActionContext.current.request.getContextPath + s"/plan/revise/report?id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions

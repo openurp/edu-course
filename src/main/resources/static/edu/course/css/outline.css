@@ -1,0 +1,135 @@
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  font-size: 1rem;
+  background-color: white;
+}
+
+body>header {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  box-shadow: 0 0 0.25rem gray;
+  z-index: 100000;
+}
+
+#page-body {
+  display: flex;
+  flex-grow: 1;
+  padding: 0.25rem;
+  margin: 0 0;
+}
+
+.page-body-module {
+  display: flex;
+  flex-direction: column;
+  margin: 0.25rem;
+  padding: 0.5rem;
+  box-shadow: 0 0 0.25rem lightgray;
+}
+
+.page-body-module-title {
+  margin-bottom: 0.5rem;
+  border-bottom: 0.0625rem solid lightgray;
+  min-height: 1.625rem;
+  font-weight: bold;
+}
+
+.page-body-module-content {
+  overflow-y: auto;
+}
+
+.flex-space-between {
+  display: flex;
+  justify-content: space-between;
+}
+
+#page-left-aside{
+  background-color:rgb(236, 240, 246);
+}
+
+#page-left-aside,
+#page-right-aside {
+  display: flex;
+  flex-direction: column;
+  flex:1;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  flex:5;
+}
+main{
+ h1, h2, h3, h4, h5, h6 {
+   font-size:0.875rem;
+   overflow:auto;
+   font-weight:bold;
+ }
+}
+
+#catalogs {
+  position: sticky;
+  box-sizing: border-box;
+}
+
+#toolboxes {
+  position: sticky;
+  box-sizing: border-box;
+}
+
+.catalog:not(.catalog-h1) {
+  padding: 0.125rem 0;
+}
+
+.catalog-active{
+  background: rgba(38, 111, 203, .1);
+  font-weight: 700;
+}
+
+.catalog>a {
+  text-decoration: none;
+  color: initial;
+  border-left: 0.25rem solid transparent;
+}
+.catalog-active>a {
+  border-left: 0.25rem solid deepskyblue;
+  color: rgb(38, 111, 203);
+}
+
+.catalog>a:hover {
+  border-left: 0.25rem solid deepskyblue;
+  color: rgb(38, 111, 203);
+}
+
+.catalog-h1 {
+  padding: 0.125rem 0;
+}
+
+.catalog-h2 {
+  margin-left: 1em;
+}
+
+.catalog-h3 {
+  margin-left: 2em;
+}
+
+.catalog-h4 {
+  margin-left: 3em;
+}
+
+.catalog-h5 {
+  margin-left: 4em;
+}
+
+.catalog-h6 {
+  margin-left: 5em;
+}
+
+a.q-anchor {
+  position: relative;
+  top: -3.75rem;
+  margin-top: -3.75rem;
+}

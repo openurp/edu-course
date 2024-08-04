@@ -46,7 +46,7 @@
     <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（一）课程基本情况</p>
   </div>
   [#assign scheduleHours=0/]
-  [#list plan.sections as h]
+  [#list plan.hours as h]
     [#assign scheduleHours=scheduleHours+h.creditHours/]
   [/#list]
   <div>
@@ -102,19 +102,19 @@
           <table style="width:100%;border: hidden;" >
             <tr>
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
-              <td colspan="${plan.sections?size}">课堂学时</td>
+              <td colspan="${plan.hours?size}">课堂学时</td>
               <td rowspan="2">考试周考核或自主考核*</td>
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
             </tr>
             <tr>
-              [#list plan.sections as h]
+              [#list plan.hours as h]
               <td>${h.name}</td>
               [/#list]
             </tr>
             <tr>
               <td>本学期教学学时</td>
-              [#list plan.sections as h]
+              [#list plan.hours as h]
               <td>${h.creditHours}</td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
@@ -227,7 +227,7 @@
   </div>
   [#if auditable?? && auditable]
     [@b.form name="auditForm" action="!audit" onsubmit="confirmSubmit"]
-      <input type="hidden" name="teachingPlan.id" value="${plan.id}"/>
+      <input type="hidden" name="clazzPlan.id" value="${plan.id}"/>
       <input type="hidden" name="toInfo" value="1"/>
       [@b.field label="状态"]${plan.status}[/@]
       [@b.submit value="驳回修改" action="!audit?passed=0" class="btn btn-warning"/]

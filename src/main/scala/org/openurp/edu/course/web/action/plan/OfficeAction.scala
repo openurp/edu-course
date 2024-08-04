@@ -25,15 +25,15 @@ import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project}
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.edu.course.web.helper.TeachingPlanHelper
+import org.openurp.edu.course.model.ClazzPlan
+import org.openurp.edu.course.web.helper.ClazzPlanHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
 /** 课程大纲教研室审核
  */
-class OfficeAction extends RestfulAction[TeachingPlan], ProjectSupport {
+class OfficeAction extends RestfulAction[ClazzPlan], ProjectSupport {
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
@@ -54,23 +54,23 @@ class OfficeAction extends RestfulAction[TeachingPlan], ProjectSupport {
     entityDao.search(q)
   }
 
-  override protected def getQueryBuilder: OqlBuilder[TeachingPlan] = {
+  override protected def getQueryBuilder: OqlBuilder[ClazzPlan] = {
     val project = getProject
     val query = super.getQueryBuilder
-    query.where("teachingPlan.clazz.course.project=:project", project)
-    query.where("teachingPlan.status in(:statuses)", auditStatuses)
+    query.where("clazzPlan.clazz.course.project=:project", project)
+    query.where("clazzPlan.status in(:statuses)", auditStatuses)
     val offices = getOffices(project)
     if (offices.nonEmpty) {
-      query.where("teachingPlan.office in(:offices)", offices)
+      query.where("clazzPlan.office in(:offices)", offices)
     }
-    query.where("teachingPlan.reviewer.code=:reviewerCode", Securities.user)
+    query.where("clazzPlan.reviewer.code=:reviewerCode", Securities.user)
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     query
   }
 
   def audit(): View = {
     val statuses = auditStatuses
-    val plans = entityDao.find(classOf[TeachingPlan], getLongIds("teachingPlan")).filter(x => statuses.contains(x.status))
+    val plans = entityDao.find(classOf[ClazzPlan], getLongIds("clazzPlan")).filter(x => statuses.contains(x.status))
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
       plans foreach { s => s.status = status }
@@ -83,8 +83,8 @@ class OfficeAction extends RestfulAction[TeachingPlan], ProjectSupport {
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
-    val plan = entityDao.get(classOf[TeachingPlan], id.toLong)
-    new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
+    val plan = entityDao.get(classOf[ClazzPlan], id.toLong)
+    new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     put("auditable", auditStatuses.contains(plan.status))

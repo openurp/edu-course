@@ -97,19 +97,19 @@
           <table style="width:100%;border: hidden;" >
             <tr>
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
-              <td colspan="${plan.sections?size}">课堂学时</td>
+              <td colspan="${plan.hours?size}">课堂学时</td>
               <td rowspan="2">考试周考核或自主考核*</td>
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
             </tr>
             <tr>
-              [#list plan.sections as h]
+              [#list plan.hours as h]
               <td>${h.name}</td>
               [/#list]
             </tr>
             <tr>
               <td>本学期教学学时</td>
-              [#list plan.sections as h]
+              [#list plan.hours as h]
               <td>${h.creditHours}</td>
               [/#list]
               <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
@@ -172,7 +172,7 @@
       [/#list]
 
       [#assign teachingHours=0/]
-      [#list plan.sections as h]
+      [#list plan.hours as h]
         [#assign teachingHours=teachingHours+h.creditHours/]
       [/#list]
       <tr>

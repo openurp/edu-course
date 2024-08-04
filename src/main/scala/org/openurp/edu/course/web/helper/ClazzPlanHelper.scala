@@ -21,13 +21,14 @@ import org.beangle.commons.collection.Collections
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.openurp.base.model.AuditStatus
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseTask, Syllabus, TeachingPlan}
+import org.openurp.edu.course.model.{ClazzPlan, CourseTask, Syllabus}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 
 import java.time.{LocalDate, LocalTime}
 import java.util.Locale
 
-class TeachingPlanHelper(entityDao: EntityDao) {
+class ClazzPlanHelper(entityDao: EntityDao) {
+
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")
     query.where("s.course=:course", clazz.course)
@@ -73,7 +74,7 @@ class TeachingPlanHelper(entityDao: EntityDao) {
     }
   }
 
-  def collectDatas(plan: TeachingPlan): collection.Map[String, Any] = {
+  def collectDatas(plan: ClazzPlan): collection.Map[String, Any] = {
     val datas = Collections.newMap[String, Any]
 
     val clazz = plan.clazz

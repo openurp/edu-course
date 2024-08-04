@@ -11,8 +11,8 @@
 <header>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="brand">
-    <img src="${b.static_url('local','/images/logo.png')}" width="50px"/>
-     [@b.a href="!index"]${project.school.name}·课程教学大纲和授课计划[/@]
+      <img src="${b.static_url('local','/images/logo.png')}" width="50px"/>
+       [@b.a href="!index"]${project.school.name}·课程教学大纲和授课计划[/@]
     </div>
     <ul class="navbar-nav ml-auto">
       <li class="nav-item">

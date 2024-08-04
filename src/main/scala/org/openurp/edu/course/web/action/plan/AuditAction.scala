@@ -25,15 +25,15 @@ import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.model.{AuditStatus, Project, User}
-import org.openurp.edu.course.model.TeachingPlan
-import org.openurp.edu.course.web.helper.TeachingPlanHelper
+import org.openurp.edu.course.model.ClazzPlan
+import org.openurp.edu.course.web.helper.ClazzPlanHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
 
 /** 学院审核授课计划
  */
-class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
+class AuditAction extends RestfulAction[ClazzPlan], ProjectSupport {
 
   var businessLogger: WebBusinessLogger = _
 
@@ -50,17 +50,17 @@ class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
     forward()
   }
 
-  override protected def getQueryBuilder: OqlBuilder[TeachingPlan] = {
+  override protected def getQueryBuilder: OqlBuilder[ClazzPlan] = {
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val query = super.getQueryBuilder
-    query.where("teachingPlan.status in(:statuses)", auditStatuses)
-    queryByDepart(query, "teachingPlan.clazz.teachDepart")
+    query.where("clazzPlan.status in(:statuses)", auditStatuses)
+    queryByDepart(query, "clazzPlan.clazz.teachDepart")
     query
   }
 
   def audit(): View = {
     val statuses = auditStatuses
-    val plans1 = entityDao.find(classOf[TeachingPlan], getLongIds("teachingPlan"))
+    val plans1 = entityDao.find(classOf[ClazzPlan], getLongIds("clazzPlan"))
     val plans = plans1.filter(x => statuses.contains(x.status))
     val user = entityDao.findBy(classOf[User], "school" -> plans.head.clazz.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
@@ -76,14 +76,14 @@ class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
       if (status == AuditStatus.PassedByDepart) {
         if (s.size == 1) {
           val h = s.head
-          businessLogger.info(s"审核通过课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("teachingPlan" -> h.id.toString))
+          businessLogger.info(s"审核通过课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("clazzPlan" -> h.id.toString))
         } else {
           businessLogger.info(s"审核通过${s.size}个课程授课计划", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
         }
       } else {
         if (s.size == 1) {
           val h = s.head
-          businessLogger.info(s"驳回了课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("teachingPlan" -> h.id.toString))
+          businessLogger.info(s"驳回了课程授课计划:${h.clazz.course.name}(${h.clazz.crn})", h.id, Map("clazzPlan" -> h.id.toString))
         } else {
           businessLogger.info(s"驳回了${s.size}个课程授课计划", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
         }
@@ -96,8 +96,8 @@ class AuditAction extends RestfulAction[TeachingPlan], ProjectSupport {
 
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
-    val plan = entityDao.get(classOf[TeachingPlan], id.toLong)
-    new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
+    val plan = entityDao.get(classOf[ClazzPlan], id.toLong)
+    new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     put("auditable", auditStatuses.contains(plan.status))

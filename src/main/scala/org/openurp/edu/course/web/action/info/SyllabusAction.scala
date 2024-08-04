@@ -29,8 +29,8 @@ import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
 import org.openurp.code.edu.model.*
-import org.openurp.edu.course.model.{Syllabus, TeachingPlan}
-import org.openurp.edu.course.web.helper.{StatHelper, SyllabusHelper, TeachingPlanHelper}
+import org.openurp.edu.course.model.{Syllabus, ClazzPlan}
+import org.openurp.edu.course.web.helper.{StatHelper, SyllabusHelper, ClazzPlanHelper}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -98,7 +98,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     put("syllabus", syllabus)
     put("semester", syllabus.semester)
     val statHelper = new StatHelper(entityDao)
-    val p = OqlBuilder.from(classOf[TeachingPlan], "p")
+    val p = OqlBuilder.from(classOf[ClazzPlan], "p")
     p.where("p.semester=:semester", syllabus.semester)
     p.where("p.clazz.course=:course", syllabus.course)
     p.where("p.status in(:statuses)", statuses)
@@ -115,8 +115,8 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   }
 
   def plan(): View = {
-    val plan = entityDao.get(classOf[TeachingPlan], getLongId("plan"))
-    new TeachingPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
+    val plan = entityDao.get(classOf[ClazzPlan], getLongId("plan"))
+    new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
@@ -136,7 +136,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
 
   def planPdf(): View = {
     val id = getLongId("plan")
-    val plan = entityDao.get(classOf[TeachingPlan], id)
+    val plan = entityDao.get(classOf[ClazzPlan], id)
     val url = Ems.base + ActionContext.current.request.getContextPath + s"/info/syllabus/plan?plan.id=${plan.id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
