@@ -50,13 +50,16 @@ body>header {
   background-color:rgb(236, 240, 246);
 }
 
-#page-left-aside,
-#page-right-aside {
+#page-left-aside{
   display: flex;
   flex-direction: column;
   flex:1;
 }
-
+#page-right-aside {
+  display: flex;
+  flex-direction: column;
+  flex:1.5;
+}
 main {
   display: flex;
   flex-direction: column;

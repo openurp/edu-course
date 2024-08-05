@@ -1,7 +1,11 @@
 [@b.head /]
   <link rel="stylesheet" type="text/css" href="${b.base}/static/edu/course/css/outline.css" />
-  <script type="module" charset="utf-8" src="${b.base}/static/edu/course/js/outline.js"></script>
-
+  <script type="module" charset="utf-8" src="${b.base}/static/edu/course/js/outline.js?v=2"></script>
+  <style>
+    p{
+      margin-bottom:0px;
+    }
+  </style>
 <header>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="brand">
@@ -10,7 +14,7 @@
     </div>
 
     <ul class="navbar-nav ml-auto">
-     [#if program.id??]
+     [#--[#if program.id??]
       <li class="nav-item">
         [@b.a href="!report?id="+program.id class="nav-link"]<i class="fa-solid fa-print"></i>打印预览[/@]
       </li>
@@ -18,6 +22,7 @@
         [@b.a href="!pdf?id="+program.id class="nav-link"]<i class="fa-solid fa-print"></i>下载PDF[/@]
       </li>
      [/#if]
+     --]
     </ul>
   </nav>
 </header>
@@ -37,26 +42,28 @@
           [#assign designs=designs+{design.idx?string:design}/]
         [/#list]
         [#list plan.lessons?sort_by("idx") as lesson]
-        <h1 style="display:inline;">
-          <a class="q-anchor q-heading-anchor" name="lesson${lesson_index+1}"></a>第${lesson_index+1}次课
-        </h1>
-        [@b.div id="lesson-block${lesson_index+1}"]
+          <div id="lesson-block${lesson_index+1}" class="ajax_container">
           [#if designs[(lesson_index+1)?string]??]
             [#assign design = designs[(lesson_index+1)?string]/]
-            [@b.a href="!editDesign?program.id=${program.id}&idx=${lesson_index+1}"]修改[/@]
             [#include "designInfo.ftl"/]
           [#else]
-            [@b.a href="!editDesign?program.id=${program.id}&idx=${lesson_index+1}"]添加[/@]
+            <div class="card">
+              <div class="card-header">
+                  <h1 style="display:inline;">
+                    <a class="q-anchor q-heading-anchor" name="lesson${lesson_index+1}"></a>第${lesson_index+1}次课
+                  </h1>
+                  [@b.a href="!editDesign?program.id=${program.id}&idx=${lesson_index+1}"]添加[/@]
+              </div>
+            </div>
           [/#if]
-        [/@]
+          </div>
         [/#list]
       </div>
     </article>
   </main>
+
   <aside id="page-right-aside">
-    <div id="toolboxes">
-     todolist
-    </div>
+    [#include "/org/openurp/edu/course/web/components/program/notice.ftl"/]
   </aside>
 </div>
 <script>

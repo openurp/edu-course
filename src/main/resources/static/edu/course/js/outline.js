@@ -18,11 +18,12 @@ const initCatalogs = () => {
   for (let anchor of $('.q-heading-anchor')) {
     const $anchor = $(anchor);
     const anchorName = $anchor.attr('name');
+    const base = window.location.href;
     const headingName = $anchor.parent().text();
     const headingLevel = $anchor.parent()[0].tagName.toLowerCase();
       $catalogs.push(SafeRenderer.forHtml `
         <div class="catalog catalog-${headingLevel}" name="${anchorName}">
-          <a href="#${anchorName}">${headingName}</a>
+          <a href="${base}#${anchorName}">${headingName}</a>
         </div>
       `);
   }

@@ -281,7 +281,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val syllabus = populateEntity()
     if (null == syllabus.beginOn) {
-      syllabus.beginOn = entityDao.get(classOf[Semester], syllabus.semester.id).beginOn
+      val semester = entityDao.get(classOf[Semester], syllabus.semester.id)
+      syllabus.beginOn = semester.beginOn
+      syllabus.endOn = semester.endOn
     }
     if (!syllabus.persisted) {
       syllabus.course = course
@@ -760,6 +762,21 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     redirect("edit", s"syllabus.id=${getLongId("syllabus")}&step=${get("step").get}", "info.save.success")
   }
 
+  /** 大纲沿用
+   *
+   * @return
+   */
+  def reuse(): View = {
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    val syllabus = entityDao.get(classOf[Syllabus], getIntId("syllabus"))
+    val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
+    if (reuses.contains(syllabus.status) && syllabus.endOn.isBefore(semester.beginOn)) {
+      syllabus.endOn = semester.endOn
+      entityDao.saveOrUpdate(syllabus)
+    }
+    redirect("course", s"&course.id=${syllabus.course.id}&semester.id=${semester.id}", "沿用成功")
+  }
+
   def course(): View = {
     val course = entityDao.get(classOf[Course], getLongId("course"))
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
@@ -777,6 +794,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("syllabuses", syllabuses)
     put("histories", histories)
     put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))
+    put("reuse", Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published))
 
     val last = entityDao.findBy(classOf[CourseProfile], "course", course).sortBy(_.beginOn).lastOption
     put("profile", last)

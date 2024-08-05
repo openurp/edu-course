@@ -19,20 +19,27 @@ package org.openurp.edu.course.web.action.program
 
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
-import org.beangle.data.model.annotation.code
+import org.beangle.doc.core.PrintOptions
+import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
-import org.beangle.web.action.view.View
+import org.beangle.template.freemarker.ProfileTemplateLoader
+import org.beangle.web.action.context.ActionContext
+import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Project, User}
 import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{ClazzPlan, ClazzProgram, LessonDesign, LessonDesignText, SyllabusObjective}
+import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.schedule.service.ScheduleDigestor
+import org.openurp.edu.course.web.helper.ClazzPlanHelper
+import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
+import java.io.File
+import java.net.URI
 import java.time.Instant
 
 class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
@@ -74,6 +81,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       entityDao.saveOrUpdate(program)
     }
     put("program", program)
+    val project = program.clazz.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     forward()
   }
 
@@ -93,16 +102,40 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     forward()
   }
 
+  def uploadImage(): View = {
+    forward()
+  }
+
   def saveDesign(): View = {
     val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
     val idx = getInt("design.idx", 1)
     val design = program.get(idx).getOrElse(new LessonDesign(program, idx))
     design.subject = get("design.subject", "")
+    design.homework = get("design.homework")
+    val clazz = program.clazz
+    val schedules = LessonSchedule.convert(clazz)
+    design.creditHours = schedules(design.idx - 1).hours
     populateText(design, "design.target")
     populateText(design, "design.emphasis")
     populateText(design, "design.difficulties")
     populateText(design, "design.resources")
     populateText(design, "design.values")
+    (1 to 10) foreach { i =>
+      val title = get(s"sections[${i}].title", "")
+      val duration = getInt(s"sections[${i}].duration", 0)
+      val summary = get(s"sections[${i}].summary", " ")
+      val details = get(s"sections[${i}].details", " ")
+      if Strings.isNotBlank(title) then
+        val section = design.getSection(i).getOrElse(new LessonDesignSection(design, i, title, duration, summary, details))
+        section.title = title
+        section.duration = duration
+        section.summary = summary
+        section.details = details
+        design.sections += section
+        if (!section.persisted) {
+          design.sections += section
+        }
+    }
     entityDao.saveOrUpdate(design)
 
     redirect("designInfo", s"design.id=${design.id}", "info.save.success")
@@ -114,12 +147,38 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     forward()
   }
 
+  def designReport(): View = {
+    val design = entityDao.get(classOf[LessonDesign], getLongId("design"))
+    put("design", design)
+    val clazz = design.program.clazz
+    put("plan", entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).headOption)
+    val syllabus = ClazzPlanHelper(entityDao).findSyllabus(clazz)
+    put("clazz", clazz)
+    put("syllabus", syllabus)
+    val project = design.program.clazz.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward("/org/openurp/edu/course/web/components/program/designReport")
+  }
+
+  def designPdf(): View = {
+    val id = getLongId("design")
+    val design = entityDao.get(classOf[LessonDesign], id)
+    val url = Ems.base + ActionContext.current.request.getContextPath + s"/program/revise/designReport?design.id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val pdf = File.createTempFile("doc", ".pdf")
+    val options = new PrintOptions
+    SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+
+    val clazz = design.program.clazz
+    Stream(pdf, clazz.crn + "_" + clazz.course.name + s" 授课教案 第${design.idx}次课.pdf").cleanup(() => pdf.delete())
+  }
+
   private def populateText(design: LessonDesign, name: String): Unit = {
     val contents = cleanText(get(name, ""))
-    design.getText(name) match {
+    val textName = name.substring("design.".length)
+    design.getText(textName) match {
       case None =>
         if Strings.isNotBlank(contents) then
-          val o = new LessonDesignText(design, name, contents)
+          val o = new LessonDesignText(design, textName, contents)
           design.texts += o
       case Some(o) =>
         if Strings.isBlank(contents) then

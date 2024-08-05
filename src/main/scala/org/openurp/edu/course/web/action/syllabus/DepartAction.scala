@@ -114,12 +114,6 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     super.editSetting(syllabus)
   }
 
-  override protected def saveAndRedirect(syllabus: Syllabus): View = {
-    syllabus.beginOn = syllabus.semester.beginOn
-
-    super.saveAndRedirect(syllabus)
-  }
-
   @mapping(value = "{id}")
   override def info(@param("id") id: String): View = {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)

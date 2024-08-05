@@ -31,7 +31,7 @@
         <td class="title">开课院系:</td>
         <td class="content">${(course.department.name)!}</td>
         <td class="title">课程类别:</td>
-        <td class="content">[#if task??]${(task.courseType.name)!}[#else]${(course.courseType.name)!}[/#if] ${task.courseType.id}</td>
+        <td class="content">[#if task??]${(task.courseType.name)!}[#else]${(course.courseType.name)!}[/#if]</td>
         <td class="title">学时:</td>
         <td class="content">${course.creditHours!}</td>
       </tr>
@@ -95,6 +95,9 @@
          <td style="width: 15%;">${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
          <td style="width: 16%;">
            <a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>
+           [#if task?? && reuse?seq_contains(syllabus.status) && system.endOn?? && system.endOn<semester.endOn]
+           [@b.a href="!reuse?id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定沿用到该学期？')"]沿用..[/@]
+           [/#if]
          </td>
          <td style="width: 15%;">[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]&nbsp;[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>
        </tr>
