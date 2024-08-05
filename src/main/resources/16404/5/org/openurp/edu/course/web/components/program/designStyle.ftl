@@ -12,12 +12,10 @@
     }
     .title {
       text-align: center;
-      font-family: STSong;
       font-weight: 700;
     }
    .title-left{
       text-align: left;
-      font-family: STSong;
       font-weight: 700;
     }
     p{

@@ -61,7 +61,7 @@
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value=assessment.assessCount ]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value=assessment.assessCount onchange="checkUsual(${rnIndex})"]
               <span id="UsualAssessCountTip${rnIndex}"></span>
             [/@]
             [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value=assessment.description! required="false"]
@@ -94,7 +94,7 @@
               [/#list]
                 <span id="UsualCoTip${rnIndex}"></span>
             [/@]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" ]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".assessCount" label="考核次数" value="" onchange="checkUsual(${rnIndex})"]
               <span id="UsualAssessCountTip${rnIndex}"></span>
             [/@]
             [@b.textarea name="grade${usualType.id}_"+rnIndex+".description" label="评分标准" rows="4" cols="80" style="width:650px" maxlength="2000" value="" required="false"]
@@ -143,9 +143,12 @@
       }
       var tips="";
       var cnt = form["grade${usualType.id}_"+idx+".assessCount"].value;
-      if(cnt.length==0 || Number.isNaN(cnt) || Number.parseInt(cnt)<=0){
+      var cntValue = Number.parseInt(cnt);
+      if(cnt.length==0 || Number.isNaN(cntValue) || cntValue<=0){
         tips="需要填写考核次数（大于0）"
         errors += 1;
+      }else{
+        form["grade${usualType.id}_"+idx+".assessCount"].value=cntValue;
       }
       var description = form["grade${usualType.id}_"+idx+".description"].value;
       if(description.length==0){
