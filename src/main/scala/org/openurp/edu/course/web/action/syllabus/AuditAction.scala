@@ -25,7 +25,7 @@ import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
-import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.base.model.{AuditStatus, Project, Semester, User}
 import org.openurp.code.edu.model.TeachingNature
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusPropertyExtractor, SyllabusValidator}
@@ -56,9 +56,11 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
     given project: Project = getProject
 
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
-
+    val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
+    put("semester", semester)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
+    query.where(":date between syllabus.beginOn and syllabus.endOn", semester.beginOn.plusDays(30))
     query.where("syllabus.status in(:statuses)", auditStatuses)
     queryByDepart(query, "syllabus.department")
     query
@@ -107,6 +109,10 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
     put("auditable", auditStatuses.contains(syllabus.status))
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)
+    val semester = getInt("semester.id") match
+      case Some(sid) => entityDao.get(classOf[Semester], sid)
+      case None => syllabus.semester
+    put("semester", semester)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 

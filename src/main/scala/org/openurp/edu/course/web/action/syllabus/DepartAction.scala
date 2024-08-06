@@ -27,7 +27,6 @@ import org.beangle.data.dao.{OqlBuilder, QueryPage}
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.doc.transfer.exporter.ExportContext
-import org.beangle.ems.app.Ems
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
@@ -38,7 +37,7 @@ import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.model.{CourseTask, Syllabus}
-import org.openurp.edu.course.web.helper.{StatItem, SyllabusHelper, SyllabusPropertyExtractor, SyllabusValidator}
+import org.openurp.edu.course.web.helper.*
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -69,8 +68,11 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
 
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
 
+    val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
+    put("semester", semester)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
+    query.where(":date between syllabus.beginOn and syllabus.endOn", semester.beginOn.plusDays(30))
     getBoolean("hasTopics") foreach { hasTopics =>
       if hasTopics then query.where("size(syllabus.topics)>0")
       else query.where("size(syllabus.topics)=0")
@@ -122,6 +124,10 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)
+    val semester = getInt("semester.id") match
+      case Some(sid) => entityDao.get(classOf[Semester], sid)
+      case None => syllabus.semester
+    put("semester", semester)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
@@ -131,9 +137,12 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     Files.travel(new File(pdfDir), f => f.delete())
     val contextPath = ActionContext.current.request.getContextPath
     new File(pdfDir).mkdirs()
+
+    val semesterId = get("semester.id", "")
+    val semesterParam = if semesterId.nonEmpty then s"?semester.id=${semesterId}" else ""
     if (syllabuses.size == 1) {
       val syllabus = syllabuses.head
-      val url = Ems.base + contextPath + s"/syllabus/depart/${syllabus.id}?URP_SID=" + Securities.session.map(_.id).getOrElse("")
+      val url = EmsUrl.url(s"/syllabus/depart/${syllabus.id}${semesterParam}")
       val fileName = Files.purify(syllabus.course.code + "_" + syllabus.course.name + "_" + syllabus.writer.name + "_课程大纲")
       val pdf = new File(pdfDir + s"/${fileName}.pdf")
       val options = new PrintOptions
@@ -147,11 +156,10 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     } else {
       val datas = syllabuses.map(x => (x.id, Files.purify(x.course.code + "_" + x.course.name + "_" + x.writer.name + "_课程大纲")))
       Workers.work(datas, (data: (Long, String)) => {
-        val url = Ems.base + contextPath + s"/syllabus/depart/${data._1}?URP_SID=" + Securities.session.map(_.id).getOrElse("")
+        val url = EmsUrl.url(s"/syllabus/depart/${data._1}${semesterParam}")
         val pdf = new File(pdfDir + s"/${data._2}.pdf")
         val options = new PrintOptions
         options.scale = 0.66d
-        println(s"download ${url} to ${pdf.getAbsolutePath}")
         SPDConverter.getInstance().convert(URI.create(url), pdf, options)
       }, Runtime.getRuntime.availableProcessors)
       val zipFile = new File(SystemInfo.tmpDir + s"/syllabus${Securities.user}.zip")

@@ -36,7 +36,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.ClazzPlanHelper
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -297,7 +297,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
   def pdf(): View = {
     val id = getLongId("plan")
     val plan = entityDao.get(classOf[ClazzPlan], id)
-    val url = Ems.base + ActionContext.current.request.getContextPath + s"/plan/revise/report?id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val url = EmsUrl.url(s"/plan/revise/report?id=${id}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)

@@ -94,7 +94,10 @@
     <table  style="width:100%;margin-top: 20px;">
       <tr>
         <td style="width:15%;text-align:right;">开课学期：</td>
-        <td style="width:35%;border-bottom: solid 1px black;" class="center">${syllabus.semester.schoolYear}学年 ${syllabus.semester.name}学期</td>
+        <td style="width:35%;border-bottom: solid 1px black;" class="center">
+        [#if !semester??][#assign semester= syllabus.semester/][/#if]
+        ${semester.schoolYear}学年 ${semester.name}学期
+        </td>
         <td style="width:15%;text-align:right;">开课学院：</td>
         <td style="width:35%;border-bottom: solid 1px black;" class="center">${syllabus.department.name}</td>
       </tr>

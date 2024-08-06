@@ -39,7 +39,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
+import org.openurp.edu.course.web.helper.{EmsUrl, SyllabusHelper, SyllabusValidator}
 import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.support.TeacherSupport
@@ -768,12 +768,21 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
    */
   def reuse(): View = {
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
-    val syllabus = entityDao.get(classOf[Syllabus], getIntId("syllabus"))
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val cancel = getBoolean("cancel", false)
     val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
-    if (reuses.contains(syllabus.status) && syllabus.endOn.isBefore(semester.beginOn)) {
-      syllabus.endOn = semester.endOn
-      entityDao.saveOrUpdate(syllabus)
+    if (cancel) {
+      if (reuses.contains(syllabus.status) && syllabus.endOn.isAfter(semester.beginOn)) {
+        syllabus.endOn = semester.beginOn.minusDays(30)
+        entityDao.saveOrUpdate(syllabus)
+      }
+    } else {
+      if (reuses.contains(syllabus.status) && syllabus.endOn.isBefore(semester.beginOn)) {
+        syllabus.endOn = semester.endOn
+        entityDao.saveOrUpdate(syllabus)
+      }
     }
+
     redirect("course", s"&course.id=${syllabus.course.id}&semester.id=${semester.id}", "沿用成功")
   }
 
@@ -789,7 +798,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val allSyllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
-    val syllabuses = allSyllabuses.filter(_.semester == semester)
+    val syllabuses = allSyllabuses.filter(_.within(semester.beginOn))
     val histories = allSyllabuses.filter(_.semester != semester)
     put("syllabuses", syllabuses)
     put("histories", histories)
@@ -852,6 +861,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)
+    val semester = getInt("semester.id") match
+      case Some(sid) => entityDao.get(classOf[Semester], sid)
+      case None => syllabus.semester
+    put("semester", semester)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
@@ -866,7 +879,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def pdf(): View = {
     val id = getLongId("syllabus")
     val syllabus = entityDao.get(classOf[Syllabus], id)
-    val url = Ems.base + ActionContext.current.request.getContextPath + s"/syllabus/revise/info?id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val semesterId = get("semester.id", "")
+    val semesterParam = if semesterId.nonEmpty then s"&semester.id=${semesterId}" else ""
+    val url = EmsUrl.url(s"/syllabus/revise/info?id=${id}$semesterParam")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     options.scale = 0.66d

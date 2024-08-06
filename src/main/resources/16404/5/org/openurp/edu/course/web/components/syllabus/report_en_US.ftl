@@ -91,7 +91,10 @@
     <table  style="width:100%;margin-top: 20px;">
       <tr>
         <td style="width:15%;text-align:right;">Semester：</td>
-        <td style="width:35%;border-bottom: solid 1px black;" class="center">${syllabus.semester.schoolYear} ${syllabus.semester.name}</td>
+        <td style="width:35%;border-bottom: solid 1px black;" class="center">
+          [#if !semester??][#assign semester= syllabus.semester/][/#if]
+          ${syllabus.semester.schoolYear} ${syllabus.semester.name}
+        </td>
         <td style="width:15%;text-align:right;">School：</td>
         <td style="width:35%;border-bottom: solid 1px black;" class="center">${syllabus.department.enName!syllabus.department.name}</td>
       </tr>

@@ -67,7 +67,7 @@
        [/#if]
          [#list syllabuses as syllabus]
        <tr>
-         <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期</td>
+         <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期[#if syllabus.semester!=semester]<sup>沿用</sup>[/#if]</td>
          <td style="width: 7%;">${locales.get(syllabus.docLocale)}</td>
          <td style="width: 10%;">${syllabus.writer.name}</td>
          <td style="width: 13%;">${syllabus.status}</td>
@@ -78,8 +78,14 @@
            [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
            [@b.a href="!remove?id=${syllabus.id}&semester.id="+semester.id onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
            [/#if]
+           [#if task?? && syllabus.semester!=semester]
+             [@b.a href="!reuse?cancel=1&syllabus.id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定取消沿用到该学期？')"]取消沿用..[/@]
+           [/#if]
          </td>
-         <td style="width: 15%;">[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]&nbsp;[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>
+         <td style="width: 15%;">
+           [@b.a href="!info?id=${syllabus.id}&semester.id="+semester.id target="_blank"]查看[/@]&nbsp;
+           [@b.a href="!pdf?id=${syllabus.id}&semester.id="+semester.id target="_blank"]下载PDF[/@]
+         </td>
        </tr>
          [/#list]
      </table>
@@ -95,8 +101,8 @@
          <td style="width: 15%;">${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
          <td style="width: 16%;">
            <a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>
-           [#if task?? && reuse?seq_contains(syllabus.status) && system.endOn?? && system.endOn<semester.endOn]
-           [@b.a href="!reuse?id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定沿用到该学期？')"]沿用..[/@]
+           [#if task?? && reuse?seq_contains(syllabus.status) && syllabus.endOn?? && syllabus.endOn < semester.endOn]
+           [@b.a href="!reuse?syllabus.id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定沿用到该学期？')"]沿用..[/@]
            [/#if]
          </td>
          <td style="width: 15%;">[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]&nbsp;[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>

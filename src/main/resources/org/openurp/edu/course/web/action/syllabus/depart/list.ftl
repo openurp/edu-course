@@ -25,7 +25,7 @@
     [@b.boxcol /]
     [@b.col width="10%" property="course.code" title="课程代码"/]
     [@b.col width="20%" property="course.name" title="课程名称"]
-      [@b.a href="!info?id="+syllabus.id target="_blank"]${syllabus.course.name}[/@]
+      [@b.a href="!info?id="+syllabus.id+"&semester.id="+semester.id target="_blank"]${syllabus.course.name}[/@]
     [/@]
     [@b.col width="5%" property="locale" title="语言"]
       ${locales.get(syllabus.docLocale)}

@@ -29,8 +29,8 @@ import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
 import org.openurp.code.edu.model.*
-import org.openurp.edu.course.model.{Syllabus, ClazzPlan}
-import org.openurp.edu.course.web.helper.{StatHelper, SyllabusHelper, ClazzPlanHelper}
+import org.openurp.edu.course.model.{ClazzPlan, Syllabus}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl, StatHelper, SyllabusHelper}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -111,6 +111,10 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    val semester = getInt("semester.id") match
+      case Some(sid) => entityDao.get(classOf[Semester], sid)
+      case None => syllabus.semester
+    put("semester", semester)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
@@ -125,7 +129,9 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   def syllabusPdf(): View = {
     val id = getLongId("syllabus")
     val syllabus = entityDao.get(classOf[Syllabus], id)
-    val url = Ems.base + ActionContext.current.request.getContextPath + s"/info/syllabus/syllabus?syllabus.id=${id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val semesterId = get("semester.id", "")
+    val semesterParam = if semesterId.nonEmpty then s"&semester.id=${semesterId}" else ""
+    val url = EmsUrl.url(s"/info/syllabus/syllabus?syllabus.id=${id}$semesterParam")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     options.scale = 0.66d
@@ -137,7 +143,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   def planPdf(): View = {
     val id = getLongId("plan")
     val plan = entityDao.get(classOf[ClazzPlan], id)
-    val url = Ems.base + ActionContext.current.request.getContextPath + s"/info/syllabus/plan?plan.id=${plan.id}&URP_SID=" + Securities.session.map(_.id).getOrElse("")
+    val url = EmsUrl.url(s"/info/syllabus/plan?plan.id=${plan.id}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)

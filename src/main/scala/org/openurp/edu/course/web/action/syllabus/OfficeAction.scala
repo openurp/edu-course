@@ -24,7 +24,7 @@ import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
-import org.openurp.base.model.{AuditStatus, Project}
+import org.openurp.base.model.{AuditStatus, Project, Semester}
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.SyllabusHelper
 import org.openurp.starter.web.support.ProjectSupport
@@ -56,7 +56,10 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
   override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
     val project = getProject
     val offices = getOffices(project)
+    val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
+    put("semester", semester)
     val query = super.getQueryBuilder
+    query.where(":date between syllabus.beginOn and syllabus.endOn", semester.beginOn.plusDays(30))
     query.where("syllabus.course.project=:project", project)
     if (offices.nonEmpty) {
       query.where("syllabus.office in(:offices)", offices)
@@ -88,6 +91,10 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     put("auditable", auditStatuses.contains(syllabus.status))
+    val semester = getInt("semester.id") match
+      case Some(sid) => entityDao.get(classOf[Semester], sid)
+      case None => syllabus.semester
+    put("semester", semester)
     forward(s"/org/openurp/edu/course/web/components/syllabus/report_${syllabus.docLocale}")
   }
 
