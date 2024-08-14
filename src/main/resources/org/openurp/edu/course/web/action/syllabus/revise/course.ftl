@@ -94,7 +94,7 @@
      <table class="table table-hover table-sm table-striped">
          [#list histories as syllabus]
        <tr>
-         <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期</td>
+         <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期 [#if syllabus.course!=course]<span class="text-muted">${syllabus.course.code}</span>[/#if]</td>
          <td style="width: 7%;">${locales.get(syllabus.docLocale)}</td>
          <td style="width: 10%;">${syllabus.writer.name}</td>
          <td style="width: 13%;">${syllabus.status}</td>

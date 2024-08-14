@@ -136,6 +136,16 @@
     <p style="width:100%;text-align:center;font-weight:bold;font-family: 宋体;font-size: 14pt;">（二）课程授课安排</p>
   </div>
 
+[#macro multi_line_p contents=""]
+  [#assign cnts]${contents!}[#nested/][/#assign]
+  [#if cnts?length>0]
+    [#assign ps = cnts?split("\n")]
+    [#list ps as p]
+    <p style="white-space: preserve;" class="mb-0">${p}</p>
+    [/#list]
+  [/#if]
+[/#macro]
+
   <div>
     <table  style="width:100%;border: solid 1px black;text-align:center;" class="form-table">
       <colgroup>
@@ -163,7 +173,7 @@
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.idx}</td>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${(schedules[lesson_index].date)!}</td>
         <td>${(schedules[lesson_index].hours)!}</td>
-        <td style="text-align:left;">${lesson.contents!}</td>
+        <td style="text-align:left;">[@multi_line_p lesson.contents!/]</td>
         <td>${lesson.forms!}</td>
         <td [#if lesson.learning??]rowspan="2"[/#if]>${lesson.homework!}</td>
       </tr>

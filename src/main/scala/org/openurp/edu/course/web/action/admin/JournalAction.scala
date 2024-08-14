@@ -62,7 +62,6 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
 
     put("tags", codeService.get(classOf[CourseTag]))
     put("teachingNatures", getCodes(classOf[TeachingNature]))
-    put("courseTypes", getCodes(classOf[CourseType]))
     put("examModes", getCodes(classOf[ExamMode]))
     put("departments", getDeparts)
 
@@ -136,7 +135,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     put("departs", departs)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
-    query.where("journal.department in(:departs)", departs)
+    queryByDepart(query,"journal.department")
     getLong("grade.id") foreach { gradeId =>
       val grade = entityDao.get(classOf[Grade], gradeId)
       query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)

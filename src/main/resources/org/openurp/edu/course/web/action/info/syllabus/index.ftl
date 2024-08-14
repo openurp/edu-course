@@ -18,10 +18,6 @@
       <li class="nav-item">
         <a href="#"class="nav-link" onclick="return toggleEnCourseName(this)">显示课程英文名</a>
       </li>
-      <li class="nav-item">
-        <a href="#"class="nav-link">${semester.schoolYear}学年${semester.name}学期</a>
-      </li>
-     [#--
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false" id="term_nav">
           ${semester.schoolYear}学年${semester.name}学期
@@ -32,7 +28,6 @@
           [/#list]
         </div>
       </li>
-      --]
     </ul>
   </nav>
 </header>
@@ -97,7 +92,7 @@
        --]
 
      </div><!--end col-3-->
-     [@b.div class="col-10" id="syllabus_list" href="!search"/]
+     [@b.div class="col-10" id="syllabus_list" href="!search?semester.id="+semester.id /]
   </div><!--end row-->
 </div><!--end container-->
 <script>

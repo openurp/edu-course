@@ -29,6 +29,39 @@ import java.util.Locale
 
 class ClazzPlanHelper(entityDao: EntityDao) {
 
+
+  /** 查询修订任务对应的教学任务
+   *
+   * @param task
+   * @param teacher
+   * @return
+   */
+  def getCourseTaskClazzes(task: CourseTask): Iterable[Clazz] = {
+    val clazzes = Collections.newSet[Clazz]
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", task.course.project)
+    q.where("c.semester=:semester", task.semester)
+    q.where("c.course=:course", task.course)
+    q.where("c.id != :taskId", task.id)
+    val otherCourseTasks = entityDao.search(q)
+    val query = OqlBuilder.from(classOf[Clazz], "clazz")
+    query.where("clazz.project=:project and clazz.semester=:semester", task.course.project, task.semester)
+    query.where("clazz.course =:course", task.course)
+    val courseClazzes = entityDao.search(query)
+    if (otherCourseTasks.isEmpty) { // 只有本人负责该课程
+      clazzes.addAll(courseClazzes)
+    } else {
+      courseClazzes foreach { clazz =>
+        val clazzTeachers = clazz.teachers.toSet
+        if (clazzTeachers.subsetOf(task.teachers)) {
+          clazzes.addOne(clazz)
+        }
+      }
+    }
+    clazzes
+  }
+
+
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")
     query.where("s.course=:course", clazz.course)

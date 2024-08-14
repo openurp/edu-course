@@ -57,7 +57,7 @@
     <div class="card-header">
       <p class="card-title">课程介绍和资源</p>
       [@b.card_tools]
-         [@b.a href="!syllabus?id="+syllabus.id target="_blank"]<i class="fa-solid fa-paperclip"></i>查看大纲全文[/@]&nbsp;
+         [@b.a href="!syllabus?id="+syllabus.id+"&semester.id="+semester.id target="_blank"]<i class="fa-solid fa-paperclip"></i>查看大纲全文[/@]&nbsp;
       [/@]
     </div>
     <table class="infoTable">

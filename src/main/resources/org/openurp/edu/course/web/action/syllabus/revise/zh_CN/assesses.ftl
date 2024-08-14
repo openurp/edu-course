@@ -126,7 +126,7 @@
       [#list syllabus.objectives?sort_by("code") as co]
         coPercent = form["usual_"+idx+"_co${co.id}"].value
         if(coPercent){
-          coTotalPercent += Number.parseInt(coPercent);
+          coTotalPercent += Number.parseFloat(coPercent);
         }
       [/#list]
       if(Number.isNaN(totalPercent)){
@@ -170,7 +170,7 @@
       [#list syllabus.objectives?sort_by("code") as co]
         coPercent = form["end_co${co.id}"].value
         if(coPercent){
-          coTotalPercent += Number.parseInt(coPercent);
+          coTotalPercent += Number.parseFloat(coPercent);
         }
       [/#list]
       if(Number.isNaN(totalPercent) || totalPercent==0){

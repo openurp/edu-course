@@ -22,12 +22,10 @@ import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.mapping
-import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
@@ -488,13 +486,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val teachingNatures = getCodes(classOf[TeachingNature])
     teachingNatures foreach { ht =>
       val creditHour = getFloat("creditHour" + ht.id)
-      //      val week = getInt("week" + ht.id)
       topic.hours find (h => h.nature == ht) match {
         case Some(hour) =>
           if (creditHour.isEmpty) {
             topic.hours -= hour
           } else {
-            //            hour.weeks = week.getOrElse(0)
             hour.creditHours = creditHour.getOrElse(0f)
           }
         case None =>
@@ -510,6 +506,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     topic.objectives = None
     if (objectives.nonEmpty) {
       topic.objectives = Some(objectives.map(_.code).sorted.mkString(","))
+    }
+    if (topic.exam) {
+      if (syllabus.topics.map(_.idx).max == topic.idx) {
+        syllabus.examCreditHours = topic.hours.map(_.creditHours).sum.toInt
+      }
     }
     val methods = getAll("teachingMethod", classOf[String])
     topic.methods = None
@@ -586,7 +587,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     if (caseAndExps.contains("hasExperiment")) {
       val experiments = syllabus.experiments.map(x => (x.idx, x)).toMap
-      (0 to 9) foreach { i =>
+      (0 to 14) foreach { i =>
         val name = get(s"experiment${i}.name", "")
         experiments.get(i) match
           case None =>
@@ -710,12 +711,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case None => "grade" + gradeType.id
       case Some(n) => "grade" + gradeType.id + "_" + index
     populate(assessment, prefix)
-    val percents = Collections.newMap[String, Int]
+    val percents = Collections.newMap[String, Float]
     if (assessment.scorePercent >= 0 && !(gradeType.id == GradeType.Usual && index == 0 && componentName.isEmpty)) {
       syllabus.objectives foreach { co =>
         val p =
-          if gradeType.id == GradeType.Usual then getInt(s"usual_${index}_co${co.id}", 0)
-          else getInt(s"end_co${co.id}", 0)
+          if gradeType.id == GradeType.Usual then getFloat(s"usual_${index}_co${co.id}").getOrElse(0f)
+          else getFloat(s"end_co${co.id}").getOrElse(0f)
         if p > 0 then percents.put(co.code, p)
       }
     }
@@ -799,7 +800,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
     val allSyllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
     val syllabuses = allSyllabuses.filter(_.within(semester.beginOn))
-    val histories = allSyllabuses.filter(_.semester != semester)
+    val hq = OqlBuilder.from(classOf[Syllabus], "s")
+    hq.where("s.course.name = :courseName", course.name)
+    hq.where("s.semester != :semester", semester)
+    val histories = entityDao.search(hq)
+
     put("syllabuses", syllabuses)
     put("histories", histories)
     put("editables", Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart))

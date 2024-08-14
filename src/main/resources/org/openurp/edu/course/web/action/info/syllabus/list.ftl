@@ -111,7 +111,7 @@
            <tr>
             <td>${syllabus.course.code}</td>
             <td>
-              [@b.a href="!info?id="+syllabus.id target="_blank"]${syllabus.course.name}[/@]
+              [@b.a href="!info?id="+syllabus.id+"&semester.id="+semester.id target="_blank"]${syllabus.course.name}[/@]
               [#if syllabus.course.enName??]
               <span class="en_course_name" style="display:none;">${syllabus.course.enName}</span>
               [/#if]

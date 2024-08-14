@@ -20,10 +20,7 @@ package org.openurp.edu.course.web.action.info
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.Ems
-import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.support.ActionSupport
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
@@ -35,7 +32,6 @@ import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
 import java.net.URI
-import java.time.LocalDate
 
 class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSupport {
 
@@ -44,18 +40,18 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   def index(): View = {
     given project: Project = getProject
 
-    val semester = semesterService.get(project, LocalDate.now)
+    val semester = getSemester
     put("project", project)
     put("semester", semester)
     val q = OqlBuilder.from(classOf[Semester], "s")
     q.where("s.calendar=:calendar", project.calendar)
+    q.where("s.archived=false")
     q.orderBy("s.endOn desc")
     put("semesters", entityDao.search(q))
 
     val dQuery = OqlBuilder.from(classOf[Syllabus].getName, "c")
     dQuery.where("c.course.project=:project", project)
-    dQuery.where("c.semester=:semester", semester)
-    //dQuery.where("c.endOn is null or c.endOn > :now", LocalDate.now)
+    dQuery.where(":day between c.beginOn and c.endOn", semester.beginOn.plusDays(30))
     dQuery.select("c.department.id,c.department.name,count(*)")
     dQuery.groupBy("c.department.id,c.department.code,c.department.name")
     dQuery.orderBy("c.department.code,c.department.name")
@@ -68,11 +64,12 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
   def search(): View = {
     given project: Project = getProject
 
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     val query = getQueryBuilder
     get("q") foreach { q =>
       query.where("syllabus.course.code like :q or syllabus.course.name like :q", s"%${q.trim}%")
     }
-    //    query.where("syllabus.endOn is null or syllabus.endOn > :now", LocalDate.now)
+    query.where(":day between syllabus.beginOn and syllabus.endOn", semester.beginOn.plusDays(30))
     query.where("syllabus.course.project=:project", project)
     query.orderBy("syllabus.course.code")
     query.where("syllabus.status in(:statuses)", statuses)
@@ -85,6 +82,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     put("natures", getCodes(classOf[CourseNature]))
     put("modules", getCodes(classOf[CourseModule]))
     put("ranks", getCodes(classOf[CourseRank]))
+    put("semester", semester)
     forward()
   }
 
@@ -96,10 +94,15 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     put("course", syllabus.course)
     put("syllabus", syllabus)
-    put("semester", syllabus.semester)
+    var semester = syllabus.semester
+
+    getInt("semester.id") foreach { semesterId =>
+      semester = entityDao.get(classOf[Semester], semesterId)
+    }
+    put("semester", semester)
     val statHelper = new StatHelper(entityDao)
     val p = OqlBuilder.from(classOf[ClazzPlan], "p")
-    p.where("p.semester=:semester", syllabus.semester)
+    p.where("p.semester=:semester", semester)
     p.where("p.clazz.course=:course", syllabus.course)
     p.where("p.status in(:statuses)", statuses)
     put("plans", entityDao.search(p))

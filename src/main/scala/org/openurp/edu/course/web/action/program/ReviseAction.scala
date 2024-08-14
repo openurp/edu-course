@@ -19,13 +19,12 @@ package org.openurp.edu.course.web.action.program
 
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
+import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
@@ -53,6 +52,17 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
 
     val clazzes = Collections.newSet[Clazz]
     clazzes.addAll(clazzProvider.getClazzes(semester, teacher, project))
+
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", project)
+    q.where("c.semester=:semester", semester)
+    q.where("c.director=:me", teacher)
+    val tasks = entityDao.search(q)
+
+    if (tasks.nonEmpty) {
+      val helper = new ClazzPlanHelper(entityDao)
+      tasks foreach { task => clazzes.addAll(helper.getCourseTaskClazzes(task)) }
+    }
 
     val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
     if (scheduled.nonEmpty) {

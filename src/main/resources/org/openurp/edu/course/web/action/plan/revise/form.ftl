@@ -7,10 +7,20 @@
 </style>
 <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
   <h4 class="card-title" style="padding: .5rem 1.25rem;">授课计划编写</h4>
-  <span>110020310 会计学原理（${clazz.crn}）</span>
+  <span>${clazz.course.code} ${clazz.course.name}（${clazz.crn}）</span>
   <ul class="nav navbar-nav ml-auto">
+    [#if lastPassedPlans?? && lastPassedPlans?size>0]
     <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中选择复制...</a>
+      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中复制，并沿用...</a>
+      <div class="dropdown-menu">
+        [#list lastPassedPlans as p]
+          [@b.a href="!reuse?clazz.id=${clazz.id}&copyFrom.id=${p.id}" class="nav-link" onclick="return bg.Go(this,null,'选择后沿用后，无需保存或提交，无需审核，确认沿用?');" ] ${p.semester.schoolYear} ${p.semester.name} ${p.clazz.crn} ${(p.writer.name)!}[/@]
+        [/#list]
+      </div>
+    </li>
+    [/#if]
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中复制，后修改...</a>
       <div class="dropdown-menu">
         [#list lastPlans as p]
           [@b.a href="!edit?clazz.id=${clazz.id}&copyFrom.id=${p.id}" class="nav-link" onclick="return bg.Go(this,null,'复制后仍需要进行保存或提交，确认复制?');" ] ${p.semester.schoolYear} ${p.semester.name} ${p.clazz.crn} ${(p.writer.name)!}[/@]

@@ -24,7 +24,7 @@
         [#assign exps=exps+{'${c.idx}':c}/]
       [/#list]
       <ul style="margin-left: 6.25rem;padding-left: 1rem;">
-      [#list 0..9 as i]
+      [#list 0..14 as i]
         <ol>
         <label>${i+1}：</label><input type="text" placeholder="实验项目${i+1}的名称" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
         <input type="text" name="experiment${i}.creditHours" style="width:60px" value="${(exps[i?string].creditHours)!}" placeholder="学时"/>

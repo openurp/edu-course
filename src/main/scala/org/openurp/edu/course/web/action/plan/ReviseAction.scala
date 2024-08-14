@@ -22,11 +22,8 @@ import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.Ems
 import org.beangle.ems.app.web.WebBusinessLogger
-import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.context.ActionContext
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
@@ -51,37 +48,6 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
   var businessLogger: WebBusinessLogger = _
   var courseTaskService: CourseTaskService = _
 
-  /** 查询修订任务对应的教学任务
-   *
-   * @param task
-   * @param teacher
-   * @return
-   */
-  private def getCourseTaskClazzes(task: CourseTask): Iterable[Clazz] = {
-    val clazzes = Collections.newSet[Clazz]
-    val q = OqlBuilder.from(classOf[CourseTask], "c")
-    q.where("c.course.project=:project", task.course.project)
-    q.where("c.semester=:semester", task.semester)
-    q.where("c.course=:course", task.course)
-    q.where("c.id != :taskId", task.id)
-    val otherCourseTasks = entityDao.search(q)
-    val query = OqlBuilder.from(classOf[Clazz], "clazz")
-    query.where("clazz.project=:project and clazz.semester=:semester", task.course.project, task.semester)
-    query.where("clazz.course =:course", task.course)
-    val courseClazzes = entityDao.search(query)
-    if (otherCourseTasks.isEmpty) { // 只有本人负责该课程
-      clazzes.addAll(courseClazzes)
-    } else {
-      courseClazzes foreach { clazz =>
-        val clazzTeachers = clazz.teachers.toSet
-        if (clazzTeachers.subsetOf(task.teachers)) {
-          clazzes.addOne(clazz)
-        }
-      }
-    }
-    clazzes
-  }
-
   protected override def projectIndex(teacher: Teacher)(using project: Project): View = {
     val semester = getSemester
     put("semester", semester)
@@ -96,7 +62,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val tasks = entityDao.search(q)
 
     if (tasks.nonEmpty) {
-      tasks foreach { task => clazzes.addAll(getCourseTaskClazzes(task)) }
+      val helper = new ClazzPlanHelper(entityDao)
+      tasks foreach { task => clazzes.addAll(helper.getCourseTaskClazzes(task)) }
     }
 
     val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
@@ -133,7 +100,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     given project: Project = clazz.project
 
     val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz)
-    val plan = plans.headOption.getOrElse(new ClazzPlan)
+    val plan = plans.headOption.getOrElse(new ClazzPlan(clazz))
     getLong("copyFrom.id") foreach { id =>
       val copyFrom = entityDao.get(classOf[ClazzPlan], id)
       copyFrom.copyTo(plan)
@@ -181,6 +148,11 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
       //每个人只选一个
       val lastPlans = historyPlans.filter(_.semester.beginOn == lastBeginOn).groupBy(_.writer).map(_._2.head)
       put("lastPlans", lastPlans)
+      val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
+      if (!plan.persisted) {
+        val lastPassedPlans = historyPlans.filter(x => x.semester.beginOn == lastBeginOn && reuses.contains(x.status)).groupBy(_.writer).map(_._2.head)
+        put("lastPassedPlans", lastPassedPlans)
+      }
     } else {
       put("lastPlans", List.empty)
     }
@@ -251,7 +223,40 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     entityDao.saveOrUpdate(plan)
 
     val submit = getBoolean("submit", false)
+    if (submit) {
+      plan.status = AuditStatus.Submited
+      entityDao.saveOrUpdate(plan)
+      share(plan, me)
+      businessLogger.info(s"提交课程授课计划:${clazz.course.name}", plan.id, Map("course" -> clazz.course.id.toString))
+    }
+    redirect("report", "plan.id=" + plan.id, "info.save.success")
+  }
 
+  def reuse(): View = {
+    val clazz = entityDao.get(classOf[Clazz], getLongId("clazz"))
+
+    val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz)
+    val plan = plans.headOption.getOrElse(new ClazzPlan(clazz))
+    val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
+    if (!plan.persisted) {
+      getLong("copyFrom.id") foreach { id =>
+        val copyFrom = entityDao.get(classOf[ClazzPlan], id)
+        if (reuses.contains(copyFrom.status)) {
+          copyFrom.copyTo(plan)
+          plan.status = copyFrom.status
+          entityDao.saveOrUpdate(plan)
+          businessLogger.info(s"沿用了课程授课计划:${clazz.course.name}", plan.id, Map("course" -> clazz.course.id.toString))
+        }
+      }
+    }
+    if (reuses.contains(plan.status)) {
+      share(plan, getTeacher)
+    }
+    redirect("report", "plan.id=" + plan.id, "info.save.success")
+  }
+
+  private def share(plan: ClazzPlan, me: Teacher): Unit = {
+    val clazz = plan.clazz
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.semester=:semester", clazz.semester)
     q.where("c.course=:course and c.director=:me", clazz.course, me)
@@ -259,7 +264,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val isDirector = tasks.nonEmpty
     //课程负责人
     if (isDirector) {
-      val clzs = getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
+      val helper = new ClazzPlanHelper(entityDao)
+      val clzs = helper.getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
       val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
 
       val writerCodes = clzs.flatMap(_.teachers.map(_.code)).toSet
@@ -268,7 +274,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
         val clazzTeachers = clazz.teachers.toSet
         if (null == p.writer || p.writer.code == me.code || !writerCodes.contains(p.writer.code)) {
           val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
-          if (submit && editables.contains(p.status)) {
+          if (editables.contains(p.status)) {
             plan.copyTo(p)
             p.status = AuditStatus.Submited
             entityDao.saveOrUpdate(p)
@@ -276,14 +282,6 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
         }
       }
     }
-
-    getBoolean("submit") foreach { s =>
-      plan.status = AuditStatus.Submited
-      entityDao.saveOrUpdate(plan)
-      businessLogger.info(s"提交课程授课计划:${clazz.course.name}", plan.id, Map("course" -> clazz.course.id.toString))
-    }
-
-    redirect("report", "plan.id=" + plan.id, "info.save.success")
   }
 
   def report(): View = {
