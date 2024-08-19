@@ -23,7 +23,7 @@
     <tr>
       <td class="title">课程学分</td><td>${clazz.course.defaultCredits}学分</td><td class="title">课程学时</td>
       <td>
-      总学时:${courseJournal.creditHours}（[#list courseJournal.hours as h]${h.nature.name}：${h.creditHours}[#sep]&nbsp;[/#list]）
+      总学时:${syllabus.creditHours}（[#list syllabus.hours as h]${h.nature.name}：${h.creditHours}[#sep]&nbsp;[/#list]）
       </td>
     </tr>
     <tr>

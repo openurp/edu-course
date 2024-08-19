@@ -19,10 +19,11 @@
         [@b.col width="19%" title="操作"]
           [#if plans.get(clazz)??]
             [@b.a href="!edit?clazz.id="+clazz.id target="_blank"]编写[/@]
-            [#if programs.get(clazz)??]
+            [#--[#if programs.get(clazz)??]
               [@b.a href="!report?plan.id="+plans.get(clazz).id target="_blank"]预览[/@]
               [@b.a href="!pdf?plan.id="+plans.get(clazz).id target="_blank"]下载PDF[/@]
             [/#if]
+            --]
           [#else]
             授课计划缺失，请先修订授课计划
           [/#if]

@@ -14,6 +14,9 @@
     </div>
 
     <ul class="navbar-nav ml-auto">
+     <li>
+     ${schedule!}
+     </li>
      [#--[#if program.id??]
       <li class="nav-item">
         [@b.a href="!report?id="+program.id class="nav-link"]<i class="fa-solid fa-print"></i>打印预览[/@]
@@ -50,9 +53,11 @@
             <div class="card">
               <div class="card-header">
                   <h1 style="display:inline;">
-                    <a class="q-anchor q-heading-anchor" name="lesson${lesson_index+1}"></a>第${lesson_index+1}次课
+                    <a class="q-anchor q-heading-anchor" name="lesson${lesson_index+1}"></a>第${(lesson_index+1)?string?left_pad(2,"0")}次课
+                    [#if schedules?? &&schedules[lesson_index]??]<small>(${schedules[lesson_index].date})</small>[/#if]
                   </h1>
                   [@b.a href="!editDesign?program.id=${program.id}&idx=${lesson_index+1}"]添加[/@]
+                  [@b.a href="!importSetting?program.id=${program.id}&idx=${lesson_index+1}"]导入[/@]
               </div>
             </div>
           [/#if]
@@ -66,7 +71,4 @@
     [#include "/org/openurp/edu/course/web/components/program/notice.ftl"/]
   </aside>
 </div>
-<script>
-  //setTimeout(function(){jQuery("head base").remove();},1500);
-</script>
 [@b.foot/]

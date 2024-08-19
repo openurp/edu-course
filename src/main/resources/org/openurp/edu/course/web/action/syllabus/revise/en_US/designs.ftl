@@ -103,7 +103,7 @@
          var missingHoursExperiments = [];
          for(var i=0; i<=9;i++){
            if(form["experiment"+i+".name"].value){
-             var hours = parseInt(form["experiment"+i+".creditHours"].value||"0");
+             var hours = parseFloat(form["experiment"+i+".creditHours"].value||"0");
              if(hours<=0){
                missingHoursExperiments.push(i+1);
              }

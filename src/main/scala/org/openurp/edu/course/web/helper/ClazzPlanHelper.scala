@@ -29,7 +29,6 @@ import java.util.Locale
 
 class ClazzPlanHelper(entityDao: EntityDao) {
 
-
   /** 查询修订任务对应的教学任务
    *
    * @param task
@@ -60,7 +59,6 @@ class ClazzPlanHelper(entityDao: EntityDao) {
     }
     clazzes
   }
-
 
   def findSyllabus(clazz: Clazz): Option[Syllabus] = {
     val query = OqlBuilder.from(classOf[Syllabus], "s")

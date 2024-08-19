@@ -172,9 +172,14 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     if (syllabus.writer.code == Securities.user) {
-      entityDao.remove(syllabus)
-      businessLogger.info(s"删除课程教学大纲:${syllabus.course.name}", syllabus.id, Map("syllabus" -> syllabus.id.toString))
-      redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "删除成功")
+      val statuses = Set(AuditStatus.Draft, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
+      if (statuses.contains(syllabus.status)) {
+        entityDao.remove(syllabus)
+        businessLogger.info(s"删除课程教学大纲:${syllabus.course.name}", syllabus.id, Map("id" -> syllabus.id.toString))
+        redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "删除成功")
+      } else {
+        redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "大纲状态不允许删除")
+      }
     } else {
       redirect("course", s"course.id=${syllabus.course.id}&semester.id=${semester.id}", "只能删除自己编写的大纲")
     }
@@ -594,7 +599,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             if (Strings.isNotBlank(name)) {
               val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
               val online = getBoolean(s"experiment${i}.online", false)
-              val hours = getInt(s"experiment${i}.creditHours", 0)
+              val hours = getFloat(s"experiment${i}.creditHours").getOrElse(0f)
               syllabus.experiments += new SyllabusExperiment(syllabus, i, name, hours, experimentType, online)
             }
           case Some(c) =>
@@ -602,7 +607,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             else
               val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
               val online = getBoolean(s"experiment${i}.online", false)
-              val hours = getInt(s"experiment${i}.creditHours", 0)
+              val hours = getFloat(s"experiment${i}.creditHours").getOrElse(0f)
               c.name = name
               c.creditHours = hours
               c.experimentType = experimentType
@@ -748,7 +753,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     getBoolean("submit") foreach { s =>
       syllabus.status = Submited
       entityDao.saveOrUpdate(syllabus)
-      businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
+      businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("id" -> syllabus.id.toString))
     }
     redirect("info", s"&syllabus.id=${syllabus.id}", "info.save.success")
   }

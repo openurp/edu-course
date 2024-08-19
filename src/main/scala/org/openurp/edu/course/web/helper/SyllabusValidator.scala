@@ -19,7 +19,7 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
-import org.openurp.code.edu.model.GradeType
+import org.openurp.code.edu.model.{GradeType, TeachingNature}
 import org.openurp.edu.course.model.Syllabus
 
 import java.util.Locale
@@ -175,6 +175,12 @@ object SyllabusValidator {
       if (!p.exam && p.methods.isEmpty) {
         messages += s"教学主题:${p.name},缺少教学方法"
       }
+    }
+    //验证实验学时
+    val totalExperimentHours = syllabus.experiments.map(_.creditHours).sum
+    val totalPracticalHours = syllabus.hours.find(_.nature.id == TeachingNature.Practice).map(_.creditHours).getOrElse(0f)
+    if (totalExperimentHours > totalPracticalHours) {
+      messages += s"实验要求${totalExperimentHours}学时，超过了${totalPracticalHours}总的实践学时，请检查。"
     }
     messages.toSeq
   }

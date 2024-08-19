@@ -17,14 +17,17 @@
 
 package org.openurp.edu.course.web.action.program
 
-import org.beangle.commons.collection.Collections
+import jakarta.servlet.http.Part
+import org.beangle.commons.collection.{Collections, Properties}
 import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.EmsApp
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
+import org.beangle.web.action.annotation.response
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.hr.model.Teacher
@@ -33,7 +36,8 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl, LessonDesignDocParser}
+import org.openurp.edu.program.model.Program
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -81,8 +85,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     val plan = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).head
     put("clazz", clazz)
     put("plan", plan)
-    put("schedule_time", ScheduleDigestor.digest(clazz, ":day :units :weeks"))
-    put("schedule_space", ScheduleDigestor.digest(clazz, ":room"))
+    put("schedules", LessonSchedule.convert(clazz))
+    put("schedule", ScheduleDigestor.digest(clazz, ":day :units(:time) :weeks :room"))
     val programs = entityDao.findBy(classOf[ClazzProgram], "clazz", clazz)
     val program = programs.headOption.getOrElse(new ClazzProgram(clazz))
     if (!program.persisted) {
@@ -107,13 +111,35 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
         case Some(id) => entityDao.get(classOf[LessonDesign], id)
         case None => new LessonDesign(program, getInt("idx", 1))
 
+    val schedules = LessonSchedule.convert(program.clazz)
+    if (design.idx - 1 < schedules.length) {
+      design.creditHours = schedules(design.idx - 1).hours
+    }
     put("design", design)
     put("program", program)
     forward()
   }
 
-  def uploadImage(): View = {
-    forward()
+  @response
+  def uploadImage(): Properties = {
+    val rs = new Properties()
+    rs.put("error", 0)
+    val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
+    val teacher = getTeacher
+    val clazz = program.clazz
+    get("imgFile", classOf[Part]) match
+      case Some(part) =>
+        val blob = EmsApp.getBlobRepository(true)
+        val storeName = part.getSubmittedFileName
+        val meta = blob.upload(s"/course/program/${program.id}/",
+          part.getInputStream, storeName, teacher.code + " " + teacher.name)
+        rs.put("url", blob.path(meta.filePath).get)
+        rs.put("message", "上传成功")
+      case None =>
+        rs.put("error", 1)
+        rs.put("message", "图片不能为空")
+
+    rs
   }
 
   def saveDesign(): View = {
@@ -147,7 +173,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
         }
     }
     entityDao.saveOrUpdate(design)
-
+    businessLogger.info(s"保存了教案:${clazz.course.name} 第${idx}次课", design.id, Map("program" -> program.id.toString))
     redirect("designInfo", s"design.id=${design.id}", "info.save.success")
   }
 
@@ -196,6 +222,79 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
         else
           o.contents = contents
     }
+  }
+
+  def importSetting(): View = {
+    put("program", entityDao.get(classOf[ClazzProgram], getLongId("program")))
+    put("idx", getInt("idx", 1))
+    forward()
+  }
+
+  def importDesign(): View = {
+    val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
+    val index = getInt("idx", 0)
+    put("program", program)
+    put("idx", index)
+
+    get("attachment", classOf[Part]) match
+      case Some(part) =>
+        val rs = LessonDesignDocParser.parse(part.getInputStream)
+        if (rs._1.nonEmpty) {
+          val design =
+            program.get(index) match
+              case Some(d) =>
+                copyTo(rs._1.get, d)
+              case None =>
+                val d = rs._1.get
+                d.idx = index
+                d.program = program
+                d
+          //更新学时
+          val schedules = LessonSchedule.convert(program.clazz)
+          if (design.idx - 1 < schedules.length) {
+            design.creditHours = schedules(design.idx - 1).hours
+          }
+          entityDao.saveOrUpdate(design)
+          businessLogger.info(s"导入教案:${program.clazz.course.name} 第${index}次课", design.id, Map("program" -> program.id.toString))
+          redirect("designInfo", s"design.id=${design.id}", "识别完成，请核对")
+        } else {
+          addError("文件解析错误，请检查是否符合模板要求")
+          forward("importSetting")
+        }
+      case None =>
+        addError("缺少word文件")
+        forward("importSetting")
+  }
+
+  private def copyTo(src: LessonDesign, dest: LessonDesign): LessonDesign = {
+    dest.homework = src.homework
+    dest.subject = src.subject
+    src.texts foreach { st =>
+      val k = st.name
+      val v = st.contents
+      dest.getText(k) match
+        case Some(t) => t.contents = v
+        case None => val t = new LessonDesignText(dest, k, v)
+          dest.texts.addOne(t)
+    }
+    val textNames = src.texts.map(_.name).toSet
+    val abandons = dest.texts.filter(x => !textNames.contains(x.name))
+    dest.texts.subtractAll(abandons)
+    src.sections foreach { section =>
+      dest.getSection(section.idx) match
+        case Some(ds) => ds.idx = section.idx
+          ds.duration = section.duration
+          ds.title = section.title
+          ds.summary = section.summary
+          ds.details = section.details
+        case None =>
+          val ds = new LessonDesignSection(dest, section.idx, section.title, section.duration, section.summary, section.details)
+          dest.sections.addOne(ds)
+    }
+    val sectionIndices = src.sections.map(_.idx).toSet
+    val abandonSections = dest.sections.filter(x => !sectionIndices.contains(x.idx))
+    dest.sections.subtractAll(abandonSections)
+    dest
   }
 
   /**

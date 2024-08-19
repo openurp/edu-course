@@ -25,7 +25,7 @@ ThisBuild / description := "The OpenURP Edu Course"
 ThisBuild / homepage := Some(url("http://openurp.github.io/edu-course/index.html"))
 ThisBuild / resolvers += Resolver.mavenLocal
 
-val apiVer = "0.41.2"
+val apiVer = "0.41.3-SNAPSHOT"
 val starterVer = "0.3.38"
 val baseVer = "0.4.35"
 val eduCoreVer = "0.2.13"
@@ -35,7 +35,7 @@ val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer
 val openurp_edu_core = "org.openurp.edu" % "openurp-edu-core" % eduCoreVer
 val openurp_stater_web = "org.openurp.starter" % "openurp-starter-web" % starterVer
 val openurp_base_tag = "org.openurp.base" % "openurp-base-tag" % baseVer
-val beangle_webmvc = "org.beangle.webmvc" % "beangle-webmvc" % "0.9.31-SNAPSHOT"
+val beangle_webmvc = "org.beangle.webmvc" % "beangle-webmvc" % "0.9.35-SNAPSHOT"
 lazy val root = (project in file("."))
   .enablePlugins(WarPlugin, UndertowPlugin, TomcatPlugin)
   .settings(

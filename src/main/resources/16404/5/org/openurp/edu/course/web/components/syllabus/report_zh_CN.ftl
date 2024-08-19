@@ -302,20 +302,22 @@
     [/#list]
   </div>
 
+  [#if syllabus.getAssessment(usualType,null)?exists && syllabus.getAssessment(endType,null)?exists]
   [#--七、课程考核方式与评分标准--]
     [#assign usualAssessments=[]/]
     [#list syllabus.getAssessments(usualType)?sort_by("idx") as a]
       [#if a.component??][#assign usualAssessments=usualAssessments +[a]/][/#if]
     [/#list]
     [#assign orderedObjectives = syllabus.objectives?sort_by("code")/]
-    [#assign usualAssess = syllabus.getAssessment(usualType,null)/]
-    [#assign endAssess = syllabus.getAssessment(endType,null)/]
-    [#assign endPercentMap = endAssess.objectivePercentMap/]
+    [#assign usualAssess = syllabus.getAssessment(usualType,null)!/]
+    [#assign endAssess = syllabus.getAssessment(endType,null)!/]
+    [#assign endPercentMap = (endAssess.objectivePercentMap)!/]
   <div>
     [@header_title "七、课程考核方式与评分标准"/]
     [@header_title "（一）课程考核方式"/]
     [@header_title "&nbsp;&nbsp;1.课程成绩构成"/]
-    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${usualAssess.scorePercent}%，期末成绩占${endAssess.scorePercent}%。平时成绩构成见下表。[/@]
+    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.scorePercent)!}%，期末成绩占${(endAssess.scorePercent)!}%。平时成绩构成见下表。[/@]
+
 
     <table class="info-table" style="table-layout:fixed;text-align: center;">
       <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
@@ -336,8 +338,8 @@
         </tr>
         <tr>
           <td>考核分值占比</td>[#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
-          <td>100%</td><td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
-          <td>${endAssess.scorePercent}%</td><td>100%</td>
+          <td>100%</td><td>${(usualAssess.scorePercent)!}%</td><td>[#if ((endAssess.scorePercent)!0)>0]100%[#else]0%[/#if]</td>
+          <td>${(endAssess.scorePercent)!}%</td><td>100%</td>
         </tr>
         [#if orderedObjectives?size>0]
         [#assign firstObj=orderedObjectives?first/]
@@ -399,7 +401,7 @@
       [/#if]
     [/#list]
   </div>
-
+[/#if]
   [#--教材和教学资源--]
   <div>
     [@header_title "八、教材和教学资源"/]
