@@ -69,35 +69,54 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
   def audit(): View = {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
     val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
+    var hasErrors: Int = 0
+    var processed: Seq[Syllabus] = null
+    val toPassedStatuses = Set(AuditStatus.PassedByDirector, AuditStatus.RejectedByDepart)
+    val toFailedStatuses = Set(AuditStatus.PassedByDirector, AuditStatus.PassedByDepart)
+
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
-      syllabuses foreach { s =>
-        s.status = status
-        s.approver = user
+      if (status == AuditStatus.PassedByDepart) {
+        val oks = syllabuses.filter { s => SyllabusValidator.validate(s).isEmpty && toPassedStatuses.contains(s.status) }
+        oks foreach { s =>
+          s.status = status
+          s.approver = user
+        }
+        hasErrors = syllabuses.size - oks.size
+        processed = oks
+      } else {
+        val oks = syllabuses.filter { s => toFailedStatuses.contains(s.status) }
+        oks foreach { s =>
+          s.status = status
+          s.approver = user
+        }
+        hasErrors = syllabuses.size - oks.size
+        processed = oks
       }
     }
-    entityDao.saveOrUpdate(syllabuses)
+    entityDao.saveOrUpdate(processed)
     val list = syllabuses.groupBy(_.status)
     list foreach { case (status, s) =>
       if (status == AuditStatus.PassedByDepart) {
         if (s.size == 1) {
           val h = s.head
-          businessLogger.info(s"审核通过课程教学大纲:${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+          businessLogger.info(s"学院审核通过课程教学大纲:${h.course.code} ${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
         } else {
-          businessLogger.info(s"审核通过${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+          businessLogger.info(s"学院审核通过${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
         }
       } else {
         if (s.size == 1) {
           val h = s.head
-          businessLogger.info(s"驳回了课程教学大纲:${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+          businessLogger.info(s"学院驳回了课程教学大纲:${h.course.code} ${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
         } else {
-          businessLogger.info(s"驳回了${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+          businessLogger.info(s"学院驳回了${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
         }
       }
     }
+    val message = if hasErrors > 0 then s"审核成功${syllabuses.size - hasErrors},失败${hasErrors}个" else "审核成功"
     val toInfo = getBoolean("toInfo", false)
-    if (toInfo) redirect("info", "id=" + syllabuses.head.id, "审核成功")
-    else redirect("search", "审核成功")
+    if (toInfo) redirect("info", "id=" + syllabuses.head.id, message)
+    else redirect("search", message)
   }
 
   @mapping(value = "{id}")

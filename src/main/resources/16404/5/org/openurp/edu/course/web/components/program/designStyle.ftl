@@ -30,7 +30,7 @@
       border: solid 0.5px black;
       border-collapse: collapse;
     }
-    .grid-table td,th{
+    .grid-table>tbody>tr>td{
       border:0.5px solid black;
     }
     .container {

@@ -18,6 +18,7 @@
 package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.data.dao.OqlBuilder
+import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
@@ -26,7 +27,7 @@ import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project, Semester}
 import org.openurp.edu.course.model.Syllabus
-import org.openurp.edu.course.web.helper.SyllabusHelper
+import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -34,6 +35,8 @@ import java.util.Locale
 /** 课程大纲教研室审核
  */
 class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
+
+  var businessLogger: WebBusinessLogger = _
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
@@ -72,16 +75,49 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
   def audit(): View = {
     val statuses = auditStatuses
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus")).filter(x => statuses.contains(x.status))
+    var hasErrors: Int = 0
+    var processed: Seq[Syllabus] = null
+    val toPassedStatuses = Set(AuditStatus.Submited, AuditStatus.RejectedByDirector)
+    val toFailedStatuses = Set(AuditStatus.Submited, AuditStatus.PassedByDirector)
+
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
-      syllabuses foreach { s =>
-        s.status = status
+      if (status == AuditStatus.PassedByDirector) {
+        val oks = syllabuses.filter { s => SyllabusValidator.validate(s).isEmpty && toPassedStatuses.contains(s.status) }
+        oks foreach { s => s.status = status }
+        hasErrors = syllabuses.size - oks.size
+        processed = oks
+      } else {
+        val oks = syllabuses.filter { s => toFailedStatuses.contains(s.status) }
+        oks foreach { s => s.status = status }
+        hasErrors = syllabuses.size - oks.size
+        processed = oks
       }
     }
-    entityDao.saveOrUpdate(syllabuses)
+    entityDao.saveOrUpdate(processed)
+
+    val list = processed.groupBy(_.status)
+    list foreach { case (status, s) =>
+      if (status == AuditStatus.PassedByDirector) {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"教研室审核通过课程教学大纲:${h.course.code} ${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+        } else {
+          businessLogger.info(s"教研室审核通过${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      } else {
+        if (s.size == 1) {
+          val h = s.head
+          businessLogger.info(s"教研室驳回了课程教学大纲:${h.course.code} ${h.course.name}", h.id, Map("syllabus" -> h.id.toString))
+        } else {
+          businessLogger.info(s"教研室驳回了${s.size}个课程教学大纲", s.head.id, Map("ids" -> s.map(_.id.toString).mkString(",")))
+        }
+      }
+    }
+    val message = if hasErrors > 0 then s"审核成功${syllabuses.size - hasErrors}个 失败${hasErrors}个" else "审核成功"
     val toInfo = getBoolean("toInfo", false)
-    if (toInfo) redirect("info", "id=" + syllabuses.head.id, "审核成功")
-    else redirect("search", "审核成功")
+    if (toInfo) redirect("info", "id=" + syllabuses.head.id, message)
+    else redirect("search", message)
   }
 
   @mapping(value = "{id}")

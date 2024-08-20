@@ -30,6 +30,7 @@ import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.response
 import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
+import org.openurp.base.edu.model.Course
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Project, User}
 import org.openurp.edu.clazz.domain.ClazzProvider
@@ -37,7 +38,6 @@ import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl, LessonDesignDocParser}
-import org.openurp.edu.program.model.Program
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -55,7 +55,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     put("semester", semester)
 
     val clazzes = Collections.newSet[Clazz]
-    clazzes.addAll(clazzProvider.getClazzes(semester, teacher, project))
+    val myClazzes = clazzProvider.getClazzes(semester, teacher, project).filter(_.schedule.activities.nonEmpty).sortBy(_.crn)
 
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course.project=:project", project)
@@ -67,11 +67,36 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       val helper = new ClazzPlanHelper(entityDao)
       tasks foreach { task => clazzes.addAll(helper.getCourseTaskClazzes(task)) }
     }
+    val scheduled = clazzes.filter(_.schedule.activities.nonEmpty).toBuffer.sortBy(_.crn)
+    scheduled.subtractAll(myClazzes)
+    scheduled.prependAll(myClazzes)
 
-    val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
     if (scheduled.nonEmpty) {
       put("plans", entityDao.findBy(classOf[ClazzPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
-      put("programs", entityDao.findBy(classOf[ClazzProgram], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
+      val clazzPrograms = entityDao.findBy(classOf[ClazzProgram], "clazz", scheduled)
+      put("programs", clazzPrograms.map(x => (x.clazz, x)).toMap)
+      val courses = scheduled.map(_.course).toSet
+
+      val q = OqlBuilder.from(classOf[CourseTask], "c")
+      q.where("c.course.project=:project", project)
+      q.where("c.semester=:semester", semester)
+      q.where("c.course in(:courses)", courses)
+      q.where("c.director is not null")
+      val tasks = entityDao.search(q)
+
+      val p = OqlBuilder.from(classOf[ClazzProgram], "c")
+      p.where("c.clazz.project=:project", project)
+      p.where("c.semester=:semester", semester)
+      p.where("c.clazz.course in(:courses)", courses)
+      val programs = entityDao.search(p)
+
+      val coursePrograms = Collections.newMap[Course, ClazzProgram]
+      tasks foreach { task =>
+        programs.find(p => p.clazz.course == task.course && task.director.get.code == p.writer.code) foreach { pr =>
+          coursePrograms.put(task.course, pr)
+        }
+      }
+      put("coursePrograms", coursePrograms)
     } else {
       put("plans", Map.empty)
       put("programs", Map.empty)
@@ -94,6 +119,20 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       program.updatedAt = Instant.now
       entityDao.saveOrUpdate(program)
     }
+    put("program", program)
+    val project = program.clazz.project
+    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    forward()
+  }
+
+  def info(): View = {
+    val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
+    val clazz = entityDao.get(classOf[Clazz], getLongId("clazz"))
+    val plan = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).head
+    put("clazz", clazz)
+    put("plan", plan)
+    put("schedules", LessonSchedule.convert(clazz))
+    put("schedule", ScheduleDigestor.digest(clazz, ":day :units(:time) :weeks :room"))
     put("program", program)
     val project = program.clazz.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
@@ -186,7 +225,11 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
   def designReport(): View = {
     val design = entityDao.get(classOf[LessonDesign], getLongId("design"))
     put("design", design)
-    val clazz = design.program.clazz
+    val clazz = getLong("clazz.id") match {
+      case None => design.program.clazz
+      case Some(clazzId) => entityDao.get(classOf[Clazz], clazzId)
+    }
+
     put("plan", entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).headOption)
     val syllabus = ClazzPlanHelper(entityDao).findSyllabus(clazz)
     put("clazz", clazz)
@@ -198,8 +241,9 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
 
   def designPdf(): View = {
     val id = getLongId("design")
+    val clazzId = getLongId("clazz")
     val design = entityDao.get(classOf[LessonDesign], id)
-    val url = EmsUrl.url(s"/program/revise/designReport?design.id=${id}")
+    val url = EmsUrl.url(s"/program/revise/designReport?design.id=${id}&clazz.id=${clazzId}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)

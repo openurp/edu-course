@@ -297,13 +297,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       val me = entityDao.findBy(classOf[User], "code", Securities.user).head
       syllabus.writer = me
     }
-    syllabus.updatedAt = Instant.now
     syllabus.creditHours = course.creditHours
 
     val majorIds = getLongIds("major")
     syllabus.majors.clear()
     syllabus.majors.addAll(entityDao.find(classOf[Major], majorIds))
-    syllabus.complete = SyllabusValidator.validate(syllabus).isEmpty
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     businessLogger.info(s"保存了课程教学大纲:${course.name}", syllabus.id, Map("course" -> course.id.toString))
     toStep(syllabus)
@@ -349,7 +348,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def saveObjectives(): View = {
     val syllabus = populateEntity()
-    syllabus.updatedAt = Instant.now
     syllabus.getText("values") match
       case Some(values) => values.contents = get("values", " ")
       case None =>
@@ -372,6 +370,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
     new SyllabusHelper(entityDao).cleanMissingObjectives(syllabus)
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=objectives", "info.save.success")
@@ -384,7 +383,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
    */
   def saveRequirements(): View = {
     val syllabus = populateEntity()
-    syllabus.updatedAt = Instant.now
     (1 to 12) foreach { idx =>
       val code = s"R${idx}"
       var name = get(code, "")
@@ -402,6 +400,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         }
       }
     }
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=requirements", "info.save.success")
@@ -410,7 +409,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def saveOutcomes(): View = {
     val syllabus = populateEntity()
-    syllabus.updatedAt = Instant.now
 
     given project: Project = getProject
 
@@ -421,6 +419,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       r.contents = contents
       r.courseObjectives = cos
     }
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=outcomes", "info.save.success")
@@ -522,7 +521,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val sep = if syllabus.docLocale == Locale.SIMPLIFIED_CHINESE then "、" else ","
     topic.methods = Some(methods.mkString(sep))
     if (null == topic.contents) topic.contents = " "
-    syllabus.updatedAt = Instant.now
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus, topic)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")
   }
@@ -531,7 +530,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val topic = entityDao.get(classOf[SyllabusTopic], getLongId("topic"))
     val syllabus = topic.syllabus
     syllabus.topics -= topic
-    syllabus.updatedAt = Instant.now
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")
   }
@@ -566,7 +565,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def saveDesign(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
-    syllabus.updatedAt = Instant.now()
     val design = populateEntity(classOf[SyllabusMethodDesign], "design")
     if (!design.persisted) {
       design.syllabus = syllabus
@@ -629,6 +627,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       d.idx = idx
       idx += 1
     }
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
   }
@@ -637,7 +636,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val design = entityDao.get(classOf[SyllabusMethodDesign], getLongId("design"))
     val syllabus = design.syllabus
     syllabus.designs -= design
-    syllabus.updatedAt = Instant.now
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
   }
@@ -655,7 +654,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def saveAssess(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
-    syllabus.updatedAt = Instant.now()
     val usualType = entityDao.get(classOf[GradeType], GradeType.Usual)
     val endType = entityDao.get(classOf[GradeType], GradeType.End)
     populateAssessment(syllabus, endType, 0, None)
@@ -669,6 +667,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         populateAssessment(syllabus, usualType, i, Some(component))
       }
     }
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("assesses", s"syllabus.id=${syllabus.id}", "info.save.success")
@@ -679,6 +678,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val assessment = entityDao.get(classOf[SyllabusAssessment], getLongId("assessment"))
     val syllabus = assessment.syllabus
     syllabus.assessments -= assessment
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("assesses", s"syllabus.id=${syllabus.id}", "info.remove.success")
   }
@@ -738,7 +738,6 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def saveTextbook(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
-    syllabus.updatedAt = Instant.now()
     syllabus.textbooks.clear()
     syllabus.textbooks ++= entityDao.find(classOf[Textbook], getLongIds("textbook"))
     syllabus.materials = get("syllabus.materials")
@@ -748,7 +747,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.office foreach { o =>
       syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department)
     }
-    syllabus.complete = SyllabusValidator.validate(syllabus).isEmpty
+    updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     getBoolean("submit") foreach { s =>
       syllabus.status = Submited
@@ -933,5 +932,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     } else {
       redirect("course", s"&semester.id=${semester.id}&course.id=${course.id}", "不是负责人，无法复制")
     }
+  }
+
+  private def updateState(syllabus: Syllabus): Unit = {
+    syllabus.updatedAt = Instant.now
+    syllabus.complete = SyllabusValidator.validate(syllabus).isEmpty
   }
 }

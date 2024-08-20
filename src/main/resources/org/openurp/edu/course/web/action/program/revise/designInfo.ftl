@@ -16,10 +16,12 @@
       </h1>
       <span style="font-weight:bold;">${design.subject}</span>
       <div class="card-tools">
+       [#if plan.clazz == program.clazz && editable??]
        [@b.a class="btn btn-outline-primary btn-sm" href="!editDesign?program.id=${design.program.id}&design.id=${design.id}"]<i class="fa-solid fa-edit"></i>修改[/@]
        [@b.a class="btn btn-outline-primary btn-sm" href="!importSetting?program.id=${design.program.id}&idx=${design.idx}"]<i class="fa-solid fa-file-word"></i>更新导入[/@]
-       [@b.a class="btn btn-outline-primary btn-sm" href="!designReport?program.id=${design.program.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-print"></i>打印预览[/@]
-       [@b.a class="btn btn-outline-primary btn-sm" href="!designPdf?program.id=${design.program.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-file-pdf"></i>下载PDF[/@]
+       [/#if]
+       [@b.a class="btn btn-outline-primary btn-sm" href="!designReport?clazz.id=${plan.clazz.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-print"></i>打印预览[/@]
+       [@b.a class="btn btn-outline-primary btn-sm" href="!designPdf?clazz.id=${plan.clazz.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-file-pdf"></i>下载PDF[/@]
       </div>
   </div>
 
