@@ -11,6 +11,13 @@
     color:rgb(192,0,0);
     font-family: 楷体;
   }
+  .line-3{
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 </style>
 <div class="container" style="font-family: 宋体;font-size: 12pt;">
   <table class="header">
@@ -33,7 +40,7 @@
       <tr>
         <td style="text-align:right;">任课教师：</td><td style="border-bottom: solid 1px black;">[#list clazz.teachers as t]${t.name}[#sep],[/#list]</td>
         <td style="text-align:right;">教  学  班：</td>
-        <td style="border-bottom: solid 1px black;display:flex;"><div>(${clazz.crn})</div><div class="text-ellipsis" style="max-width:350px;">${clazz.clazzName}</div></td>
+        <td style="border-bottom: solid 1px black;display:flex;"><div class="line-3" style="max-width:350px;">(${clazz.crn})${clazz.clazzName}</div></td>
       </tr>
       <tr>
         <td style="text-align:right;">授课时间：</td><td style="border-bottom: solid 1px black;">${schedule_time}</td>
@@ -104,6 +111,9 @@
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
               <td colspan="${plan.hours?size}">课堂学时</td>
               <td rowspan="2">考试周考核或自主考核*</td>
+              [#if plan.extraHours>0]
+              <td rowspan="2">课外课时</td>
+              [/#if]
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
             </tr>
@@ -117,8 +127,11 @@
               [#list plan.hours as h]
               <td>${h.creditHours}</td>
               [/#list]
-              <td>[#if syllabus.examCreditHours>0]${syllabus.examCreditHours}[/#if]</td>
-              <td>[#if scheduleHours == syllabus.creditHours]${scheduleHours}[#else]${syllabus.examCreditHours+scheduleHours}[/#if]</td>
+              <td>[#if plan.examHours>0]${plan.examHours}[/#if]</td>
+              [#if plan.extraHours>0]
+              <td>${plan.extraHours}</td>
+              [/#if]
+              <td>${plan.lessonHours + plan.examHours+plan.extraHours}</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -188,20 +201,25 @@
 
       <tr>
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
-        <td>[#if scheduleHours==syllabus.creditHours]${scheduleHours-syllabus.examCreditHours}[#else]${scheduleHours}[/#if]</td> <td colspan="3">——</td>
+        <td>${plan.lessonHours}</td> <td colspan="3">——</td>
       </tr>
-      [#if syllabus.examCreditHours>0]
+      [#if plan.extraHours>0]
+      <tr>
+        <td colspan="2" style="text-align:left;">课外学时</td>
+        <td>${plan.extraHours}</td>
+        <td colspan="3">——</td>
+      </tr>
+      [/#if]
+      [#if plan.examHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">期末考核</td>
-        <td>${syllabus.examCreditHours}</td>
+        <td>${plan.examHours}</td>
         <td colspan="3">——</td>
       </tr>
       [/#if]
       <tr>
         <td colspan="2" style="text-align:left;">合计</td>
-        <td>[#assign examCreditHours =syllabus.examCreditHours/] [#if scheduleHours==syllabus.creditHours][#assign examCreditHours=0/][/#if]
-        ${scheduleHours + examCreditHours}
-        </td><td colspan="3">——</td>
+        <td>${plan.lessonHours + plan.examHours + plan.extraHours}</td><td colspan="3">——</td>
       </tr>
       [#if syllabus.learningHours>0]
       <tr>

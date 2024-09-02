@@ -124,7 +124,7 @@
               [#list sectionNames as sectionName]
               <td><input name="section${sectionName_index+1}.creditHours" value="${hours.get(sectionName)!}" style="width:100%" placeholder="学时" onchange="checkHours(this)"/></td>
               [/#list]
-              <td>${syllabus.examCreditHours}</td>
+              <td>${syllabus.examCreditHours}<span class="text-muted"> 如课时不对，可以修改大纲中的期末考核环节（修订第四步）</span></td>
               <td>[#if scheduleHours == syllabus.creditHours]${scheduleHours}[#else]${syllabus.examCreditHours+scheduleHours}[/#if]</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
@@ -212,6 +212,7 @@
       var missingContents = [];
       var missingLearningHours = [];
       var fillinLearningHours=0;
+      var errors = [];
       for(var i=1;i<=${schedules?size};i++){
         if(!form['lesson'+i+".contents"].value || !form['lesson'+i+".forms"].value){
           missingContents.push(i);
@@ -225,21 +226,22 @@
         }
       }
       if(missingContents.length>0){
-        alert("第"+missingContents.join(",")+"次课程，缺少内容或上课形式，请填写");
-        return false;
+        errors.push("第"+missingContents.join(",")+"次课程，缺少内容或上课形式，请填写");
       }
       if(missingLearningHours.length>0){
         alert("第"+missingLearningHours.join(",")+"次课程，缺少自主学习学时，请填写");
         return false;
       }
       if(fillinLearningHours!=${syllabus.learningHours}){
-        alert("本次填写自主学习学时为"+fillinLearningHours+"和大纲中的${syllabus.learningHours}不相符,请调整");
-        return false;
+         errors.push("本次填写自主学习学时为"+fillinLearningHours+"和大纲中的${syllabus.learningHours}不相符,请调整");
       }
       //check hours
       var warnings = checkHours();
       if(warnings){
-        return !confirm(warnings+"，继续填写?");
+        errors.push(warnings);
+      }
+      if(errors.length>0){
+        return !confirm(errors.join(",")+"，点击取消可先行保存，继续填写?");
       }else{
         return true;
       }
@@ -255,7 +257,7 @@
       var totalHours = ${syllabus.creditHours};
       if(hours != scheduleHours){
         warnings ="分项累计为"+hours+"学时，不等于课堂学时"+scheduleHours;
-      }else if(hours + ${syllabus.examCreditHours} < totalHours){
+      }else if(hours + ${syllabus.examCreditHours} + ${(task.extraHours)!0} < totalHours){
         warnings="课堂学时+期末考核学时少于"+totalHours+"学时";
       }
 

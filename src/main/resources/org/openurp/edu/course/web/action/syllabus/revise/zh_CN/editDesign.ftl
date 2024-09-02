@@ -1,6 +1,6 @@
   [@b.form theme="list" action="!saveDesign" target="_self" onsubmit="checkCaseAndExperiment"]
     [@b.textfield label="教学法名称" name="design.name" value=design.name! required="true"/]
-    [@b.textarea label="教学法内容" name="design.contents" rows="12" cols="80" value=design.contents! required="true"/]
+    [@b.textarea label="教学法内容" name="design.contents" rows="12" cols="80" value=design.contents! required="true" maxlength="2000"/]
     [#assign caseAndExperiments=""/]
     [#if design.hasCase][#assign caseAndExperiments=caseAndExperiments+"hasCase"/][/#if]
     [#if design.hasExperiment][#assign caseAndExperiments=caseAndExperiments+",hasExperiment"/][/#if]

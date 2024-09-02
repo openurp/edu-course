@@ -53,7 +53,7 @@
 [@b.form name="courseTaskForm" action="/admin/task/search"]
   <input type="hidden" name="syllabus_status" value="0"/>
   <input type="hidden" name="hideMenus" value="1"/>
-  <input type="hidden" name="courseTask.semester.id" value="${Parameters['syllabus.semester.id']!}"/>
+  <input type="hidden" name="courseTask.semester.id" value="${Parameters['semester.id']!}"/>
   <input type="hidden" name="courseTask.department.id" value="${Parameters['syllabus.department.id']!}"/>
 [/@]
 [@b.foot/]

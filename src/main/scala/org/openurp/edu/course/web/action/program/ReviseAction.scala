@@ -210,6 +210,10 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
         if (!section.persisted) {
           design.sections += section
         }
+      else
+        design.getSection(i) foreach { section =>
+          design.sections.subtractOne(section)
+        }
     }
     entityDao.saveOrUpdate(design)
     businessLogger.info(s"保存了教案:${clazz.course.name} 第${idx}次课", design.id, Map("program" -> program.id.toString))

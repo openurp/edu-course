@@ -318,7 +318,6 @@
     [@header_title "&nbsp;&nbsp;1.课程成绩构成"/]
     [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.scorePercent)!}%，期末成绩占${(endAssess.scorePercent)!}%。平时成绩构成见下表。[/@]
 
-
     <table class="info-table" style="table-layout:fixed;text-align: center;">
       <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
       [#assign tableIndex=tableIndex+1/]

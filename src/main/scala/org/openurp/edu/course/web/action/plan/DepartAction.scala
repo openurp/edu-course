@@ -78,7 +78,7 @@ class DepartAction extends RestfulAction[ClazzPlan], ProjectSupport {
   }
 
   def audit(): View = {
-    val plans = entityDao.find(classOf[ClazzPlan], getLongIds("syllabus"))
+    val plans = entityDao.find(classOf[ClazzPlan], getLongIds("clazzPlan"))
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
       plans foreach { s =>

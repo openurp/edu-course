@@ -47,6 +47,7 @@ class DefaultNewCourseApplyService extends NewCourseApplyService {
       query.where("c.project=:project", apply.project)
       query.where("c.department != :depart", apply.department)
       query.where("c.name=:name", apply.name)
+      query.where("c.endOn is null")
       val otherCourses = entityDao.search(query)
       if (otherCourses.nonEmpty) {
         val h = otherCourses.head

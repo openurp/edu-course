@@ -62,7 +62,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
     val tasks = courseTaskService.getTasks(project, semester, teacher)
     val taskCourses = tasks.map(_.course)
-    val clazzCourses = clazzProvider.getClazzes(semester, teacher, project).map(_.course).toBuffer.subtractAll(taskCourses)
+    val clazzCourses = clazzProvider.getClazzes(semester, teacher, project).map(_.course).toSet.toBuffer.subtractAll(taskCourses)
 
     val query2 = OqlBuilder.from[Course](classOf[Clazz].getName, "c")
     query2.join("c.teachers", "t")
@@ -87,7 +87,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     put("course", syllabus.course)
     put("syllabus", syllabus)
-    syllabus.creditHours = syllabus.course.creditHours
+    syllabus.creditHours = syllabus.course.getJournal(syllabus.semester).creditHours
+    entityDao.saveOrUpdate(syllabus)
     putBasicDatas(syllabus.course)
 
     given project: Project = syllabus.course.project
@@ -130,8 +131,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         first foreach { clazz =>
           //根据排课学时测算考核学时
           val scheduleHours = LessonSchedule.convert(clazz).map(_.hours).sum
-          if (scheduleHours <= syllabus.course.creditHours) {
-            examHours = syllabus.course.creditHours - scheduleHours
+          if (scheduleHours <= syllabus.creditHours) {
+            examHours = syllabus.creditHours - scheduleHours
           }
         }
         if (examHours > 0) {
@@ -218,10 +219,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
     val task = courseTaskService.getTask(semester, course, teacher).get
     val syllabus = newSyllabus(task)
+
     put("course", course)
     put("syllabus", syllabus)
     val locale = get("locale", classOf[Locale]).getOrElse(Locale.SIMPLIFIED_CHINESE)
     put("locale", locale)
+    syllabus.docLocale = locale
     val majors = entityDao.findBy(classOf[Major], "project" -> syllabus.course.project)
     val courseMajors = majors.filter(m => m.active && m.journals.exists(_.depart == syllabus.department))
     put("majors", courseMajors)
@@ -511,16 +514,18 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (objectives.nonEmpty) {
       topic.objectives = Some(objectives.map(_.code).sorted.mkString(","))
     }
-    if (topic.exam) {
-      if (syllabus.topics.map(_.idx).max == topic.idx) {
-        syllabus.examCreditHours = topic.hours.map(_.creditHours).sum.toInt
-      }
-    }
     val methods = getAll("teachingMethod", classOf[String])
     topic.methods = None
     val sep = if syllabus.docLocale == Locale.SIMPLIFIED_CHINESE then "、" else ","
     topic.methods = Some(methods.mkString(sep))
     if (null == topic.contents) topic.contents = " "
+    val examTopics = syllabus.topics.filter(_.exam)
+    if (examTopics.nonEmpty) {
+      val last = examTopics.maxBy(_.idx)
+      syllabus.examCreditHours = if last.exam then last.hours.map(_.creditHours).sum.toInt else 0
+    } else {
+      syllabus.examCreditHours = 0
+    }
     updateState(syllabus)
     entityDao.saveOrUpdate(syllabus, topic)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=topics", "info.save.success")

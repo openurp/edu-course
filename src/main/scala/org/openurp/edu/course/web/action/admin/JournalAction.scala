@@ -115,12 +115,14 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
       entityDao.saveOrUpdate(journals)
     }
     //last one
-    if (journal.endOn.isEmpty) {
+    val last = journals.last
+    if (last.endOn.isEmpty) {
       val course = entityDao.get(classOf[Course], journal.course.id)
-      if (journal.enName.nonEmpty) {
-        course.enName = journal.enName
+      if (last.enName.nonEmpty) {
+        course.enName = last.enName
       }
-      course.name = journal.name
+      course.name = last.name
+      course.creditHours = last.creditHours
       entityDao.saveOrUpdate(course)
       databus.publish(DataEvent.update(course))
     }

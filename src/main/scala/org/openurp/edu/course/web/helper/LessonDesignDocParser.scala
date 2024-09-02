@@ -29,7 +29,7 @@ import scala.jdk.javaapi.CollectionConverters.asScala
 object LessonDesignDocParser {
 
   def main(args: Array[String]): Unit = {
-    val rs = parse(new FileInputStream("C:\\Users\\duantihua\\Desktop\\教案.docx"))
+    val rs = parse(new FileInputStream("C:\\Users\\duantihua\\Desktop\\ja.docx"))
     println(rs._1)
     rs._1 foreach { d =>
       println(d.homework)

@@ -29,6 +29,19 @@ import java.util.Locale
 
 class ClazzPlanHelper(entityDao: EntityDao) {
 
+  def findCourseTask(clazz:Clazz):CourseTask={
+    val q = OqlBuilder.from(classOf[CourseTask], "c")
+    q.where("c.course.project=:project", clazz.project)
+    q.where("c.semester=:semester", clazz.semester)
+    q.where("c.course=:course", clazz.course)
+    val tasks = entityDao.search(q)
+    if(tasks.isEmpty)   null
+    else if(tasks.size==1)   tasks.head
+    else {
+      tasks.find(x=> clazz.teachers.toSet.subsetOf(x.teachers)).orNull
+    }
+  }
+
   /** 查询修订任务对应的教学任务
    *
    * @param task
@@ -112,7 +125,7 @@ class ClazzPlanHelper(entityDao: EntityDao) {
     datas.put("plan", plan)
     datas.put("clazz", clazz)
     datas.put("schedule_time", ScheduleDigestor.digest(clazz, ":day :units :weeks"))
-    datas.put("schedule_space", ScheduleDigestor.digest(clazz, ":room"))
+    datas.put("schedule_space", clazz.schedule.activities.flatMap(_.rooms).toSet.map(_.name).mkString(","))
     val dates = Collections.newBuffer[LocalDate]
     val semester = clazz.semester
     val beginAt = semester.beginOn.atTime(LocalTime.MIN)

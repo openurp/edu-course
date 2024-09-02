@@ -43,7 +43,7 @@
   [/@]
 <script>
    function validCreditHour(form){
-      var creditHours ="${journal.creditHours}";
+      var creditHours = "${journal.creditHours}";
       if(form['journal.creditHours']) creditHours = form['journal.creditHours'].value;
       [#if teachingNatures?size>0]
       var sumCreditHours=0;

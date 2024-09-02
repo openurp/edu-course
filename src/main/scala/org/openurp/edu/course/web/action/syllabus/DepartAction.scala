@@ -216,24 +216,4 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     redirect(to(classOf[ReviseAction], "edit", s"syllabus.id=${id}"), null)
   }
 
-  def fix(): View = {
-    val query = OqlBuilder.from(classOf[Syllabus], "s").where("s.complete=false")
-    getLong("syllabus.id") foreach { id =>
-      query.where("s.id=:id", id)
-    }
-    val page = QueryPage(query, entityDao)
-    val helper = new SyllabusHelper(entityDao)
-    var i = 0;
-    page foreach { syllabus =>
-      if (!syllabus.complete) {
-        val messages = SyllabusValidator.validate(syllabus)
-        syllabus.complete = messages.isEmpty
-        println(s"${i} ${syllabus.id} ${syllabus.complete}" + messages.mkString(","))
-        i += 1
-      }
-      entityDao.saveOrUpdate(syllabus)
-    }
-    return null;
-  }
-
 }

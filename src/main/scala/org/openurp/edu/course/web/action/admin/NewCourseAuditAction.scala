@@ -170,6 +170,9 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     val q = OqlBuilder.from[String](classOf[Course].getName, "c")
     q.where("c.code like :pattern and c.name=:name", codePattern, apply.name)
     q.where("c.project=:project", apply.project)
+    apply.code foreach { code =>
+      q.where("c.code != :thisCourseCode", code)
+    }
     q.select("c.code")
     val exists = entityDao.search(q)
     if (exists.nonEmpty) {
@@ -178,6 +181,9 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
       val q = OqlBuilder.from[String](classOf[Course].getName, "c")
       q.where("c.code like :pattern", codePattern)
       q.where("c.project=:project", apply.project)
+      apply.code foreach { code =>
+        q.where("c.code != :thisCourseCode", code)
+      }
       q.select("c.code")
       val codes = entityDao.search(q)
       if (codes.nonEmpty) {

@@ -53,7 +53,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     put("semester", semester)
 
     val clazzes = Collections.newSet[Clazz]
-    clazzes.addAll(clazzProvider.getClazzes(semester, teacher, project))
+    val myClazzes = clazzProvider.getClazzes(semester, teacher, project).filter(_.schedule.activities.nonEmpty).sortBy(_.crn)
 
     val q = OqlBuilder.from(classOf[CourseTask], "c")
     q.where("c.course.project=:project", project)
@@ -65,13 +65,15 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
       val helper = new ClazzPlanHelper(entityDao)
       tasks foreach { task => clazzes.addAll(helper.getCourseTaskClazzes(task)) }
     }
+    val scheduled = clazzes.filter(_.schedule.activities.nonEmpty).toBuffer.sortBy(_.crn)
+    scheduled.subtractAll(myClazzes)
+    scheduled.prependAll(myClazzes)
 
-    val scheduled = clazzes.filter(_.schedule.activities.nonEmpty)
     if (scheduled.nonEmpty) {
       put("plans", entityDao.findBy(classOf[ClazzPlan], "clazz", scheduled).map(x => (x.clazz, x)).toMap)
     }
     val query = OqlBuilder.from(classOf[Syllabus], "s")
-    query.where("s.course in(:courses)", clazzes.map(_.course))
+    query.where("s.course in(:courses)", scheduled.map(_.course))
     query.where("s.beginOn<=:beginOn and (s.endOn is null or s.endOn >:endOn)", semester.beginOn, semester.beginOn)
     query.orderBy("s.beginOn desc")
 
@@ -108,7 +110,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     put("plan", plan)
     put("clazz", clazz)
     put("schedule_time", ScheduleDigestor.digest(clazz, ":day :units :weeks"))
-    put("schedule_space", ScheduleDigestor.digest(clazz, ":room"))
+    put("schedule_space", clazz.schedule.activities.flatMap(_.rooms).toSet.map(_.name).mkString(","))
     put("teachingForms", getCodes(classOf[TeachingMethod]))
 
     val sections = getCodes(classOf[TeachingSection]).map(_.name)
@@ -122,6 +124,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val endAt = semester.endOn.atTime(LocalTime.MAX)
 
     put("syllabus", new ClazzPlanHelper(entityDao).findSyllabus(clazz))
+    put("task",new ClazzPlanHelper(entityDao).findCourseTask(clazz))
     val schedules = LessonSchedule.convert(clazz)
 
     val scheduleHours = schedules.map(_.hours).sum
@@ -162,6 +165,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
   def save(): View = {
     val clazz = entityDao.get(classOf[Clazz], getLongId("clazz"))
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val task = new ClazzPlanHelper(entityDao).findCourseTask(clazz)
 
     given project: Project = clazz.project
 
@@ -220,6 +224,9 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     plan.examHours = syllabus.examCreditHours
     plan.lessonHours = getInt("lessonHours", 0)
 
+    if(null!=task && task.extraHours.nonEmpty){
+      plan.extraHours = task.extraHours.getOrElse(0)
+    }
     entityDao.saveOrUpdate(plan)
 
     val submit = getBoolean("submit", false)
@@ -268,16 +275,22 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
       val clzs = helper.getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
       val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
 
+      val mySchedule = LessonSchedule.convert(clazz)
+      val myLessonHours = mySchedule.map(_.hours).sum
       val writerCodes = clzs.flatMap(_.teachers.map(_.code)).toSet
       clzs foreach { clz =>
-        val p = plans.getOrElse(clz, new ClazzPlan(clz))
-        val clazzTeachers = clazz.teachers.toSet
-        if (null == p.writer || p.writer.code == me.code || !writerCodes.contains(p.writer.code)) {
-          val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
-          if (editables.contains(p.status)) {
-            plan.copyTo(p)
-            p.status = AuditStatus.Submited
-            entityDao.saveOrUpdate(p)
+        val clzSchedule = LessonSchedule.convert(clz)
+        //课程安排次数和总课时一样的才好复制
+        if (mySchedule.size == clzSchedule.size && myLessonHours == clzSchedule.map(_.hours).sum) {
+          val p = plans.getOrElse(clz, new ClazzPlan(clz))
+          val clazzTeachers = clazz.teachers.toSet
+          if (null == p.writer || p.writer.code == me.code || !writerCodes.contains(p.writer.code)) {
+            val editables = Set(AuditStatus.Draft, AuditStatus.Submited, AuditStatus.Rejected, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
+            if (editables.contains(p.status)) {
+              plan.copyTo(p)
+              p.status = AuditStatus.Submited
+              entityDao.saveOrUpdate(p)
+            }
           }
         }
       }

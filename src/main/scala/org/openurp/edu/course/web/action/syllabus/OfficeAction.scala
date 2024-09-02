@@ -127,6 +127,8 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val project = syllabus.course.project
     ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
     put("auditable", auditStatuses.contains(syllabus.status))
+    val messages = SyllabusValidator.validate(syllabus)
+    put("messages", messages)
     val semester = getInt("semester.id") match
       case Some(sid) => entityDao.get(classOf[Semester], sid)
       case None => syllabus.semester
