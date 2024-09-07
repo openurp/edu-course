@@ -144,7 +144,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     }
     val q = OqlBuilder.from(classOf[ClazzPlan], "p")
     q.where("p.clazz.course=:course", clazz.course)
-    q.where("p.semester.beginOn <:beginOn", semester.beginOn)
+    q.where("p.semester.beginOn <=:beginOn", semester.beginOn)
     val historyPlans = entityDao.search(q)
     if (historyPlans.nonEmpty) {
       val lastBeginOn = historyPlans.map(_.semester.beginOn).toSet.max

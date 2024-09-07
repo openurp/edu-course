@@ -23,7 +23,7 @@ import org.beangle.commons.concurrent.Workers
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.Files
 import org.beangle.commons.lang.SystemInfo
-import org.beangle.data.dao.{OqlBuilder, QueryPage}
+import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.doc.transfer.exporter.ExportContext
@@ -142,7 +142,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val semesterParam = if semesterId.nonEmpty then s"?semester.id=${semesterId}" else ""
     if (syllabuses.size == 1) {
       val syllabus = syllabuses.head
-      val url = EmsUrl.url(s"/syllabus/depart/${syllabus.id}${semesterParam}")
+      val contextPath  =ActionContext.current.request.getContextPath
+      val url = EmsUrl.url(contextPath,s"/syllabus/depart/${syllabus.id}${semesterParam}")
       val fileName = Files.purify(syllabus.course.code + "_" + syllabus.course.name + "_" + syllabus.writer.name + "_课程大纲")
       val pdf = new File(pdfDir + s"/${fileName}.pdf")
       val options = new PrintOptions
@@ -155,9 +156,11 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
       }
     } else {
       val datas = syllabuses.map(x => (x.id, Files.purify(x.course.code + "_" + x.course.name + "_" + x.writer.name + "_课程大纲")))
+      val contextPath  = ActionContext.current.request.getContextPath
       Workers.work(datas, (data: (Long, String)) => {
-        val url = EmsUrl.url(s"/syllabus/depart/${data._1}${semesterParam}")
+        val url = EmsUrl.url(contextPath,s"/syllabus/depart/${data._1}${semesterParam}")
         val pdf = new File(pdfDir + s"/${data._2}.pdf")
+        println(s"download ${url} to ${pdf.getAbsolutePath}")
         val options = new PrintOptions
         options.scale = 0.66d
         SPDConverter.getInstance().convert(URI.create(url), pdf, options)

@@ -77,19 +77,13 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       put("programs", clazzPrograms.map(x => (x.clazz, x)).toMap)
       val courses = scheduled.map(_.course).toSet
 
-      val q = OqlBuilder.from(classOf[CourseTask], "c")
-      q.where("c.course.project=:project", project)
-      q.where("c.semester=:semester", semester)
-      q.where("c.course in(:courses)", courses)
-      q.where("c.director is not null")
-      val tasks = entityDao.search(q)
-
       val p = OqlBuilder.from(classOf[ClazzProgram], "c")
       p.where("c.clazz.project=:project", project)
       p.where("c.semester=:semester", semester)
       p.where("c.clazz.course in(:courses)", courses)
       val programs = entityDao.search(p)
 
+      val tasks = new ClazzPlanHelper(entityDao).findCourseTasks(scheduled).values
       val coursePrograms = Collections.newMap[Course, ClazzProgram]
       tasks foreach { task =>
         programs.find(p => p.clazz.course == task.course && task.director.get.code == p.writer.code) foreach { pr =>
@@ -223,6 +217,10 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
   def designInfo(): View = {
     val design = entityDao.get(classOf[LessonDesign], getLongId("design"))
     put("design", design)
+    val clazz = design.program.clazz
+    val plan = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).head
+    put("plan",plan)
+    put("program",design.program)
     forward()
   }
 

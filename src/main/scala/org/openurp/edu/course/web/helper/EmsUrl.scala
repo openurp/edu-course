@@ -24,9 +24,13 @@ import org.beangle.web.action.context.ActionContext
 @deprecated("using EmsApi.url")
 object EmsUrl {
 
-  def url(uri: String): String = {
-    val base = Ems.base + ActionContext.current.request.getContextPath + uri
+  def url(contextPath:String,uri: String): String = {
+    val base = Ems.base + contextPath + uri
     val sidParam = "URP_SID=" + Securities.session.map(_.id).getOrElse("")
     if base.contains("?") then s"${base}&$sidParam" else s"${base}?$sidParam"
+  }
+
+  def url(uri: String): String = {
+    url( ActionContext.current.request.getContextPath,uri)
   }
 }

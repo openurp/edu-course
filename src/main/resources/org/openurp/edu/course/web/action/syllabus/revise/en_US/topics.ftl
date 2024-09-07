@@ -26,7 +26,7 @@
             </button>
           [/@]
         [/@]
-        <div class="card-body" style="display:none">
+        <div class="card-body" style="display:none" id="new_topic_card">
           [@b.form theme="list" action="!saveTopic" target="_self"]
             [@b.radios label="Section" name="topic.exam" value="0" items="0:Lecture,1:Exam" onclick="changeTopicExam(this.value);"/]
             [@b.textfield label="Topic Name" name="topic.name" required="true"  style="width:500px" comment="Chapter 1: xxx "/]

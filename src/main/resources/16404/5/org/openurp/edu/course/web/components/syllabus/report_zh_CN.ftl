@@ -260,10 +260,10 @@
           [#list topic.hours as h]
           [#assign creditHours=creditHours + h.creditHours/]
           [/#list]
-          ${creditHours}
+          [#if creditHours>0]${creditHours}[/#if]
           [#assign totalCreditHours=totalCreditHours + creditHours/]
           </td>
-          [#list teachingNatures as nature]<td>${(topic.getHour(nature).creditHours)!}</td>[/#list]
+          [#list teachingNatures as nature]<td>[#assign hh=(topic.getHour(nature).creditHours)!0 /][#if hh>0]${hh}[/#if]</td>[/#list]
           <td>[#if topic.learningHours>0]${topic.learningHours}[/#if]</td>
           [#assign totalLearningHours=totalLearningHours + topic.learningHours/]
           <td>[#if topic.exam]——[#else]${(topic.objectives?replace(","," "))!}[/#if]</td>

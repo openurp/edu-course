@@ -165,10 +165,12 @@ object SyllabusValidator {
     syllabus.topics foreach { p =>
       val hours = p.hours.map(_.creditHours).sum
       if (hours == 0) {
-        if (p.hours.isEmpty) {
-          messages += s"教学主题:${p.name},缺少学时分布"
-        } else {
-          messages += s"教学主题:${p.name},学时为0"
+        if(p.learningHours==0){
+          if (p.hours.isEmpty) {
+            messages += s"教学主题:${p.name},缺少学时分布"
+          } else {
+            messages += s"教学主题:${p.name},学时为0"
+          }
         }
       }
 

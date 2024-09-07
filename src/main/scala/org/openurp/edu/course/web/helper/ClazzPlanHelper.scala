@@ -36,10 +36,37 @@ class ClazzPlanHelper(entityDao: EntityDao) {
     q.where("c.course=:course", clazz.course)
     val tasks = entityDao.search(q)
     if(tasks.isEmpty)   null
-    else if(tasks.size==1)   tasks.head
+    else if(tasks.size==1) tasks.head
     else {
       tasks.find(x=> clazz.teachers.toSet.subsetOf(x.teachers)).orNull
     }
+  }
+  def findCourseTasks(clazzes:Iterable[Clazz]):Map[Clazz,CourseTask]={
+    if clazzes.isEmpty then Map.empty
+    else
+      val headClazz= clazzes.head
+      val courses = clazzes.map(_.course).toSet
+      val q = OqlBuilder.from(classOf[CourseTask], "c")
+      q.where("c.course.project=:project", headClazz.project)
+      q.where("c.semester=:semester", headClazz.semester)
+      q.where("c.course in(:courses)", courses)
+      q.where("c.director is not null")
+      val courseTasks = entityDao.search(q).groupBy(_.course)
+      val maps = Collections.newMap[Clazz,CourseTask]
+      clazzes foreach{clazz=>
+        courseTasks.get(clazz.course) foreach{tasks=>
+          if(tasks.nonEmpty){
+            if(tasks.size==1){
+              maps.put(clazz, tasks.head)
+            }else{
+              tasks.find(x=> clazz.teachers.toSet.subsetOf(x.teachers)) foreach{t=>
+                maps.put(clazz, t)
+              }
+            }
+          }
+        }
+      }
+      maps.toMap
   }
 
   /** 查询修订任务对应的教学任务

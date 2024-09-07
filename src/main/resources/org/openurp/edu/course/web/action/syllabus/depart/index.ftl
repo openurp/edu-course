@@ -3,7 +3,7 @@
 [@b.toolbar title="教学大纲学院管理"]
   bar.addItem("上传统计","stat()");
   function stat(){
-    bg.form.submit(document.courseTaskSearchForm,"${b.url('!stat?semester.id='+semester.id)}","main");
+    bg.form.submit(document.courseTaskSearchForm,"${b.url('!stat')}","main");
   }
 [/@]
 <div class="search-container">

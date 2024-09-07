@@ -13,7 +13,7 @@
     bar.addItem("${b.text("action.export")}",
                 action.exportData("course.code:课程代码,course.name:课程名称,course.defaultCredits:学分,course.creditHours:学时,"+
                 "department.name:开课院系,courseType.name:课程类型,office.name:专业教研室,"+
-                "director.name:课程负责人,teachers:任课教师",
+                "director.staff.code:课程负责人工号,director.name:课程负责人,teachers:任课教师",
                 null,'fileName=课程负责人信息'));
   [/@]
   [@b.row]
