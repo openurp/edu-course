@@ -83,8 +83,8 @@
         if(minutes == ${design.creditHours*45}){
           return errorSections.length==0;
         }else{
-          alert("总时间安排为"+minutes+"分钟，和${design.creditHours*45}分钟不符，请检查");
-          return false;
+          alert("总时间安排为"+minutes+"分钟，和${design.creditHours*45}分钟不符，请下次修正");
+          return true;
         }
       }
     </script>

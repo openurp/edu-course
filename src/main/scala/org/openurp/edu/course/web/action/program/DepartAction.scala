@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.program
 
+import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.template.freemarker.ProfileTemplateLoader
@@ -26,7 +27,7 @@ import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.model.Project
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{ClazzPlan, ClazzProgram, LessonDesign}
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper, EmsUrl}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.ProjectSupport
 
@@ -45,6 +46,23 @@ class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport {
     put("project", project)
     put("semester", getSemester)
     forward()
+  }
+
+  override def getQueryBuilder: OqlBuilder[ClazzProgram] = {
+    val query = super.getQueryBuilder
+    val lessonOn = getDate("lessonOn")
+    val unit = getShort("unit")
+    if (lessonOn.nonEmpty || unit.nonEmpty) {
+      if (lessonOn.nonEmpty && unit.nonEmpty) {
+        query.where("exists(from clazzProgram.designs as d where d.lessonOn = :lessonOn" +
+          " and :unit between pair_1(d.units) and pair_2(d.units))", lessonOn.get, unit.get)
+      } else if (lessonOn.nonEmpty) {
+        query.where("exists(from clazzProgram.designs as d where d.lessonOn = :lessonOn)", lessonOn.get)
+      } else {
+        query.where("exists(from clazzProgram.designs as d where :unit between pair_1(d.units) and pair_2(d.units))", unit.get)
+      }
+    }
+    query
   }
 
   @mapping(value = "{id}")
@@ -92,5 +110,13 @@ class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport {
     Stream(pdf, clazz.crn + "_" + clazz.course.name + s" 授课教案 第${design.idx}次课.pdf").cleanup(() => pdf.delete())
   }
 
+  def fix(): View = {
+    val programs = entityDao.getAll(classOf[ClazzProgram])
+    programs foreach { p =>
+      ClazzProgramHelper.updateStatInfo(p)
+      entityDao.saveOrUpdate(p)
+    }
+    forward()
+  }
 
 }

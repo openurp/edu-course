@@ -37,7 +37,7 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl, LessonDesignDocParser}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper, EmsUrl, LessonDesignDocParser}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -179,11 +179,12 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
     val idx = getInt("design.idx", 1)
     val design = program.get(idx).getOrElse(new LessonDesign(program, idx))
+    if (!design.persisted) {
+      program.designs.addOne(design)
+    }
     design.subject = get("design.subject", "")
     design.homework = get("design.homework")
     val clazz = program.clazz
-    val schedules = LessonSchedule.convert(clazz)
-    design.creditHours = schedules(design.idx - 1).hours
     populateText(design, "design.target")
     populateText(design, "design.emphasis")
     populateText(design, "design.difficulties")
@@ -209,9 +210,10 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
           design.sections.subtractOne(section)
         }
     }
+    ClazzProgramHelper.updateStatInfo(program)
     entityDao.saveOrUpdate(design)
     businessLogger.info(s"保存了教案:${clazz.course.name} 第${idx}次课", design.id, Map("program" -> program.id.toString))
-    redirect("designInfo", s"design.id=${design.id}", "info.save.success")
+    redirect("designInfo", s"design.id=${design.id}&editable=1", "info.save.success")
   }
 
   def designInfo(): View = {
@@ -219,8 +221,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     put("design", design)
     val clazz = design.program.clazz
     val plan = entityDao.findBy(classOf[ClazzPlan], "clazz", clazz).head
-    put("plan",plan)
-    put("program",design.program)
+    put("plan", plan)
+    put("program", design.program)
     forward()
   }
 
@@ -302,7 +304,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
           }
           entityDao.saveOrUpdate(design)
           businessLogger.info(s"导入教案:${program.clazz.course.name} 第${index}次课", design.id, Map("program" -> program.id.toString))
-          redirect("designInfo", s"design.id=${design.id}", "识别完成，请核对")
+          redirect("designInfo", s"design.id=${design.id}&editable=1", "识别完成，请核对")
         } else {
           addError("文件解析错误，请检查是否符合模板要求")
           forward("importSetting")

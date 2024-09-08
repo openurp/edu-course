@@ -16,7 +16,7 @@
       </h1>
       <span style="font-weight:bold;">${design.subject}</span>
       <div class="card-tools">
-       [#if plan.clazz == program.clazz && editable??]
+       [#if plan.clazz == program.clazz && (editable?? || (Parameters['editable']!) == "1")]
        [@b.a class="btn btn-outline-primary btn-sm" href="!editDesign?program.id=${design.program.id}&design.id=${design.id}"]<i class="fa-solid fa-edit"></i>修改[/@]
        [@b.a class="btn btn-outline-primary btn-sm" href="!importSetting?program.id=${design.program.id}&idx=${design.idx}"]<i class="fa-solid fa-file-word"></i>更新导入[/@]
        [/#if]

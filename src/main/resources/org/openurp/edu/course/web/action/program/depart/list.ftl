@@ -16,9 +16,22 @@
       ${clazzProgram.clazz.teachDepart.shortName!clazzProgram.clazz.teachDepart.name}
     [/@]
     [@b.col width="10%" property="writer.name" title="编写人"/]
+    [@b.col width="10%" property="designCount" title="进度"]
+      ${clazzProgram.designCount}/${clazzProgram.lessonCount} <span class="inlinepie" values="${clazzProgram.designCount},${clazzProgram.lessonCount-clazzProgram.designCount}"></span>
+    [/@]
     [@b.col width="15%" property="clazz.courseType.name" title="课程类别"/]
     [@b.col width="6%" property="clazz.course.defaultCredits" title="学分"/]
     [@b.col width="6%" property="clazz.course.creditHours" title="学时"/]
   [/@]
 [/@]
+<script>
+beangle.register("${b.base}/static/",{
+  "sparkline":{js:"edu/course/js/jquery.sparkline.min.js"}
+});
+bg.load(["sparkline"],function(){
+  jQuery(document).ready(function(){
+    $('.inlinepie').sparkline('html', {type: 'pie',sliceColors:['green','red']});
+  });
+});
+</script>
 [@b.foot/]
