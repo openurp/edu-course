@@ -117,7 +117,7 @@
         <td rowspan="3" style="min-width:40px;">${course.defaultCredits}</td>
         <td rowspan="3">Course hours or practical weeks</td>
         <td rowspan="2">①Total hours<br>（Among them: theoretical hours and practical hours）</td>
-        <td class="center">${course.creditHours}Hours</td>
+        <td class="center">${syllabus.creditHours}Hours</td>
       </tr>
       <tr>
         <td>Among them：[#list syllabus.hours?sort_by(['nature','code']) as h]${h.nature.enName} ${h.creditHours} [#sep]，[/#list]</td>
@@ -327,8 +327,12 @@ Graduation requirements【${o.title}】：${o.contents}
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr style="text-align:center;">
-          <th rowspan="2">Classification</th><th rowspan="2">Evaluation items</th><th colspan="${usualAssessments?size}">Composition and structure of usual score</th>
-          <th rowspan="2">Subtotal of usual score</th><th rowspan="2">Proportion of usual score to total score</th>
+          <th rowspan="2">Classification</th><th rowspan="2">Evaluation items</th>
+          [#if usualAssessments?size>0]
+          <th colspan="${usualAssessments?size}">Composition and structure of usual score</th>
+          <th rowspan="2">Subtotal of usual score</th>
+          [/#if]
+          <th rowspan="2">Proportion of usual score to total score</th>
           <th rowspan="2">Subtotal of final score</th><th rowspan="2">Proportion of final score to total score</th>
           <th rowspan="2">Total score</th>
         </tr>
@@ -336,46 +340,65 @@ Graduation requirements【${o.title}】：${o.contents}
           [#list usualAssessments as a]<th>${a.component}</th>[/#list]
         </tr>
         <tr>
-          <td rowspan="2">Examination arrangement</td><td>Evaluation frequency</td>[#list usualAssessments as a]<th>${a.assessCount}</th>[/#list]
-          <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+          <td rowspan="2">Examination arrangement</td><td>Evaluation frequency</td>
+          [#if usualAssessments?size>0]
+          [#list usualAssessments as a]<th>${a.assessCount}</th>[/#list]
+          <td>—</td>
+          [/#if]
+          <td>—</td><td>—</td><td>—</td><td>—</td>
         </tr>
         <tr>
-          <td>Proportion of assessment scores</td>[#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
-          <td>100%</td><td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
+          <td>Proportion of assessment scores</td>
+          [#if usualAssessments?size>0]
+          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          <td>100%</td>
+          [/#if]
+          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
           <td>${endAssess.scorePercent}%</td><td>100%</td>
         </tr>
+        [#if orderedObjectives?size>0]
         [#assign firstObj=orderedObjectives?first/]
         <tr>
           <td rowspan="${orderedObjectives?size}">Course objectives</td><td>${firstObj.code}</td>
           [#assign coPercent=0/]
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[firstObj.code]??]${percentMap[firstObj.code]}%[#assign coPercent=coPercent+percentMap[firstObj.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${usualAssess.scorePercent}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${endAssess.scorePercent}%</td>
+          <td>${coPercent}%</td>
+          [/#if]
+          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
+        [/#if]
         [#list orderedObjectives as co]
          [#if co_index==0][#continue/][/#if]
         <tr>
           <td>${co.code}</td>
           [#assign coPercent=0/]
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[co.code]??]${percentMap[co.code]}%[#assign coPercent=coPercent+percentMap[co.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${usualAssess.scorePercent}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${endAssess.scorePercent}%</td>
+          <td>${coPercent}%</td>
+          [/#if]
+          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[co.code]!0))/100}%</td>
         </tr>
         [/#list]
         <tr>
           <td colspan="2">Subtotal of assessment</td>
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
-          <td>100%</td><td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
+          <td>100%</td>
+          [/#if]
+          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
           <td>${endAssess.scorePercent}%</td><td>100%</td>
         </tr>
         <tr>
-          <td colspan="${7+usualAssessments?size}" style="text-align:left;">
+          <td colspan="[#if usualAssessments?size>0]${7+usualAssessments?size}[#else]${6}[/#if]" style="text-align:left;">
           Note: ①The process assessment is completed by the network teaching platform.②For
           Ideological and political quality education and honesty education are integrated in the
           whole process of the course, the process assessment shall be conducted by the course
@@ -406,6 +429,16 @@ Graduation requirements【${o.title}】：${o.contents}
         ${scoreTable}
       [/#if]
     [/#list]
+
+    [#--添加统一的期末考试说明--]
+    [#if syllabus.getAssessment(endType,null)?exists]
+      [#assign endAssess = syllabus.getAssessment(endType,null)!/]
+      [#if endAssess.scorePercent>0]
+        [#assign title]${assessIdx+1}. Grading standard of final exam[/#assign]
+        [@header_title title/]
+        [@multi_line_p "(1) In the end, the final exam will be conducted. \n(2) The full score of the final exam is 100 score; the final exam is organized according to the requirements of SLU. See \"Final Papers, Reference Answers and Scoring Standards\" for the grading standards of final exams."/]
+      [/#if]
+    [/#if]
   </div>
 
   [#--教材和教学资源--]

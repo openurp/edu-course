@@ -109,7 +109,7 @@
           <table style="width:100%;border: hidden;" >
             <tr>
               <td rowspan="2" style="width:15%;">课程教学活动安排</td>
-              <td colspan="${sectionNames?size}">课堂学时([#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if])<span id="schedule_hour_tips"></span></td>
+              <td colspan="${sectionNames?size}">课堂学时(${plan.lessonHours})<span id="schedule_hour_tips"></span></td>
               <td rowspan="2">考试周考核或自主考核*</td>
               <td rowspan="2">合计</td>
               <td rowspan="2">自主学习</td>
@@ -124,8 +124,8 @@
               [#list sectionNames as sectionName]
               <td><input name="section${sectionName_index+1}.creditHours" value="${hours.get(sectionName)!}" style="width:100%" placeholder="学时" onchange="checkHours(this)"/></td>
               [/#list]
-              <td>${syllabus.examCreditHours}<span class="text-muted"> 如课时不对，可以修改大纲中的期末考核环节（修订第四步）</span></td>
-              <td>[#if scheduleHours == syllabus.creditHours]${scheduleHours}[#else]${syllabus.examCreditHours+scheduleHours}[/#if]</td>
+              <td>${plan.examHours}<span class="text-muted"> 如课时不对，可以修改大纲中的期末考核环节（修订第四步）</span></td>
+              <td>${plan.examHours+plan.lessonHours+plan.extraHours}</td>
               <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
             </tr>
           </table>
@@ -196,7 +196,6 @@
     <input type="hidden" name="clazz.id" value="${clazz.id}"/>
     [#if syllabus??]
     <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-    <input type="hidden" name="lessonHours" value="[#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if]"/>
     [/#if]
     [@b.submit value="保存" class="btn btn-sm btn-outline-primary"/]
     [#if plan.reviewer??]
@@ -232,8 +231,8 @@
         alert("第"+missingLearningHours.join(",")+"次课程，缺少自主学习学时，请填写");
         return false;
       }
-      if(fillinLearningHours!=${syllabus.learningHours}){
-         errors.push("本次填写自主学习学时为"+fillinLearningHours+"和大纲中的${syllabus.learningHours}不相符,请调整");
+      if(fillinLearningHours<${syllabus.learningHours}){
+        errors.push("本次填写自主学习学时为"+fillinLearningHours+"和大纲中的${syllabus.learningHours}不相符,请调整");
       }
       //check hours
       var warnings = checkHours();
@@ -253,11 +252,11 @@
       hours += parseInt(document.planForm["section${sectionName_index+1}.creditHours"].value||'0');
     [/#list]
       var warnings="";
-      var scheduleHours = [#if scheduleHours == syllabus.creditHours]${scheduleHours - syllabus.examCreditHours}[#else]${scheduleHours}[/#if]
+      var lessonHours = ${plan.lessonHours}
       var totalHours = ${syllabus.creditHours};
-      if(hours != scheduleHours){
-        warnings ="分项累计为"+hours+"学时，不等于课堂学时"+scheduleHours;
-      }else if(hours + ${syllabus.examCreditHours} + ${(task.extraHours)!0} < totalHours){
+      if(hours != lessonHours){
+        warnings ="分项累计为"+hours+"学时，不等于课堂学时"+lessonHours;
+      }else if(hours + ${plan.examHours} + ${plan.extraHours} < totalHours){
         warnings="课堂学时+期末考核学时少于"+totalHours+"学时";
       }
 

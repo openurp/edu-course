@@ -9,16 +9,19 @@
     [#assign minSection=design.sections?size/]
   [/#if]
   [@b.form action="!saveDesign" theme="list" onsubmit="validateSection" title="第${design.idx}次课的教案"]
+    [#if otherDesigns?size>0]
+    [@b.select name="from.id" label="复制自" items=otherDesigns required="false" value=fromDesign! option=r"${item.program.clazz.crn} ${item.program.writer.name}" onchange="copyFrom(this.value);"/]
+    [/#if]
     [@b.textfield name="design.subject" label="教学主题" required="true" value=design.subject! style="width:600px"/]
-    [@b.textarea name="design.target" label="教学目标" required="true" value=design.get('target')! style="width:600px" rows="3" maxlength="4000"/]
-    [@b.textarea name="design.emphasis" label="教学重点" required="true" value=design.get('emphasis')! style="width:600px" rows="3" maxlength="4000"/]
-    [@b.textarea name="design.difficulties" label="教学难点" required="true" value=design.get('difficulties')! style="width:600px" rows="2" maxlength="4000"/]
+    [@b.textarea name="design.target" label="教学目标" required="false" value=design.get('target')! style="width:600px" rows="3" maxlength="4000"/]
+    [@b.textarea name="design.emphasis" label="教学重点" required="false" value=design.get('emphasis')! style="width:600px" rows="3" maxlength="4000"/]
+    [@b.textarea name="design.difficulties" label="教学难点" required="false" value=design.get('difficulties')! style="width:600px" rows="2" maxlength="4000"/]
     [@b.textarea name="design.resources" label="教学资源" required="false" value=design.get('resources')! style="width:600px" rows="3"/]
     [@b.textarea name="design.values" label="课程思政融入点" required="false" value=design.get('values')! style="width:600px" rows="3" maxlength="4000"/]
     [@b.textarea name="design.homework" label="课后作业" required="false" value=design.homework! style="width:600px" rows="4" maxlength="500"/]
     [#list 1..10 as sectionIndex]
       [@b.field label="教学环节${sectionIndex}"]填写第${sectionIndex}个教学环节内容<span id="section${sectionIndex}_tip" style="color:red"></span>[/@]
-      [#assign required][#if sectionIndex==1]true[#else]false[/#if][/#assign]
+      [#assign required]false[/#assign]
       [@b.textfield name="sections["+sectionIndex+"].title" label="教学环节名称" required=required value=(design.getSection(sectionIndex).title)! style="width:400px" comment="不要填写序号，系统自编，类似一、二、三"/]
       [@b.number name="sections["+sectionIndex+"].duration" label="教学环节时间安排" required=required value=(design.getSection(sectionIndex).duration)! comment="分钟"/]
       [@b.editor theme="mini" name="sections["+sectionIndex+"].summary" label="教学内容提要" required=required value=(design.getSection(sectionIndex).summary)! style="width:600px" maxlength="50000" allowImageUpload="true" uploadJson="!uploadImage.json?program.id=${program.id}"/]
@@ -87,5 +90,19 @@
           return true;
         }
       }
+
+      function copyFrom(fromId){
+        if(fromId){
+          document.copyForm['from.id'].value = fromId;
+          bg.form.submit(document.copyForm);
+        }
+      }
     </script>
   [/@]
+[#if otherDesigns?size>0]
+  [@b.form name="copyForm" action="!editDesign"]
+    <input type="hidden" name="program.id" value="${program.id}"/>
+    <input type="hidden" name="idx" value="${design.idx}"/>
+    <input type="hidden" name="from.id" value=""/>
+  [/@]
+[/#if]

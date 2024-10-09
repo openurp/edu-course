@@ -5,10 +5,20 @@
   [#if cnts?length>0]
     [#assign ps = cnts?split("\n")]
     [#list ps as p]
-    <p style="white-space: preserve;" class="mb-0">${p}</p>
+    <p>${p}</p>
     [/#list]
   [/#if]
 [/#macro]
+
+[#macro display contents=""]
+  [#assign cnts]${contents!}[#nested/][/#assign]
+  [#if cnts?contains("</p>")]
+    ${cnts}
+  [#else]
+    [@multi_line_p cnts/]
+  [/#if]
+[/#macro]
+
 <div class="card">
   <div class="card-header">
       <h1 style="display:inline;">
@@ -19,6 +29,7 @@
        [#if plan.clazz == program.clazz && (editable?? || (Parameters['editable']!) == "1")]
        [@b.a class="btn btn-outline-primary btn-sm" href="!editDesign?program.id=${design.program.id}&design.id=${design.id}"]<i class="fa-solid fa-edit"></i>修改[/@]
        [@b.a class="btn btn-outline-primary btn-sm" href="!importSetting?program.id=${design.program.id}&idx=${design.idx}"]<i class="fa-solid fa-file-word"></i>更新导入[/@]
+       [@b.a class="btn btn-outline-danger btn-sm" href="!removeDesign?design.id=${design.id}" target="_self" onclick="return confirm('确定删除第${design.idx}次课程的教案?');"]<i class="fa-solid fa-xmark"></i>删除[/@]
        [/#if]
        [@b.a class="btn btn-outline-primary btn-sm" href="!designReport?clazz.id=${plan.clazz.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-print"></i>打印预览[/@]
        [@b.a class="btn btn-outline-primary btn-sm" href="!designPdf?clazz.id=${plan.clazz.id}&design.id=${design.id}" target="_blank"]<i class="fa-solid fa-file-pdf"></i>下载PDF[/@]
@@ -28,11 +39,11 @@
   [@b.div class="card-body"]
     <dl>
       <dt>教学目标</dt>
-      <dd>${design.get('target')!}</dd>
+      <dd>[@multi_line_p design.get('target')! /]</dd>
       <dt>教学重点</dt>
-      <dd>[@multi_line_p design.get('emphasis')!/]</dd>
+      <dd>[@multi_line_p design.get('emphasis')! /]</dd>
       <dt>教学难点</dt>
-      <dd>[@multi_line_p design.get('difficulties')!/]</dd>
+      <dd>[@multi_line_p design.get('difficulties')! /]</dd>
       [#if design.get('resources')??]
       <dt>教学资源</dt>
       <dd>[@multi_line_p design.get('resources')!/]</dd>
@@ -60,9 +71,9 @@
       </div>
       <div class="card-body">
         <p style="font-weight:bold;">教学内容提要：</p>
-        [@multi_line_p section.summary/]
+        [@display section.summary/]
         <p style="font-weight:bold;">教学过程设计（包括教学方法与手段、学生学习活动、教师支持活动等）:</p>
-        [@multi_line_p section.details!/]
+        [@display section.details/]
       </div>
     </div>
     [/#list]

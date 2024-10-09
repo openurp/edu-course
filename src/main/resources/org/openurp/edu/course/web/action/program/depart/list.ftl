@@ -2,8 +2,10 @@
 [@b.head/]
 [@b.grid items=clazzPrograms var="clazzProgram"]
   [@b.gridbar]
-    bar.addItem("选中下载",action.multi("download","选择数量较多时,下载时间较长，请稍后",null,"_blank"));
-    bar.addItem("${b.text("action.delete")}",action.remove("确认删除?"));
+    bar.addItem("${b.text("action.export")}",
+                action.exportData("clazz.crn:课程序号,clazz.course.code:课程代码,clazz.course.name:课程名称,clazz.teachDepart.name:开课院系,writer.name:编写人,"+
+                "clazz.course.defaultCredits:学分,clazz.course.creditHours:学时,lessonCount:上课次数,designCount:教案编写次数",
+                null,'fileName=课程教案编写信息'));
   [/@]
   [@b.row]
     [@b.boxcol /]

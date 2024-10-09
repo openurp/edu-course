@@ -18,7 +18,7 @@
 package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.collection.Collections
-import org.beangle.commons.lang.Strings
+import org.beangle.commons.lang.{Locales, Strings}
 import org.beangle.data.dao.EntityDao
 import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
@@ -32,7 +32,7 @@ class SyllabusHelper(entityDao: EntityDao) {
     datas.put("syllabus", syllabus)
     datas.put("usualType", entityDao.get(classOf[GradeType], GradeType.Usual))
     datas.put("endType", entityDao.get(classOf[GradeType], GradeType.End))
-    datas.put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    datas.put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     datas
   }
 

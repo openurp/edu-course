@@ -4,6 +4,8 @@
   <style>
     p{
       margin-bottom:0px;
+      white-space: preserve;
+      word-wrap: anywhere;
     }
   </style>
 <header>

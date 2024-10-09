@@ -36,6 +36,7 @@
         <option value="">...</option>
         <option value="1">已安排</option>
         <option value="0">未安排</option>
+        <option value="3">未开课</option>
       [/@]
       <input type="hidden" name="orderBy" value="courseTask.course.code"/>
     [/@]

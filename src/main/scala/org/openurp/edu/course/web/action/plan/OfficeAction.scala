@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.plan
 
+import org.beangle.commons.lang.Locales
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
@@ -24,7 +25,8 @@ import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
-import org.openurp.base.model.{AuditStatus, Project}
+import org.openurp.base.model.AuditStatus.RejectedByDepart
+import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.edu.course.model.ClazzPlan
 import org.openurp.edu.course.web.helper.ClazzPlanHelper
 import org.openurp.starter.web.support.ProjectSupport
@@ -58,22 +60,27 @@ class OfficeAction extends RestfulAction[ClazzPlan], ProjectSupport {
     val project = getProject
     val query = super.getQueryBuilder
     query.where("clazzPlan.clazz.course.project=:project", project)
-    query.where("clazzPlan.status in(:statuses)", auditStatuses)
+    query.where("clazzPlan.status in(:statuses)", searchStatuses)
     val offices = getOffices(project)
     if (offices.nonEmpty) {
       query.where("clazzPlan.office in(:offices)", offices)
     }
     query.where("clazzPlan.reviewer.code=:reviewerCode", Securities.user)
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     query
   }
 
   def audit(): View = {
     val statuses = auditStatuses
     val plans = entityDao.find(classOf[ClazzPlan], getLongIds("clazzPlan")).filter(x => statuses.contains(x.status))
+    val user = entityDao.findBy(classOf[User], "school" -> plans.head.clazz.project.school, "code" -> Securities.user).headOption
+
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
-      plans foreach { s => s.status = status }
+      plans foreach { s =>
+        s.reviewer = user
+        s.status = status
+      }
     }
     entityDao.saveOrUpdate(plans)
     val toInfo = getBoolean("toInfo", false)
@@ -93,5 +100,9 @@ class OfficeAction extends RestfulAction[ClazzPlan], ProjectSupport {
 
   private def auditStatuses: Seq[AuditStatus] = {
     Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
+  }
+
+  private def searchStatuses: Seq[AuditStatus] = {
+    Seq(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart)
   }
 }

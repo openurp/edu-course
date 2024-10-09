@@ -33,7 +33,7 @@ import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature}
 import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.{CourseTask, Syllabus, ClazzPlan}
+import org.openurp.edu.course.model.{ClazzPlan, CourseTask, Syllabus}
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.{CourseTaskImportListener, CourseTaskPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
@@ -70,15 +70,14 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
       case "0" => query.where("size(courseTask.teachers) = 0")
       case _ =>
     }
+    val semester = entityDao.get(classOf[Semester], getIntId("courseTask.semester"))
     get("syllabus_status").foreach {
       case "1" => query.where(s"exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
-        s" and s.semester=courseTask.semester and s.status in (:statuses))",
-        List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
+        s" and s.semester=courseTask.semester and s.status != :draft)", AuditStatus.Draft)
       case "0" =>
-        query.where("courseTask.syllabusRequired=true")
+        query.where("courseTask.syllabusRequired = true")
         query.where(s"not exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
-          s" and s.semester=courseTask.semester and s.status in (:statuses))",
-          List(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.PassedByDepart, AuditStatus.Passed))
+          s" and :date between s.beginOn and s.endOn and s.status != :draft)", semester.beginOn.plusDays(30), AuditStatus.Draft)
       case _ =>
     }
     get("plan_status").foreach {
@@ -98,6 +97,9 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
       case "0" =>
         query.where(s"not exists(from ${classOf[Clazz].getName} s where s.course=courseTask.course" +
           s" and s.semester=courseTask.semester and size(s.schedule.activities)>0)")
+      case "3" =>
+        query.where(s"not exists(from ${classOf[Clazz].getName} s where s.course=courseTask.course" +
+          s" and s.semester=courseTask.semester)")
       case _ =>
     }
     getBoolean("assigned").foreach {
@@ -229,7 +231,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
 
     val os = new ByteArrayOutputStream()
     schema.generate(os)
-    Stream(new ByteArrayInputStream(os.toByteArray), MediaTypes.ApplicationXlsx.toString, "课程负责人.xlsx")
+    Stream(new ByteArrayInputStream(os.toByteArray), MediaTypes.ApplicationXlsx, "课程负责人.xlsx")
   }
 
   protected override def configExport(context: ExportContext): Unit = {

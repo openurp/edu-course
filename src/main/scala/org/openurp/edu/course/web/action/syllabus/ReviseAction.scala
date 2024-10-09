@@ -18,7 +18,7 @@
 package org.openurp.edu.course.web.action.syllabus
 
 import org.beangle.commons.collection.Collections
-import org.beangle.commons.lang.Strings
+import org.beangle.commons.lang.{Locales, Strings}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
@@ -125,7 +125,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       put("requirements", requirements)
     }
     if (get("step").contains("topics")) {
-      if (syllabus.topics.isEmpty) {
+      if (syllabus.examCreditHours == 0) {
         var examHours = 0
         val first = findScheduledClazz(syllabus.course, syllabus.semester)
         first foreach { clazz =>
@@ -135,7 +135,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
             examHours = syllabus.creditHours - scheduleHours
           }
         }
-        if (examHours > 0) {
+        if (examHours > 0 && !syllabus.topics.exists(_.exam)) {
           val examTopic = new SyllabusTopic
           examTopic.syllabus = syllabus
           examTopic.idx = 99
@@ -204,7 +204,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     s.orderBy("s.startWeek").cacheable()
     put("calendarStages", entityDao.search(s))
 
-    put("locales", Map(new Locale("zh", "CN") -> "中文大纲", new Locale("en", "US") -> "English Syllabus"))
+    put("locales", Map(Locales.chinese -> "中文大纲", Locales.us -> "English Syllabus"))
   }
 
   @mapping(value = "new", view = "new,form")
@@ -806,12 +806,16 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("course", course)
     put("semester", semester)
 
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     val allSyllabuses = entityDao.findBy(classOf[Syllabus], "course", course)
     val syllabuses = allSyllabuses.filter(_.within(semester.beginOn))
     val hq = OqlBuilder.from(classOf[Syllabus], "s")
-    hq.where("s.course.name = :courseName", course.name)
-    hq.where("s.semester != :semester", semester)
+    course.cluster match {
+      case None => hq.where("s.course.name = :courseName", course.name)
+      case Some(c) => hq.where("s.course.name = :courseName or s.course.cluster=:cluster", course.name, c)
+    }
+
+    hq.where("s.semester.beginOn <= :beginOn", semester.beginOn)
     val histories = entityDao.search(hq)
 
     put("syllabuses", syllabuses)

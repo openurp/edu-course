@@ -18,7 +18,8 @@
 package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.lang.Strings
-import org.openurp.edu.course.model.{ClazzProgram, ShortInterval}
+import org.beangle.commons.lang.math.SmallInterval
+import org.openurp.edu.course.model.ClazzProgram
 import org.openurp.edu.schedule.service.LessonSchedule
 
 object ClazzProgramHelper {
@@ -34,7 +35,7 @@ object ClazzProgramHelper {
       d.lessonOn = s.date
       val b = Strings.substringBefore(s.units, "-").toShort
       val e = Strings.substringAfter(s.units, "-").toShort
-      d.units = ShortInterval(b, e)
+      d.units = SmallInterval(b, e)
     }
   }
 }

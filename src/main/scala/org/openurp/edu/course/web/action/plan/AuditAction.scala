@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.plan
 
+import org.beangle.commons.lang.Locales
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
@@ -51,7 +52,7 @@ class AuditAction extends RestfulAction[ClazzPlan], ProjectSupport {
   }
 
   override protected def getQueryBuilder: OqlBuilder[ClazzPlan] = {
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     val query = super.getQueryBuilder
     query.where("clazzPlan.status in(:statuses)", auditStatuses)
     queryByDepart(query, "clazzPlan.clazz.teachDepart")
@@ -62,12 +63,12 @@ class AuditAction extends RestfulAction[ClazzPlan], ProjectSupport {
     val statuses = auditStatuses
     val plans1 = entityDao.find(classOf[ClazzPlan], getLongIds("clazzPlan"))
     val plans = plans1.filter(x => statuses.contains(x.status))
-    val user = entityDao.findBy(classOf[User], "school" -> plans.head.clazz.project.school, "code" -> Securities.user).headOption
+    val approver = entityDao.findBy(classOf[User], "school" -> plans.head.clazz.project.school, "code" -> Securities.user).headOption
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
       plans foreach { s =>
         s.status = status
-        s.approver = user
+        s.approver = approver
       }
     }
     entityDao.saveOrUpdate(plans)

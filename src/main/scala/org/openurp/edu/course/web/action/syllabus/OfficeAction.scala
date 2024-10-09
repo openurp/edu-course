@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
+import org.beangle.commons.lang.Locales
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
@@ -25,7 +26,7 @@ import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.TeachingOffice
-import org.openurp.base.model.{AuditStatus, Project, Semester}
+import org.openurp.base.model.{AuditStatus, Project, Semester, User}
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
 import org.openurp.starter.web.support.ProjectSupport
@@ -67,8 +68,7 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     if (offices.nonEmpty) {
       query.where("syllabus.office in(:offices)", offices)
     }
-    //query.where("syllabus.reviewer.code=:reviewerCode", Securities.user)
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     query
   }
 
@@ -77,19 +77,27 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus")).filter(x => statuses.contains(x.status))
     var hasErrors: Int = 0
     var processed: Seq[Syllabus] = null
-    val toPassedStatuses = Set(AuditStatus.Submited, AuditStatus.RejectedByDirector)
+    val toPassedStatuses = Set(AuditStatus.Submited, AuditStatus.PassedByDirector, AuditStatus.RejectedByDirector, AuditStatus.RejectedByDepart)
     val toFailedStatuses = Set(AuditStatus.Submited, AuditStatus.PassedByDirector)
+
+    val reviewer = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
 
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDirector else AuditStatus.RejectedByDirector
       if (status == AuditStatus.PassedByDirector) {
         val oks = syllabuses.filter { s => SyllabusValidator.validate(s).isEmpty && toPassedStatuses.contains(s.status) }
-        oks foreach { s => s.status = status }
+        oks foreach { s =>
+          s.status = status
+          s.reviewer = reviewer
+        }
         hasErrors = syllabuses.size - oks.size
         processed = oks
       } else {
         val oks = syllabuses.filter { s => toFailedStatuses.contains(s.status) }
-        oks foreach { s => s.status = status }
+        oks foreach { s =>
+          s.status = status
+          s.reviewer = reviewer
+        }
         hasErrors = syllabuses.size - oks.size
         processed = oks
       }

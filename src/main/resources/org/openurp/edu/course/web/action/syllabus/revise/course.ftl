@@ -11,6 +11,15 @@
       font-size:0.8rem;
       padding: 0px 0px 1px 0px;
     }
+    .red-point{ position: relative; }
+    .red-point::before{
+       content: " "; border: 3px solid red;
+       border-radius:3px;
+       position: absolute;
+       z-index: 1000;
+       right: 0;
+       margin-right: -5px;
+    }
   </style>
 <div class="container">
   [@b.messages slash="3"/]
@@ -72,18 +81,18 @@
          <td style="width: 10%;">${syllabus.writer.name}</td>
          <td style="width: 13%;">${syllabus.status}</td>
          <td style="width: 15%;">${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
-         <td style="width: 16%;">
+         <td style="width: 20%;">
            [#if task??]<a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>[/#if]
            [#if task?? && editables?seq_contains(syllabus.status)]
-           [@b.a href="!edit?id=${syllabus.id}" target="_blank"]修改[/@]
+           [@b.a href="!edit?id=${syllabus.id}" target="_blank"]<span [#if !syllabus.complete]class="red-point"[/#if]>修改</span>[/@]
            [@b.a href="!remove?id=${syllabus.id}&semester.id="+semester.id onclick="if(confirm('确定删除该教学大纲吗吗?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
            [/#if]
            [#if task?? && syllabus.semester!=semester]
              [@b.a href="!reuse?cancel=1&syllabus.id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定取消沿用到该学期？')"]取消沿用..[/@]
            [/#if]
          </td>
-         <td style="width: 15%;">
-           [@b.a href="!info?id=${syllabus.id}&semester.id="+semester.id target="_blank"]查看[/@]&nbsp;
+         <td style="width: 11%;">
+           [@b.a href="!info?id=${syllabus.id}&semester.id="+semester.id target="_blank"]<span [#if !syllabus.complete]class="red-point"[/#if]>查看</span>[/@]&nbsp;
            [@b.a href="!pdf?id=${syllabus.id}&semester.id="+semester.id target="_blank"]下载PDF[/@]
          </td>
        </tr>
@@ -99,13 +108,13 @@
          <td style="width: 10%;">${syllabus.writer.name}</td>
          <td style="width: 13%;">${syllabus.status}</td>
          <td style="width: 15%;">${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
-         <td style="width: 16%;">
+         <td style="width: 20%;">
            [#if task??]<a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>[/#if]
            [#if task?? && reuse?seq_contains(syllabus.status) && syllabus.endOn?? && syllabus.endOn < semester.endOn]
            [@b.a href="!reuse?syllabus.id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定沿用到该学期？')"]沿用..[/@]
            [/#if]
          </td>
-         <td style="width: 15%;">[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]&nbsp;[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>
+         <td style="width: 11%;">[@b.a href="!info?id=${syllabus.id}" target="_blank"]查看[/@]&nbsp;[@b.a href="!pdf?id=${syllabus.id}" target="_blank"]下载PDF[/@]</td>
        </tr>
          [/#list]
      </table>

@@ -20,7 +20,7 @@ package org.openurp.edu.course.web.action.plan
 import org.beangle.commons.concurrent.Workers
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.Files
-import org.beangle.commons.lang.SystemInfo
+import org.beangle.commons.lang.{Locales, SystemInfo}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
@@ -66,7 +66,7 @@ class DepartAction extends RestfulAction[ClazzPlan], ProjectSupport {
   }
 
   override protected def getQueryBuilder: OqlBuilder[ClazzPlan] = {
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     val query = super.getQueryBuilder
     getInt("checkHour") foreach {
       case 1 => query.where("clazzPlan.lessonHours + clazzPlan.examHours > clazzPlan.clazz.course.creditHours")

@@ -17,25 +17,65 @@
 
 package org.openurp.edu.course.web.helper
 
-import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.{ParagraphAlignment, UnderlinePatterns, XWPFParagraph}
+import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
-import org.beangle.doc.html.dom.{P, Span}
+import org.openxmlformats.schemas.officeDocument.x2006.sharedTypes.STVerticalAlignRun
 
+import java.util.Locale
 import scala.jdk.javaapi.CollectionConverters.asScala
 
 object DocParser {
 
-  def parse(paragrah:XWPFParagraph):P={
-    val p = new P
-    println(paragrah.getStyle)
-    for (run <- asScala(paragrah.getRuns)) {
-      val runText = run.getText(0)
-      if (Strings.isNotEmpty(runText)) {
-        val span = new Span
-//        span.add()
-//        p.add(runText)
+  def parse(p: XWPFParagraph): String = {
+    val sb = new StringBuilder()
+    val styles = Collections.newMap[String, String]
+    if (p.getIndentationLeft > 0) {
+      styles.addOne("margin-left", s"${twipsToPoint(p.getIndentationLeft)}pt")
+    }
+    if (p.getIndentationFirstLine > 0) {
+      styles.addOne("text-indent", s"${twipsToPoint(p.getIndentationFirstLine)}pt")
+    }
+    val align = p.getAlignment
+    if (null != align && align != ParagraphAlignment.LEFT) {
+      val alignStyle = align match {
+        case ParagraphAlignment.RIGHT => "right"
+        case ParagraphAlignment.CENTER => "center"
+        case ParagraphAlignment.BOTH => "justify"
+        case _ => "left"
+      }
+      if (alignStyle != "left")
+        styles.addOne("text-align", alignStyle)
+    }
+    if (styles.nonEmpty) {
+      sb.append(s"<p style='${styles.map(x => s"${x._1}:${x._2}").mkString(";")}'>")
+    } else {
+      sb.append(s"<p>")
+    }
+    for (run <- asScala(p.getRuns)) {
+      var t = run.getText(0)
+      if (Strings.isNotBlank(t)) {
+        run.getVerticalAlignment match {
+          case STVerticalAlignRun.SUPERSCRIPT => t = s"<sup>${t}</sup>"
+          case STVerticalAlignRun.SUBSCRIPT => t = s"<sub>${t}</sub>"
+          case _ =>
+        }
+        if (run.isStrikeThrough) t = s"<del>${t}</del>"
+        if (run.isBold) t = s"<strong>${t}</strong>"
+        if (run.isItalic) t = s"<em>${t}</em>"
+        //FIXME 下划线很多种
+        if (UnderlinePatterns.NONE != run.getUnderline) t = s"<u>${t}</u>"
+        sb.append(Strings.replace(t, " ", "&nbsp;"))
+      } else {
+        sb.append(Strings.replace(t, " ", "&nbsp;"))
       }
     }
-    p
+    sb.append("</p>")
+    sb.mkString.replace("\r", "")
   }
+
+  private def twipsToPoint(twips: Int): Int = {
+    twips / 20
+  }
+
 }

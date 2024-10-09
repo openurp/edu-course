@@ -19,8 +19,10 @@
       font-weight: 700;
     }
     p{
-      margin-bottom:0rem;
       margin-top:0rem;
+      margin-bottom:0px;
+      white-space: preserve;
+      word-wrap: anywhere;
     }
     .cover-table {
       margin:auto;

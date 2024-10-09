@@ -22,6 +22,7 @@
               [#assign program = programs.get(clazz)/]
               [@b.a href="!info?clazz.id="+clazz.id+"&program.id="+program.id target="_blank"]查看<span class="text-muted">(${program.writer.name})</span>[/@]
               [@b.a href="!edit?clazz.id="+clazz.id target="_blank"]修改[/@]
+              [@b.a href="!remove?program.id="+program.id onclick="if(confirm('确定删除该课程的教案?')){return bg.Go(this,null)}else{return false;}"]删除[/@]
             [#elseif coursePrograms.get(clazz.course)??]
               [#assign program = coursePrograms.get(clazz.course)/]
               [@b.a href="!info?clazz.id="+clazz.id+"&program.id="+program.id target="_blank"]查看<span class="text-muted">(${program.writer.name})</span>[/@]

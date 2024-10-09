@@ -17,6 +17,7 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
+import org.beangle.commons.lang.Locales
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.ems.app.web.WebBusinessLogger
@@ -55,7 +56,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
   override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
     given project: Project = getProject
 
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
     put("semester", semester)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
@@ -68,10 +69,10 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
 
   def audit(): View = {
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
-    val user = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
+    val approver = entityDao.findBy(classOf[User], "school" -> syllabuses.head.course.project.school, "code" -> Securities.user).headOption
     var hasErrors: Int = 0
     var processed: Seq[Syllabus] = null
-    val toPassedStatuses = Set(AuditStatus.PassedByDirector, AuditStatus.RejectedByDepart)
+    val toPassedStatuses = Set(AuditStatus.PassedByDirector, AuditStatus.RejectedByDepart, AuditStatus.PassedByDepart)
     val toFailedStatuses = Set(AuditStatus.PassedByDirector, AuditStatus.PassedByDepart)
 
     getBoolean("passed") foreach { passed =>
@@ -80,7 +81,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
         val oks = syllabuses.filter { s => SyllabusValidator.validate(s).isEmpty && toPassedStatuses.contains(s.status) }
         oks foreach { s =>
           s.status = status
-          s.approver = user
+          s.approver = approver
         }
         hasErrors = syllabuses.size - oks.size
         processed = oks
@@ -88,7 +89,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
         val oks = syllabuses.filter { s => toFailedStatuses.contains(s.status) }
         oks foreach { s =>
           s.status = status
-          s.approver = user
+          s.approver = approver
         }
         hasErrors = syllabuses.size - oks.size
         processed = oks

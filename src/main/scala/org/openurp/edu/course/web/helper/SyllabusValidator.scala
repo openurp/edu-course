@@ -113,9 +113,13 @@ object SyllabusValidator {
     }
     val errorObjectives = Collections.newBuffer[String]
     syllabus.outcomes foreach { o =>
-      Strings.split(o.courseObjectives) foreach { obj =>
-        if !syllabus.objectives.exists(_.name == obj) then
-          errorObjectives.addOne(obj)
+      if (Strings.isBlank(o.courseObjectives)) {
+        messages += s"毕业要求${o.title}缺少课程目标支撑"
+      } else {
+        Strings.split(o.courseObjectives) foreach { obj =>
+          if !syllabus.objectives.exists(_.name == obj) then
+            errorObjectives.addOne(obj)
+        }
       }
     }
     if errorObjectives.nonEmpty then
@@ -165,7 +169,7 @@ object SyllabusValidator {
     syllabus.topics foreach { p =>
       val hours = p.hours.map(_.creditHours).sum
       if (hours == 0) {
-        if(p.learningHours==0){
+        if (p.learningHours == 0) {
           if (p.hours.isEmpty) {
             messages += s"教学主题:${p.name},缺少学时分布"
           } else {

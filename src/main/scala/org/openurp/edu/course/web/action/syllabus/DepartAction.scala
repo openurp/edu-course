@@ -22,7 +22,7 @@ import org.beangle.commons.collection.Collections
 import org.beangle.commons.concurrent.Workers
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.Files
-import org.beangle.commons.lang.SystemInfo
+import org.beangle.commons.lang.{Locales, SystemInfo}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
@@ -66,7 +66,7 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   override protected def getQueryBuilder: OqlBuilder[Syllabus] = {
     given project: Project = getProject
 
-    put("locales", Map(new Locale("zh", "CN") -> "中文", new Locale("en", "US") -> "English"))
+    put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
 
     val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
     put("semester", semester)
@@ -84,7 +84,13 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val syllabuses = entityDao.find(classOf[Syllabus], getLongIds("syllabus"))
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
-      syllabuses foreach { s => s.status = status }
+      syllabuses foreach { s =>
+        if(status == AuditStatus.PassedByDepart && s.reviewer.nonEmpty && s.approver.nonEmpty){
+          s.status = status
+        }else{
+          s.status = status
+        }
+      }
     }
     entityDao.saveOrUpdate(syllabuses)
     redirect("search", "审核成功")
@@ -111,7 +117,7 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     s.where("s.school=:school and s.vacation=false", project.school)
     s.orderBy("s.startWeek").cacheable()
     put("calendarStages", entityDao.search(s))
-    put("locales", Map(new Locale("zh", "CN") -> "中文大纲", new Locale("en", "US") -> "English Syllabus"))
+    put("locales", Map(Locales.chinese -> "中文大纲", Locales.us -> "English Syllabus"))
     put("offices", entityDao.findBy(classOf[TeachingOffice], "project" -> project, "department" -> syllabus.department))
     super.editSetting(syllabus)
   }

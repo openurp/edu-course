@@ -123,12 +123,13 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val beginAt = semester.beginOn.atTime(LocalTime.MIN)
     val endAt = semester.endOn.atTime(LocalTime.MAX)
 
-    put("syllabus", new ClazzPlanHelper(entityDao).findSyllabus(clazz))
-    put("task",new ClazzPlanHelper(entityDao).findCourseTask(clazz))
-    val schedules = LessonSchedule.convert(clazz)
+    val syllabus = new ClazzPlanHelper(entityDao).findSyllabus(clazz).orNull
+    val task = new ClazzPlanHelper(entityDao).findCourseTask(clazz)
+    put("syllabus", syllabus)
+    put("task", task)
+    calcHours(plan, syllabus, task)
 
-    val scheduleHours = schedules.map(_.hours).sum
-    put("scheduleHours", scheduleHours)
+    val schedules = LessonSchedule.convert(clazz)
     (plan.lessons.size + 1 to schedules.size) foreach { i =>
       val lesson = new Lesson()
       lesson.plan = plan
@@ -160,6 +161,33 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
       put("lastPlans", List.empty)
     }
     forward()
+  }
+
+  /** 测算授课计划的学时
+   *
+   * @param plan
+   * @param syllabus
+   * @param task
+   */
+  private def calcHours(plan: ClazzPlan, syllabus: Syllabus, task: CourseTask): Unit = {
+    val clazz = plan.clazz
+    val schedules = LessonSchedule.convert(clazz)
+    val scheduleHours = schedules.map(_.hours).sum
+    if (null != task && task.extraHours.nonEmpty) {
+      plan.extraHours = task.extraHours.getOrElse(0)
+    }
+    if (syllabus.creditHours == scheduleHours) { //如果安排的学时和开课学时一致，则考试学时为考核学时
+      plan.examHours = syllabus.examCreditHours
+      plan.lessonHours = syllabus.creditHours - plan.examHours
+    } else {
+      plan.lessonHours = scheduleHours
+      if (plan.lessonHours > syllabus.creditHours) { //如果安排的学时大于开课学时，则考试学时为考核学时
+        plan.examHours = syllabus.examCreditHours
+      } else {
+        //否则，考试学时为开课学时-额外学时-排课学时
+        plan.examHours = syllabus.creditHours - plan.extraHours - plan.lessonHours
+      }
+    }
   }
 
   def save(): View = {
@@ -221,12 +249,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
-    plan.examHours = syllabus.examCreditHours
-    plan.lessonHours = getInt("lessonHours", 0)
-
-    if(null!=task && task.extraHours.nonEmpty){
-      plan.extraHours = task.extraHours.getOrElse(0)
-    }
+    calcHours(plan, syllabus, task)
     entityDao.saveOrUpdate(plan)
 
     val submit = getBoolean("submit", false)

@@ -142,12 +142,29 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     val design =
       getLong("design.id") match
         case Some(id) => entityDao.get(classOf[LessonDesign], id)
-        case None => new LessonDesign(program, getInt("idx", 1))
+        case None =>
+          val idx = getInt("idx", 1)
+          program.get(idx).getOrElse(new LessonDesign(program, idx))
 
     val schedules = LessonSchedule.convert(program.clazz)
     if (design.idx - 1 < schedules.length) {
       design.creditHours = schedules(design.idx - 1).hours
     }
+    getLong("from.id") foreach { fromId =>
+      val fromDesign = entityDao.get(classOf[LessonDesign], fromId)
+      copyTo(fromDesign, design)
+      put("fromDesign", fromDesign)
+    }
+    val q = OqlBuilder.from(classOf[LessonDesign], "d")
+    q.where("d.program.clazz.course=:course", program.clazz.course)
+    q.where("d.idx = :idx", design.idx)
+    q.where("d.program.clazz.semester=:semester", program.clazz.semester)
+    q.where("d.program.clazz.project=:project", program.clazz.project)
+    if (design.persisted) {
+      q.where("d.id!=:me", design.id)
+    }
+    val otherDesigns = entityDao.search(q)
+    put("otherDesigns", otherDesigns)
     put("design", design)
     put("program", program)
     forward()
@@ -193,8 +210,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     (1 to 10) foreach { i =>
       val title = get(s"sections[${i}].title", "")
       val duration = getInt(s"sections[${i}].duration", 0)
-      val summary = get(s"sections[${i}].summary", " ")
-      val details = get(s"sections[${i}].details", " ")
+      val summary = get(s"sections[${i}].summary", " ").trim()
+      val details = get(s"sections[${i}].details", " ").trim()
       if Strings.isNotBlank(title) then
         val section = design.getSection(i).getOrElse(new LessonDesignSection(design, i, title, duration, summary, details))
         section.title = title
@@ -296,17 +313,14 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
                 val d = rs._1.get
                 d.idx = index
                 d.program = program
+                program.designs.addOne(d)
                 d
-          //更新学时
-          val schedules = LessonSchedule.convert(program.clazz)
-          if (design.idx - 1 < schedules.length) {
-            design.creditHours = schedules(design.idx - 1).hours
-          }
+          ClazzProgramHelper.updateStatInfo(program)
           entityDao.saveOrUpdate(design)
           businessLogger.info(s"导入教案:${program.clazz.course.name} 第${index}次课", design.id, Map("program" -> program.id.toString))
           redirect("designInfo", s"design.id=${design.id}&editable=1", "识别完成，请核对")
         } else {
-          addError("文件解析错误，请检查是否符合模板要求")
+          addError("文件解析错误，请检查是否符合模板要求:"+rs._2)
           forward("importSetting")
         }
       case None =>
@@ -345,6 +359,35 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     dest
   }
 
+  def removeDesign(): View = {
+    val design = entityDao.get(classOf[LessonDesign], getLongId("design"))
+    val program = design.program
+    program.designs.subtractOne(design)
+    ClazzProgramHelper.updateStatInfo(program)
+    entityDao.remove(design)
+    businessLogger.info(s"删除教案:${program.clazz.course.name} 第${design.idx}次课", design.id, Map("program" -> program.id.toString))
+    redirect("edit", s"clazz.id=${program.clazz.id}", "删除成功")
+  }
+
+  def remove(): View = {
+    val program = entityDao.get(classOf[ClazzProgram], getLongId("program"))
+    if (program.writer.code == Securities.user) {
+      if (program.designs.isEmpty) {
+        entityDao.remove(program)
+        redirect("index", "删除成功")
+      } else {
+        redirect("index", "该教案内部还有内容，无法删除,删除失败")
+      }
+    } else {
+      redirect("index", "删除失败")
+    }
+  }
+
+  def copyDesign(): View = {
+    val id = getLongId("from")
+    forward()
+  }
+
   /**
    * 清理文本内容，移除换行符和回车符。
    *
@@ -355,11 +398,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
    * @return 清理后的文本字符串，不包含任何回车符或换行符。
    */
   private def cleanText(contents: String): String = {
-    // 移除文本中的回车符
-    var c = Strings.replace(contents, "\r", "")
-    // 移除文本中的换行符
-    c = Strings.replace(c, "\n", "")
-    c
+    Strings.replace(contents, "\r", "").trim()
   }
 
   def report(): View = {

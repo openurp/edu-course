@@ -10,7 +10,7 @@
   <div class="search-panel">
     [@b.form name="courseTaskSearchForm" action="!search" target="courseTaskList" title="ui.searchForm" theme="search"]
       [@base.semester name="semester.id" value=semester label="学年学期"/]
-      [@b.textfield name="syllabus.course.code" label="课程代码"/]
+      [@b.textfield name="syllabus.course.code" label="课程代码" maxlength="200000"/]
       [@b.textfield name="syllabus.course.name" label="课程名称"/]
       [@b.select style="width:100px" name="syllabus.department.id" label="开课院系" items=departs option="id,name" empty="..." /]
       [@b.textfield name="syllabus.office.name" label="教研室"/]

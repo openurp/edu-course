@@ -7,8 +7,16 @@
   [#if cnts?length>0]
     [#assign ps = cnts?split("\n")]
     [#list ps as p]
-    <p style="white-space: preserve;" class="mb-0">${p}</p>
+    <p>${p}</p>
     [/#list]
+  [/#if]
+[/#macro]
+[#macro display contents=""]
+  [#assign cnts]${contents!}[#nested/][/#assign]
+  [#if cnts?contains("</p>")]
+    ${cnts}
+  [#else]
+    [@multi_line_p cnts/]
   [/#if]
 [/#macro]
 <div class="container">
@@ -36,12 +44,12 @@
     </tr>
     <tr>
       <td colspan="3"><span class="title-left">教学内容提要：</span><br>
-      [@multi_line_p section.summary/]
+      [@display section.summary/]
       </td>
     </tr>
     <tr>
       <td colspan="3"><span class="title-left">教学过程设计（包括教学方法与手段、学生学习活动、教师支持活动等）：</span><br>
-      [@multi_line_p section.details/]
+      [@display section.details/]
       </td>
     </tr>
     [/#list]

@@ -6,7 +6,7 @@
         [@b.card_tools]
          <div class="btn-group">
          [@b.a href="!editDesign?design.id=${design.id}" class="btn btn-sm btn-outline-info"]<i class="fa fa-edit"></i> Edit[/@]
-         [@b.a href="!removeDesign?design.id=${design.id}"  onclick="return confirm('确定删除该教学法?');"class="btn btn-sm btn-outline-danger"]<i class="fa fa-xmark"></i> Remove[/@]
+         [@b.a href="!removeDesign?design.id=${design.id}"  onclick="return confirm('确定删除该教学法?');" class="btn btn-sm btn-outline-danger"]<i class="fa fa-xmark"></i> Remove[/@]
          </div>
         [/@]
        [/@]

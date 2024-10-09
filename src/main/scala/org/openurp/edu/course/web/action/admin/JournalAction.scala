@@ -216,7 +216,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     }
     val os = new ByteArrayOutputStream()
     schema.generate(os)
-    Stream(new ByteArrayInputStream(os.toByteArray), MediaTypes.ApplicationXlsx.toString, "课程标记信息.xlsx")
+    Stream(new ByteArrayInputStream(os.toByteArray), MediaTypes.ApplicationXlsx, "课程标记信息.xlsx")
   }
 
   protected override def configExport(context: ExportContext): Unit = {

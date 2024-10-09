@@ -23,7 +23,7 @@ import org.beangle.doc.pdf.SPDConverter
 import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.web.action.annotation.{mapping, param}
 import org.beangle.web.action.view.{Stream, View}
-import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
 import org.openurp.base.model.Project
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{ClazzPlan, ClazzProgram, LessonDesign}
@@ -34,7 +34,7 @@ import org.openurp.starter.web.support.ProjectSupport
 import java.io.File
 import java.net.URI
 
-class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport {
+class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport, ExportSupport[ClazzProgram] {
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()

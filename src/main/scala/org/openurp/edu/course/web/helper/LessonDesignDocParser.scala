@@ -17,7 +17,7 @@
 
 package org.openurp.edu.course.web.helper
 
-import org.apache.poi.xwpf.usermodel.{XWPFDocument, XWPFTable, XWPFTableCell, XWPFTableRow}
+import org.apache.poi.xwpf.usermodel.*
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.{Numbers, Strings}
 import org.openurp.edu.course.model.{LessonDesign, LessonDesignSection, LessonDesignText}
@@ -42,12 +42,20 @@ object LessonDesignDocParser {
       case None => (None, "找不到教案所在的表格")
       case Some(table) =>
         findSectionTitleRowIndex(table) match
-          case None => (None, "找不到教学内容与过程设计")
+          case None =>
+            findDetailTable(doc) match
+              case None => (None, "找不到教学内容与过程设计")
+              case Some(detailTable) =>
+                val design = readDesign(table, Int.MaxValue)
+                readSections(design, detailTable, 0)
+                (Some(design), "")
           case Some(row) =>
-            (Some(readProgram(table, row)), "")
+            val design = readDesign(table, row)
+            readSections(design, table, row)
+            (Some(design), "")
   }
 
-  private def readProgram(table: XWPFTable, separatorIndex: Int): LessonDesign = {
+  private def readDesign(table: XWPFTable, separatorIndex: Int): LessonDesign = {
     val ld = new LessonDesign()
     val rowIter = table.getRows.iterator()
     var i = 0
@@ -61,7 +69,19 @@ object LessonDesignDocParser {
         } else {
           readText(title, row.getTableCells.get(1), ld)
         }
-      } else if (i > separatorIndex) {
+      }
+      i += 1
+    }
+    ld
+  }
+
+  private def readSections(design: LessonDesign, table: XWPFTable, separatorIndex: Int): Unit = {
+    val rowIter = table.getRows.iterator()
+    var i = 0
+    var sectionIdx = 1
+    while (rowIter.hasNext) {
+      val row = rowIter.next()
+      if (i > separatorIndex) {
         val sectionRows = Collections.newBuffer[XWPFTableRow]
         sectionRows.addOne(row)
         var fectched = 0
@@ -70,16 +90,15 @@ object LessonDesignDocParser {
           sectionRows.addOne(rowIter.next())
         }
         if (sectionRows.size == 3) {
-          readSection(ld, sectionIdx, sectionRows)
+          readSection(design, sectionIdx, sectionRows)
           sectionIdx += 1
         } else {
           val title = row.getTableCells.get(0).getText
-          if title.contains("课后作业") then ld.homework = Some(readCell(row.getTableCells.get(1)))
+          if title.contains("课后作业") then design.homework = Some(readCell(row.getTableCells.get(1)))
         }
       }
       i += 1
     }
-    ld
   }
 
   private def readSection(design: LessonDesign, index: Int, sectionRows: mutable.Buffer[XWPFTableRow]): Unit = {
@@ -96,13 +115,13 @@ object LessonDesignDocParser {
     if (Numbers.isDigits(duration)) {
       minutes = duration.toInt
     }
-    var summary = readCell(row2.getTableCells.get(0))
-    if (summary.startsWith("教学内容提要")) {
-      summary = summary.substring("教学内容提要：".length)
+    var summary = readCell2Html(row2.getTableCells.get(0))
+    if (summary.contains("教学内容提要")) {
+      summary = summary.replaceAll("<p>(.*?)教学内容提要(.*?)</p>","")
     }
-    var details = readCell(row3.getTableCells.get(0))
-    if (details.startsWith("教学过程设计")) {
-      details = Strings.substringAfter(details, "：")
+    var details = readCell2Html(row3.getTableCells.get(0))
+    if (details.contains("教学过程设计")) {
+      details = details.replaceAll("<p>(.*?)教学过程设计（包括教学方法与手段(.*?)</p>","")
     }
     val section = new LessonDesignSection(design, index, title, minutes, summary, details)
     design.sections.addOne(section)
@@ -140,6 +159,24 @@ object LessonDesignDocParser {
         false
       }
     }
+  }
+
+  private def findDetailTable(document: XWPFDocument): Option[XWPFTable] = {
+    asScala(document.getTables).find { t =>
+      if (t.getRows.size > 1 && t.getRows.get(0).getTableCells.size > 0) {
+        t.getRows.get(0).getTableCells.get(0).getText.contains("教学内容与过程设计")
+      } else {
+        false
+      }
+    }
+  }
+
+  private def readCell2Html(cell: XWPFTableCell):String={
+    val sb = new StringBuilder()
+    for (p <- asScala(cell.getParagraphs)) {
+      sb.append(DocParser.parse(p))
+    }
+    sb.toString
   }
 
   private def readCell(cell: XWPFTableCell): String = {

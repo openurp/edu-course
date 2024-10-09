@@ -18,6 +18,7 @@
 package org.openurp.edu.course.web.action.admin
 
 import jakarta.servlet.http.Part
+import org.beangle.commons.activation.MediaTypes
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.{Files, IOs}
 import org.beangle.commons.lang.Strings
@@ -201,7 +202,7 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport {
     val targetZip = new File(System.getProperty("java.io.tmpdir") + "syllabus" + Files./ + "batch.zip")
     Zipper.zip(dir, targetZip)
     val fileName = (if (departs.size == 1) then departs.head.name else departs.head.name + "等院系") + s"课程大纲(${paperCount}).zip"
-    Stream(targetZip, "application/zip", fileName).cleanup(() => {
+    Stream(targetZip, MediaTypes.ApplicationZip, fileName).cleanup(() => {
       Files.travel(dir, f => f.delete())
       dir.delete()
       targetZip.delete()

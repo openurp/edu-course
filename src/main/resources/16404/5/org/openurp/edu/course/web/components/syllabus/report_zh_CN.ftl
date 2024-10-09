@@ -125,7 +125,7 @@
         <td rowspan="3">${course.defaultCredits}</td>
         <td rowspan="3">课程学时或实践周</td>
         <td rowspan="2">①总学时：<br>（其中，理论与实践学时）</td>
-        <td>${course.creditHours}学时</td>
+        <td>${syllabus.creditHours}学时</td>
       </tr>
       <tr>
         <td>其中：[#list syllabus.hours?sort_by(['nature','code']) as h]${h.nature.name}${h.creditHours}[#sep]，[/#list]</td>
@@ -323,8 +323,12 @@
       [#assign tableIndex=tableIndex+1/]
       <thead>
         <tr style="text-align:center;">
-          <th rowspan="2">类别</th><th rowspan="2">考核项目</th><th colspan="${usualAssessments?size}">平时成绩组成及结构</th>
-          <th rowspan="2">平时成绩分布小计</th><th rowspan="2">平时成绩占总成绩比重</th>
+          <th rowspan="2">类别</th><th rowspan="2">考核项目</th>
+            [#if usualAssessments?size>0]
+            <th colspan="${usualAssessments?size}">平时成绩组成及结构</th>
+            <th rowspan="2">平时成绩分布小计</th>
+            [/#if]
+          <th rowspan="2">平时成绩占总成绩比重</th>
           <th rowspan="2">期末成绩分布小计</th><th rowspan="2">期末成绩占总成绩比重</th>
           <th rowspan="2">总评成绩分布合计</th>
         </tr>
@@ -332,12 +336,20 @@
           [#list usualAssessments as a]<th>${a.component}</th>[/#list]
         </tr>
         <tr>
-          <td rowspan="2">考核安排</td><td>考核次数</td>[#list usualAssessments as a]<th>${a.assessCount}</th>[/#list]
-          <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+          <td rowspan="2">考核安排</td><td>考核次数</td>
+          [#if usualAssessments?size>0]
+          [#list usualAssessments as a]<th>${a.assessCount}</th>[/#list]
+          <td>—</td>
+          [/#if]
+          <td>—</td><td>—</td><td>—</td><td>—</td>
         </tr>
         <tr>
-          <td>考核分值占比</td>[#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
-          <td>100%</td><td>${(usualAssess.scorePercent)!}%</td><td>[#if ((endAssess.scorePercent)!0)>0]100%[#else]0%[/#if]</td>
+          <td>考核分值占比</td>
+          [#if usualAssessments?size>0]
+          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          <td>100%</td>
+          [/#if]
+          <td>${(usualAssess.scorePercent)!}%</td><td>[#if ((endAssess.scorePercent)!0)>0]100%[#else]0%[/#if]</td>
           <td>${(endAssess.scorePercent)!}%</td><td>100%</td>
         </tr>
         [#if orderedObjectives?size>0]
@@ -345,11 +357,14 @@
         <tr>
           <td rowspan="${orderedObjectives?size}">课程目标</td><td>${firstObj.code}</td>
           [#assign coPercent=0/]
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[firstObj.code]??]${percentMap[firstObj.code]}%[#assign coPercent=coPercent+percentMap[firstObj.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
+          <td>${coPercent}%</td>
+          [/#if]
+          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
         [/#if]
@@ -358,22 +373,28 @@
         <tr>
           <td>${co.code}</td>
           [#assign coPercent=0/]
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]
           [#assign percentMap = a.objectivePercentMap/]
           <td>[#if percentMap[co.code]??]${percentMap[co.code]}%[#assign coPercent=coPercent+percentMap[co.code]/][#else]—[/#if]</td>
           [/#list]
-          <td>${coPercent}%</td><td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
+          <td>${coPercent}%</td>
+          [/#if]
+          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
           <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[co.code]!0))/100}%</td>
         </tr>
         [/#list]
         <tr>
           <td colspan="2">考核方式小计</td>
+          [#if usualAssessments?size>0]
           [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
-          <td>100%</td><td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
+          <td>100%</td>
+          [/#if]
+          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
           <td>${endAssess.scorePercent}%</td><td>100%</td>
         </tr>
         <tr>
-          <td colspan="${7+usualAssessments?size}" style="text-align:left;">注：①平时成绩考核依托网络教学平台完成。②思想政治素质教育和诚信教育，融合在课程教学的全过程，根据课程实际进行课程考核。</td>
+          <td colspan="[#if usualAssessments?size>0]${7+usualAssessments?size}[#else]${6}[/#if]" style="text-align:left;">注：①平时成绩考核依托网络教学平台完成。②思想政治素质教育和诚信教育，融合在课程教学的全过程，根据课程实际进行课程考核。</td>
         </tr>
       </thead>
     </table>
@@ -399,6 +420,16 @@
         ${scoreTable}
       [/#if]
     [/#list]
+
+    [#--添加统一的期末考试说明--]
+    [#if syllabus.getAssessment(endType,null)?exists]
+      [#assign endAssess = syllabus.getAssessment(endType,null)!/]
+      [#if endAssess.scorePercent>0]
+        [#assign title]${assessIdx+1}.期末考试的评分标准[/#assign]
+        [@header_title title/]
+        [@multi_line_p "(1)课程结束后统一进行期末考试。\n(2)期末考试满分为100分;根据学校要求组织期末考试。期末考试评分标准详见“期末试卷、参考答案及评分标准”。"/]
+      [/#if]
+    [/#if]
   </div>
 [/#if]
   [#--教材和教学资源--]

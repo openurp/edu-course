@@ -56,6 +56,10 @@
   [#list plan.hours as h]
     [#assign scheduleHours=scheduleHours+h.creditHours/]
   [/#list]
+  [#assign totalLearningHours=0/]
+  [#list plan.lessons  as lesson]
+    [#assign totalLearningHours = totalLearningHours + lesson.learningHours/]
+  [/#list]
   <div>
     <table  style="width:100%;border: solid 1px black;text-align:center;" class="form-table">
       <tr>
@@ -132,7 +136,7 @@
               <td>${plan.extraHours}</td>
               [/#if]
               <td>${plan.lessonHours + plan.examHours+plan.extraHours}</td>
-              <td>[#if syllabus.learningHours>0]${syllabus.learningHours}[/#if]</td>
+              <td>[#if totalLearningHours>0]${totalLearningHours}[/#if]</td>
             </tr>
           </table>
         </td>
@@ -198,7 +202,6 @@
       </tr>
       [/#if]
       [/#list]
-
       <tr>
         <td colspan="2" style="text-align:left;">课堂教学合计</td>
         <td>${plan.lessonHours}</td> <td colspan="3">——</td>
@@ -221,10 +224,10 @@
         <td colspan="2" style="text-align:left;">合计</td>
         <td>${plan.lessonHours + plan.examHours + plan.extraHours}</td><td colspan="3">——</td>
       </tr>
-      [#if syllabus.learningHours>0]
+      [#if totalLearningHours>0]
       <tr>
         <td colspan="2" style="text-align:left;">自主学习学时</td>
-        <td>${syllabus.learningHours}</td>
+        <td>${totalLearningHours}</td>
         <td colspan="3">——</td>
       </tr>
       [/#if]

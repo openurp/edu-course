@@ -50,7 +50,7 @@
            </h5>
          </div>
          <div id="stat_body_2" class="collapse show" aria-labelledby="stat_header_1" data-parent="#accordion">
-           <div class="card-body" style="padding-top: 0px;max-height:600px;overflow:scroll;">
+           <div class="card-body" style="padding-top: 0px;">
              <table class="table table-hover table-sm">
                <tbody>
                [#list departStat as stat]

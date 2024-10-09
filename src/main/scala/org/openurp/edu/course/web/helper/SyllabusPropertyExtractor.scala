@@ -31,11 +31,11 @@ class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
       if (p == "usual_percent") {
         syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
           case None => ""
-          case Some(a) => a.scorePercent + "%"
+          case Some(a) => s"${a.scorePercent}%"
       } else if (p == "end_percent") {
         syllabus.getAssessment(new GradeType(GradeType.End), null) match
           case None => ""
-          case Some(a) => a.scorePercent + "%"
+          case Some(a) => s"${a.scorePercent}%"
       } else if (p == "usual_percents") {
         syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
           case None => ""
