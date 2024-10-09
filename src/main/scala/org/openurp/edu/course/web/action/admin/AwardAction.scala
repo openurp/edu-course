@@ -19,7 +19,24 @@ package org.openurp.edu.course.web.action.admin
 
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.CourseAward
+import org.openurp.base.model.Project
+import org.openurp.code.edu.model.CourseAwardType
+import org.openurp.starter.web.support.ProjectSupport
 
-class AwardAction extends RestfulAction[CourseAward]{
+class AwardAction extends RestfulAction[CourseAward],ProjectSupport{
 
+  override def indexSetting(): Unit = {
+    given project:Project = getProject
+    put("project",project)
+    put("departments",getDeparts)
+    put("awardTypes",getCodes(classOf[CourseAwardType]))
+    super.indexSetting()
+  }
+
+  override protected def editSetting(entity: CourseAward): Unit = {
+    given project: Project = getProject
+
+    put("awardTypes", getCodes(classOf[CourseAwardType]))
+    super.editSetting(entity)
+  }
 }
