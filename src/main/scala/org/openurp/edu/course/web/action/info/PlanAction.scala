@@ -18,7 +18,7 @@
 package org.openurp.edu.course.web.action.info
 
 import org.beangle.data.dao.EntityDao
-import org.beangle.web.action.support.ActionSupport
+import org.beangle.webmvc.support.ActionSupport
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.edu.course.model.ClazzPlan
 

@@ -19,45 +19,26 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.bean.DefaultPropertyExtractor
 import org.beangle.commons.lang.Strings
-import org.openurp.code.edu.model.GradeType
-import org.openurp.edu.course.model.Syllabus
+import org.openurp.edu.course.model.SyllabusExperiment
 
 import java.time.format.DateTimeFormatter
 
-class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
+class SyllabusExperimentPropertyExtractor extends DefaultPropertyExtractor {
+
   val publishDatePattern = DateTimeFormatter.ofPattern("yyyy年MM月")
 
   override def get(target: Object, property: String): Any = {
-    val syllabus = target.asInstanceOf[Syllabus]
-    if (property.startsWith("assessment.")) {
-      val p = Strings.substringAfter(property, "assessment.")
-      if (p == "usual_percent") {
-        syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
-          case None => ""
-          case Some(a) => s"${a.scorePercent}%"
-      } else if (p == "end_percent") {
-        syllabus.getAssessment(new GradeType(GradeType.End), null) match
-          case None => ""
-          case Some(a) => s"${a.scorePercent}%"
-      } else if (p == "usual_percents") {
-        syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
-          case None => ""
-          case Some(a) =>
-            val components = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty).sortBy(_.idx)
-            components.map(x => x.component.get + " " + x.scorePercent + "%").mkString(",")
-      } else {
-        ""
-      }
-    } else if (property.startsWith("hour.")) {
+    val exp = target.asInstanceOf[SyllabusExperiment]
+    val syllabus = exp.syllabus
+    if (property.startsWith("hour.")) {
       val natureId = Strings.substringAfter(property, "hour.")
       syllabus.hours.find(x => x.nature.id.toString == natureId) match
         case None => ""
         case Some(h) => h.creditHours
     } else if (property == "textbooks") {
       syllabus.textbooks.map { b => s"${b.name} ${b.author} ${b.press.map(_.name).getOrElse("--")} ${publishDatePattern.format(b.publishedOn)} 版次:第${b.edition}版" }.mkString(";")
-    } else if ("uncompleteReason" == property) {
-      if (syllabus.complete) then ""
-      else SyllabusValidator.validate(syllabus).mkString(";")
-    } else super.get(target, property)
+    } else {
+      super.get(target, property)
+    }
   }
 }

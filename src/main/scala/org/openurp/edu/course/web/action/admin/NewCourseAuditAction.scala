@@ -20,7 +20,7 @@ package org.openurp.edu.course.web.action.admin
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.{Numbers, Strings}
 import org.beangle.data.dao.OqlBuilder
-import org.beangle.web.action.view.View
+import org.beangle.webmvc.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.base.edu.model.{Course, CourseJournal}
 import org.openurp.base.model.AuditStatus.{Passed, Rejected}

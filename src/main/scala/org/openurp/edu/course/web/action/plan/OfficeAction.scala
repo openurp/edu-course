@@ -21,14 +21,15 @@ import org.beangle.commons.lang.Locales
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.view.View
+import org.beangle.webmvc.annotation.{mapping, param}
 import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.view.View
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.AuditStatus.RejectedByDepart
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.edu.course.model.ClazzPlan
 import org.openurp.edu.course.web.helper.ClazzPlanHelper
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -93,7 +94,7 @@ class OfficeAction extends RestfulAction[ClazzPlan], ProjectSupport {
     val plan = entityDao.get(classOf[ClazzPlan], id.toLong)
     new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     put("auditable", auditStatuses.contains(plan.status))
     forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }

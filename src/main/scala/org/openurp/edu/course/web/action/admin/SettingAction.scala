@@ -17,7 +17,7 @@
 
 package org.openurp.edu.course.web.action.admin
 
-import org.beangle.web.action.view.View
+import org.beangle.webmvc.view.View
 import org.beangle.webmvc.support.action.RestfulAction
 import org.openurp.edu.course.app.model.ReviseSetting
 

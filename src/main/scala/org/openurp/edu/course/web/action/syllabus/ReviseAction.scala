@@ -22,12 +22,12 @@ import org.beangle.commons.lang.{Locales, Strings}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.EmsApi
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
-import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.mapping
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.mapping
 import org.beangle.webmvc.support.action.EntityAction
+import org.beangle.webmvc.view.{Status, Stream, View}
 import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
@@ -37,9 +37,10 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{EmsUrl, SyllabusHelper, SyllabusValidator}
+import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
 import org.openurp.edu.schedule.service.LessonSchedule
 import org.openurp.edu.textbook.model.ClazzMaterial
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.TeacherSupport
 
 import java.io.File
@@ -876,7 +877,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     put("submitable", isSubmitable(syllabus))
     val project = syllabus.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)
     val semester = getInt("semester.id") match
@@ -899,13 +900,20 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], id)
     val semesterId = get("semester.id", "")
     val semesterParam = if semesterId.nonEmpty then s"&semester.id=${semesterId}" else ""
-    val url = EmsUrl.url(s"/syllabus/revise/info?id=${id}$semesterParam")
+    val url = EmsApi.url(s"/syllabus/revise/info?id=${id}$semesterParam")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     options.scale = 0.66d
+    println(s"download ${url} to ${pdf.getAbsolutePath}")
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)
+    if (!pdf.exists() || pdf.length() < 100) {
+      pdf.delete()
+      Status.NotFound
+    } else {
+      println(pdf.length())
+      Stream(pdf, syllabus.course.code + "_" + syllabus.course.name + " 教学大纲.pdf").cleanup(() => pdf.delete())
+    }
 
-    Stream(pdf, syllabus.course.code + "_" + syllabus.course.name + " 教学大纲.pdf").cleanup(() => pdf.delete())
   }
 
   def copySetting(): View = {

@@ -22,15 +22,16 @@ import org.beangle.commons.activation.MediaTypes
 import org.beangle.commons.file.zip.Zipper
 import org.beangle.commons.io.{Files, IOs}
 import org.beangle.commons.lang.Strings
+import org.beangle.commons.logging.Logging
 import org.beangle.commons.net.http.HttpUtils.followRedirect
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.data.model.Entity
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.support.ActionSupport
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.{mapping, param}
+import org.beangle.webmvc.support.ActionSupport
 import org.beangle.webmvc.support.action.EntityAction
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.{Course, CourseProfile, TeachingOffice}
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature, CourseType}
@@ -45,7 +46,7 @@ import java.net.URLConnection
 import java.time.{Instant, LocalDate}
 import java.util.Locale
 
-class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport {
+class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, Logging {
   var entityDao: EntityDao = _
   var syllabusService: SyllabusService = _
 
@@ -193,13 +194,14 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport {
     val blob = EmsApp.getBlobRepository(true)
     docs.foreach { doc =>
       blob.url(doc.docPath) foreach { url =>
-        val courseName = doc.course.code + " " + doc.course.name
+        val courseName = doc.course.code// + " " + doc.course.name
         val fileName = dir.getAbsolutePath + Files./ + courseName + "." + Strings.substringAfterLast(doc.docPath, ".")
         downloading(url.openConnection(), new File(fileName))
         paperCount += 1
       }
     }
-    val targetZip = new File(System.getProperty("java.io.tmpdir") + "syllabus" + Files./ + "batch.zip")
+    val targetZip = new File(System.getProperty("java.io.tmpdir") + "syllabus" + Files./ + s"batch${System.currentTimeMillis()}.zip")
+    logger.info(s"download to ${targetZip.getAbsolutePath}")
     Zipper.zip(dir, targetZip)
     val fileName = (if (departs.size == 1) then departs.head.name else departs.head.name + "等院系") + s"课程大纲(${paperCount}).zip"
     Stream(targetZip, MediaTypes.ApplicationZip, fileName).cleanup(() => {

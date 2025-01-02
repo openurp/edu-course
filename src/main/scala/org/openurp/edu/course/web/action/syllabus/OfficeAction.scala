@@ -22,13 +22,14 @@ import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.view.View
+import org.beangle.webmvc.annotation.{mapping, param}
 import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.view.View
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project, Semester, User}
 import org.openurp.edu.course.model.Syllabus
 import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.util.Locale
@@ -133,7 +134,7 @@ class OfficeAction extends RestfulAction[Syllabus], ProjectSupport {
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     val project = syllabus.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     put("auditable", auditStatuses.contains(syllabus.status))
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)

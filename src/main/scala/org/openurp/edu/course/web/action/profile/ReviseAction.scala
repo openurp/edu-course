@@ -24,9 +24,9 @@ import org.beangle.commons.net.http.HttpUtils
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.support.{ActionSupport, ServletSupport}
-import org.beangle.web.action.view.View
+import org.beangle.webmvc.annotation.{mapping, param}
+import org.beangle.webmvc.support.{ActionSupport, ServletSupport}
+import org.beangle.webmvc.view.View
 import org.beangle.webmvc.support.action.EntityAction
 import org.openurp.base.edu.model.{Course, CourseProfile}
 import org.openurp.base.model.{AuditStatus, User}

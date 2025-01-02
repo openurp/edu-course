@@ -1,6 +1,6 @@
 [#ftl]
 [@b.head/]
-[@b.toolbar title="教案学院管理"]
+[@b.toolbar title="教案教研室查询"]
 [/@]
 <div class="search-container">
   <div class="search-panel">

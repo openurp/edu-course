@@ -22,10 +22,11 @@ import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.EmsApi
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.view.{Stream, View}
 import org.beangle.webmvc.support.action.EntityAction
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{TeachingMethod, TeachingSection}
@@ -33,8 +34,9 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, EmsUrl}
+import org.openurp.edu.course.web.helper.ClazzPlanHelper
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.TeacherSupport
 
 import java.io.File
@@ -324,14 +326,14 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val plan = entityDao.get(classOf[ClazzPlan], getLongId("plan"))
     new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }
 
   def pdf(): View = {
     val id = getLongId("plan")
     val plan = entityDao.get(classOf[ClazzPlan], id)
-    val url = EmsUrl.url(s"/plan/revise/report?id=${id}")
+    val url = EmsApi.url(s"/plan/revise/report?id=${id}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)

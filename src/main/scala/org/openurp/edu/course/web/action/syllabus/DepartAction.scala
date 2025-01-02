@@ -27,17 +27,18 @@ import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.doc.transfer.exporter.ExportContext
+import org.beangle.ems.app.EmsApi
 import org.beangle.security.Securities
-import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.context.ActionContext
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.{mapping, param}
+import org.beangle.webmvc.context.ActionContext
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, CalendarStage, Project, Semester}
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.model.{CourseTask, Syllabus}
 import org.openurp.edu.course.web.helper.*
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -85,9 +86,9 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     getBoolean("passed") foreach { passed =>
       val status = if passed then AuditStatus.PassedByDepart else AuditStatus.RejectedByDepart
       syllabuses foreach { s =>
-        if(status == AuditStatus.PassedByDepart && s.reviewer.nonEmpty && s.approver.nonEmpty){
+        if (status == AuditStatus.PassedByDepart && s.reviewer.nonEmpty && s.approver.nonEmpty) {
           s.status = status
-        }else{
+        } else {
           s.status = status
         }
       }
@@ -127,7 +128,7 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val syllabus = entityDao.get(classOf[Syllabus], id.toLong)
     new SyllabusHelper(entityDao).collectDatas(syllabus) foreach { case (k, v) => put(k, v) }
     val project = syllabus.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     val messages = SyllabusValidator.validate(syllabus)
     put("messages", messages)
     val semester = getInt("semester.id") match
@@ -148,8 +149,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val semesterParam = if semesterId.nonEmpty then s"?semester.id=${semesterId}" else ""
     if (syllabuses.size == 1) {
       val syllabus = syllabuses.head
-      val contextPath  =ActionContext.current.request.getContextPath
-      val url = EmsUrl.url(contextPath,s"/syllabus/depart/${syllabus.id}${semesterParam}")
+      val contextPath = ActionContext.current.request.getContextPath
+      val url = EmsApi.url(contextPath, s"/syllabus/depart/${syllabus.id}${semesterParam}")
       val fileName = Files.purify(syllabus.course.code + "_" + syllabus.course.name + "_" + syllabus.writer.name + "_课程大纲")
       val pdf = new File(pdfDir + s"/${fileName}.pdf")
       val options = new PrintOptions
@@ -162,9 +163,9 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
       }
     } else {
       val datas = syllabuses.map(x => (x.id, Files.purify(x.course.code + "_" + x.course.name + "_" + x.writer.name + "_课程大纲")))
-      val contextPath  = ActionContext.current.request.getContextPath
+      val contextPath = ActionContext.current.request.getContextPath
       Workers.work(datas, (data: (Long, String)) => {
-        val url = EmsUrl.url(contextPath,s"/syllabus/depart/${data._1}${semesterParam}")
+        val url = EmsApi.url(contextPath, s"/syllabus/depart/${data._1}${semesterParam}")
         val pdf = new File(pdfDir + s"/${data._2}.pdf")
         println(s"download ${url} to ${pdf.getAbsolutePath}")
         val options = new PrintOptions

@@ -27,14 +27,15 @@ import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.Ems
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.context.ActionContext
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.{mapping, param}
+import org.beangle.webmvc.context.ActionContext
 import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.TeachingOffice
 import org.openurp.base.model.{AuditStatus, Project}
 import org.openurp.edu.course.model.ClazzPlan
 import org.openurp.edu.course.web.helper.ClazzPlanHelper
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -94,7 +95,7 @@ class DepartAction extends RestfulAction[ClazzPlan], ProjectSupport {
     val plan = entityDao.get(classOf[ClazzPlan], id.toLong)
     new ClazzPlanHelper(entityDao).collectDatas(plan) foreach { case (k, v) => put(k, v) }
     val project = plan.clazz.course.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward(s"/org/openurp/edu/course/web/components/plan/report_zh_CN")
   }
 

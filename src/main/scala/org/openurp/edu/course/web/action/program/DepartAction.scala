@@ -20,15 +20,17 @@ package org.openurp.edu.course.web.action.program
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
+import org.beangle.ems.app.EmsApi
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.{mapping, param}
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.{mapping, param}
 import org.beangle.webmvc.support.action.{ExportSupport, RestfulAction}
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.model.Project
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.{ClazzPlan, ClazzProgram, LessonDesign}
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper, EmsUrl}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.File
@@ -76,7 +78,7 @@ class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport, ExportSu
     put("schedule", ScheduleDigestor.digest(clazz, ":day :units(:time) :weeks :room"))
     put("program", program)
     val project = program.clazz.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward()
   }
 
@@ -93,7 +95,7 @@ class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport, ExportSu
     put("clazz", clazz)
     put("syllabus", syllabus)
     val project = design.program.clazz.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward("/org/openurp/edu/course/web/components/program/designReport")
   }
 
@@ -101,7 +103,7 @@ class DepartAction extends RestfulAction[ClazzProgram], ProjectSupport, ExportSu
     val id = getLongId("design")
     val clazzId = getLongId("clazz")
     val design = entityDao.get(classOf[LessonDesign], id)
-    val url = EmsUrl.url(s"/program/depart/designReport?design.id=${id}&clazz.id=${clazzId}")
+    val url = EmsApi.url(s"/program/depart/designReport?design.id=${id}&clazz.id=${clazzId}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)

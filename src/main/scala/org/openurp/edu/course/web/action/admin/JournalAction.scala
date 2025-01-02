@@ -25,13 +25,13 @@ import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.doc.transfer.importer.ImportSetting
 import org.beangle.doc.transfer.importer.listener.ForeignerListener
 import org.beangle.event.bus.{DataEvent, DataEventBus}
-import org.beangle.web.action.annotation.response
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.response
+import org.beangle.webmvc.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
 import org.openurp.base.edu.model.{Course, CourseJournal, CourseJournalHour}
 import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
-import org.openurp.code.edu.model.{CourseTag, CourseType, ExamMode, TeachingNature}
+import org.openurp.code.edu.model.{CourseTag, ExamMode, TeachingNature}
 import org.openurp.edu.course.web.helper.{CourseJournalImportListener, CourseJournalPropertyExtractor}
 import org.openurp.starter.web.support.ProjectSupport
 
@@ -137,7 +137,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     put("departs", departs)
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
-    queryByDepart(query,"journal.department")
+    queryByDepart(query, "journal.department")
     getLong("grade.id") foreach { gradeId =>
       val grade = entityDao.get(classOf[Grade], gradeId)
       query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)
@@ -228,7 +228,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     val project = getProject
     val natures = codeService.get(classOf[TeachingNature]).sortBy(_.code)
     val tags = codeService.get(classOf[CourseTag]).sortBy(_.code)
-    val grade = entityDao.search(OqlBuilder.from(classOf[Grade], "g").where("g.beginOn>:now and g.project=:project", LocalDate.now, project)).head
+    val grade = entityDao.get(classOf[Grade], getLongId("grade"))
     setting.listeners = List(ForeignerListener(entityDao), new CourseJournalImportListener(entityDao, grade, natures, tags))
   }
 

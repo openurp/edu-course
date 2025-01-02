@@ -23,13 +23,13 @@ import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.EmsApp
+import org.beangle.ems.app.{EmsApi, EmsApp}
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
 import org.beangle.template.freemarker.ProfileTemplateLoader
-import org.beangle.web.action.annotation.response
-import org.beangle.web.action.view.{Stream, View}
+import org.beangle.webmvc.annotation.response
 import org.beangle.webmvc.support.action.EntityAction
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.Course
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{Project, User}
@@ -37,8 +37,9 @@ import org.openurp.edu.clazz.domain.ClazzProvider
 import org.openurp.edu.clazz.model.Clazz
 import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
-import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper, EmsUrl, LessonDesignDocParser}
+import org.openurp.edu.course.web.helper.{ClazzPlanHelper, ClazzProgramHelper, LessonDesignDocParser}
 import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
+import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.TeacherSupport
 
 import java.io.File
@@ -115,7 +116,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     }
     put("program", program)
     val project = program.clazz.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward()
   }
 
@@ -129,7 +130,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     put("schedule", ScheduleDigestor.digest(clazz, ":day :units(:time) :weeks :room"))
     put("program", program)
     val project = program.clazz.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward()
   }
 
@@ -256,7 +257,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     put("clazz", clazz)
     put("syllabus", syllabus)
     val project = design.program.clazz.project
-    ProfileTemplateLoader.setProfile(s"${project.school.id}/${project.id}")
+    ProjectProfile.set(project)
     forward("/org/openurp/edu/course/web/components/program/designReport")
   }
 
@@ -264,7 +265,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     val id = getLongId("design")
     val clazzId = getLongId("clazz")
     val design = entityDao.get(classOf[LessonDesign], id)
-    val url = EmsUrl.url(s"/program/revise/designReport?design.id=${id}&clazz.id=${clazzId}")
+    val url = EmsApi.url(s"/program/revise/designReport?design.id=${id}&clazz.id=${clazzId}")
     val pdf = File.createTempFile("doc", ".pdf")
     val options = new PrintOptions
     SPDConverter.getInstance().convert(URI.create(url), pdf, options)
@@ -320,7 +321,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
           businessLogger.info(s"导入教案:${program.clazz.course.name} 第${index}次课", design.id, Map("program" -> program.id.toString))
           redirect("designInfo", s"design.id=${design.id}&editable=1", "识别完成，请核对")
         } else {
-          addError("文件解析错误，请检查是否符合模板要求:"+rs._2)
+          addError("文件解析错误，请检查是否符合模板要求:" + rs._2)
           forward("importSetting")
         }
       case None =>
