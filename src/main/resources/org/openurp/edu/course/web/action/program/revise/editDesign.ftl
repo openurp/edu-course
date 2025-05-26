@@ -10,7 +10,7 @@
   [/#if]
   [@b.form action="!saveDesign" theme="list" onsubmit="validateSection" title="第${design.idx}次课的教案"]
     [#if otherDesigns?size>0]
-    [@b.select name="from.id" label="复制自" items=otherDesigns required="false" value=fromDesign! option=r"${item.program.clazz.crn} ${item.program.writer.name}" onchange="copyFrom(this.value);"/]
+    [@b.select name="from.id" label="复制自" items=otherDesigns required="false" value=fromDesign! option=r"${item.program.clazz.semester.schoolYear} ${item.program.clazz.semester.name}学期 ${item.program.clazz.crn} ${item.program.clazz.course.name} ${item.program.writer.name}" onchange="copyFrom(this.value);" style="width:400px;"/]
     [/#if]
     [@b.textfield name="design.subject" label="教学主题" required="true" value=design.subject! style="width:600px"/]
     [@b.textarea name="design.target" label="教学目标" required="false" value=design.get('target')! style="width:600px" rows="3" maxlength="4000"/]
@@ -38,7 +38,8 @@
       function toggleSection(ele){
         var show = jQuery("input[name='displayMore']:checked").val() == '1';
         var ol = jQuery("input[name='displayMore']").parents("ol");
-        for(var i=7+${minSection}*5; i < 7+10*5;i++){
+        var headLines=[#if otherDesigns?size>0]8[#else]7[/#if];
+        for(var i=headLines+${minSection}*5; i < (headLines+10*5);i++){
           if(show){
             ol.children("li:nth("+i+")").show();
           }else{

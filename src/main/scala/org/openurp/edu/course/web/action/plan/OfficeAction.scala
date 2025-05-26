@@ -66,7 +66,8 @@ class OfficeAction extends RestfulAction[ClazzPlan], ProjectSupport {
     if (offices.nonEmpty) {
       query.where("clazzPlan.office in(:offices)", offices)
     }
-    query.where("clazzPlan.reviewer.code=:reviewerCode", Securities.user)
+    //有可能没有指定具体的教研室主任
+    //query.where("clazzPlan.reviewer.code=:reviewerCode", Securities.user)
     put("locales", Map(Locales.chinese -> "中文", Locales.us -> "English"))
     query
   }

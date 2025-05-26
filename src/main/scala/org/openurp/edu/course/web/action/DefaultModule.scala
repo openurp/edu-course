@@ -20,11 +20,12 @@ package org.openurp.edu.course.web.action
 import org.beangle.commons.cdi.BindModule
 import org.openurp.edu.clazz.domain.DefaultClazzProvider
 import org.openurp.edu.course.service.impl.{CourseTaskServiceImpl, DefaultNewCourseApplyService, SyllabusServiceImpl}
+import org.openurp.edu.course.web.action.profile.DepartAction
 
 class DefaultModule extends BindModule {
 
   override protected def binding(): Unit = {
-    bind(classOf[admin.DepartAction], classOf[admin.TaskAction])
+    bind(classOf[admin.TaskAction])
     bind(classOf[admin.DirectorAction], classOf[admin.JournalAction])
     bind(classOf[admin.NewCourseApplyAction], classOf[admin.NewCourseAuditAction])
     bind(classOf[admin.AwardAction], classOf[admin.SettingAction])
@@ -36,6 +37,7 @@ class DefaultModule extends BindModule {
     bind(classOf[plan.AuditAction], classOf[plan.DepartAction])
 
     bind(classOf[profile.ReviseAction], classOf[profile.InfoAction])
+    bind(classOf[DepartAction])
 
     bind(classOf[program.ReviseAction], classOf[program.DepartAction])
     bind(classOf[program.OfficeAction])
@@ -47,6 +49,8 @@ class DefaultModule extends BindModule {
     bind(classOf[DefaultNewCourseApplyService])
 
     bind(classOf[experiment.DepartAction], classOf[experiment.NoneExpAction])
+
+    bind(classOf[assess.CourseAction])
 
     bind(classOf[DefaultClazzProvider])
   }

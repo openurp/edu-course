@@ -15,7 +15,7 @@
        [#if taskCourses?size>0]
        <div class="card card-info card-primary card-outline">
          <div class="card-header" id="stat_header_1">
-          <h5 class="mb-0">
+           <h5 class="mb-0">
               <button class="btn btn-link" data-toggle="collapse" data-target="#stat_body_1" aria-expanded="true" aria-controls="stat_body_1" style="padding: 0;">
                 我的修订任务
               </button>
@@ -29,7 +29,7 @@
                 <i class="fas fa-paperclip"></i>中文
               </a>
               [/#if]
-            </h5>
+           </h5>
          </div>
          <div id="stat_body_1" class="collapse show" aria-labelledby="stat_header_1" data-parent="#accordion">
            <div class="card-body" style="padding-top: 0px;">

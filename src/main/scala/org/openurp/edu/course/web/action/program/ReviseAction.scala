@@ -23,10 +23,10 @@ import org.beangle.commons.lang.Strings
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
-import org.beangle.ems.app.{EmsApi, EmsApp}
+import org.beangle.ems.app.EmsApp.path
 import org.beangle.ems.app.web.WebBusinessLogger
+import org.beangle.ems.app.{Ems, EmsApi, EmsApp}
 import org.beangle.security.Securities
-import org.beangle.template.freemarker.ProfileTemplateLoader
 import org.beangle.webmvc.annotation.response
 import org.beangle.webmvc.support.action.EntityAction
 import org.beangle.webmvc.view.{Stream, View}
@@ -42,7 +42,7 @@ import org.openurp.edu.schedule.service.{LessonSchedule, ScheduleDigestor}
 import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.TeacherSupport
 
-import java.io.File
+import java.io.{ByteArrayInputStream, File}
 import java.net.URI
 import java.time.Instant
 
@@ -157,14 +157,23 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       put("fromDesign", fromDesign)
     }
     val q = OqlBuilder.from(classOf[LessonDesign], "d")
-    q.where("d.program.clazz.course=:course", program.clazz.course)
-    q.where("d.idx = :idx", design.idx)
-    q.where("d.program.clazz.semester=:semester", program.clazz.semester)
     q.where("d.program.clazz.project=:project", program.clazz.project)
+    q.where("d.idx = :idx", design.idx)
+    q.where("d.program.clazz.course=:course", program.clazz.course)
+    q.where("d.program.clazz.semester=:semester", program.clazz.semester)
     if (design.persisted) {
       q.where("d.id!=:me", design.id)
     }
-    val otherDesigns = entityDao.search(q)
+    val otherDesigns = entityDao.search(q).toBuffer
+
+    //自己编写的历史教案，或者同课程其他教案
+    val q2 = OqlBuilder.from(classOf[LessonDesign], "d")
+    q2.where("d.program.clazz.project=:project", program.clazz.project)
+    q2.where("d.idx = :idx", design.idx)
+    q2.where("d.program.clazz.semester.beginOn <:beginOn", program.clazz.semester.beginOn)
+    q2.where("(d.program.clazz.course=:course or d.program.writer.code=:me)", program.clazz.course, Securities.user)
+    otherDesigns.addAll(entityDao.search(q2))
+
     put("otherDesigns", otherDesigns)
     put("design", design)
     put("program", program)
@@ -302,9 +311,10 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
     put("program", program)
     put("idx", index)
 
+    val teacher = getTeacher
     get("attachment", classOf[Part]) match
       case Some(part) =>
-        val rs = LessonDesignDocParser.parse(part.getInputStream)
+        val rs = new LessonDesignDocParser().parse(part.getInputStream)
         if (rs._1.nonEmpty) {
           val design =
             program.get(index) match
@@ -317,11 +327,28 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
                 program.designs.addOne(d)
                 d
           ClazzProgramHelper.updateStatInfo(program)
+
+          val blob = EmsApp.getBlobRepository(true)
+          rs._2.foreach { doc =>
+            doc.images foreach { (name, data) =>
+              val meta = blob.upload(s"/course/program/${program.id}/${design.id}/",
+                new ByteArrayInputStream(data), name, teacher.code + " " + teacher.name)
+              design.sections foreach { section =>
+                var path = blob.path(meta.filePath).get
+                path = path.substring(Ems.base.length)
+                section.summary = section.summary.replaceAll(name, path)
+                section.details = section.details.replaceAll(name, path)
+                design.homework foreach { hw =>
+                  design.homework = Some(hw.replaceAll(name, path))
+                }
+              }
+            }
+          }
           entityDao.saveOrUpdate(design)
           businessLogger.info(s"导入教案:${program.clazz.course.name} 第${index}次课", design.id, Map("program" -> program.id.toString))
           redirect("designInfo", s"design.id=${design.id}&editable=1", "识别完成，请核对")
         } else {
-          addError("文件解析错误，请检查是否符合模板要求:" + rs._2)
+          addError("文件解析错误，请检查是否符合模板要求:" + rs._3)
           forward("importSetting")
         }
       case None =>

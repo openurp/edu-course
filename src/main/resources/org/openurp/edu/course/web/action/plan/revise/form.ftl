@@ -20,10 +20,10 @@
     </li>
     [/#if]
     <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中复制，后修改...</a>
+      <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">从上次授课计划中复制，后修改...&nbsp;&nbsp;&nbsp;&nbsp;</a>
       <div class="dropdown-menu">
         [#list lastPlans as p]
-          [@b.a href="!edit?clazz.id=${clazz.id}&copyFrom.id=${p.id}" class="nav-link" onclick="return bg.Go(this,null,'复制后仍需要进行保存或提交，确认复制?');" ] ${p.semester.schoolYear} ${p.semester.name} ${p.clazz.crn} ${(p.writer.name)!}[/@]
+          [@b.a href="!edit?clazz.id=${clazz.id}&copyFrom.id=${p.id}" class="nav-link" onclick="return bg.Go(this,null,'复制后仍需要进行保存或提交，确认复制?');" ] ${p.semester.schoolYear} ${p.semester.name} ${p.clazz.crn} [#if plan.clazz.course!=p.clazz.course]${p.clazz.course.name}[/#if] ${(p.writer.name)!}[/@]
         [/#list]
       </div>
     </li>

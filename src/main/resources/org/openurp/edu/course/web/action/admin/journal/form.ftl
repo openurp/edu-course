@@ -1,10 +1,11 @@
 [#ftl]
 [@b.head/]
-[@b.toolbar title="修改课程"]bar.addBack();[/@]
-  [@b.form action=b.rest.save(journal) theme="list" onsubmit="validCreditHour"]
+[@b.toolbar title="修改课程信息"]bar.addBack();[/@]
+  [@b.form action=b.rest.save(journal) theme="list" onsubmit="validCreditHour" name="journalForm"]
     [@b.field  label="课程"]
        ${journal.course.code!} ${journal.course.name!} ${journal.course.defaultCredits!}学分 ${journal.creditHours}学时
     [/@]
+    [@b.field label="生效日期"]${journal.beginOn?string}[/@]
     [#if departments?size>2]
       [@b.textfield name="journal.name" label="名称" value=journal.name! required="true" maxlength="100"/]
       [@b.textfield name="journal.enName" label="英文名" value=journal.enName! maxlength="200" style="width:500px"/]
@@ -34,15 +35,30 @@
     [/@]
     [/#if]
     [@b.radios name="journal.examMode.id" label="考核方式" value=journal.examMode! required="true" items=examModes /]
-    [@b.select name="journal.beginOn" label="生效日期" value=journal.beginOn?string required="true"  items=grades empty="..."/]
     [@b.checkboxes name="tag.id" label="课程标签" values=journal.tags! items=tags  required="false" /]
 
     [@b.formfoot]
-      [@b.reset/]&nbsp;&nbsp;[@b.submit value="action.submit"/]
+      [@b.reset/]&nbsp;&nbsp;
+      [#if grade?? && grade.beginOn != journal.beginOn]
+        <input type="hidden" name="grade.id" value="${grade.id}"/>
+        <input type="hidden" name="clone" value="1"/>
+        [@b.submit value="复制后编辑"/]
+      [#else]
+        [@b.submit value="action.submit"/]
+      [/#if]
     [/@]
   [/@]
 <script>
-   function validCreditHour(form){
+   [#if grade?? && grade.beginOn != journal.beginOn]
+     var form = document.journalForm;
+     jQuery("#journalForm input:visible").attr('disabled', true);
+     jQuery("#journalForm select").attr('disabled', true);
+     form.action="${b.url('!edit?id='+journal.id)}"
+     function validCreditHour(form){
+       return true;
+     }
+   [#else]
+    function validCreditHour(form){
       var creditHours = "${journal.creditHours}";
       if(form['journal.creditHours']) creditHours = form['journal.creditHours'].value;
       [#if teachingNatures?size>0]
@@ -59,6 +75,7 @@
       [#else]
       return true;
       [/#if]
-   }
+    }
+   [/#if]
 </script>
 [@b.foot/]

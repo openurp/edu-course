@@ -47,11 +47,13 @@
       [@display section.summary/]
       </td>
     </tr>
+    [#if section.details?length>0]
     <tr>
       <td colspan="3"><span class="title-left">教学过程设计（包括教学方法与手段、学生学习活动、教师支持活动等）：</span><br>
       [@display section.details/]
       </td>
     </tr>
+    [/#if]
     [/#list]
 
     <tr><td>课后作业</td><td colspan="2">[@multi_line_p design.homework/]</td></tr>

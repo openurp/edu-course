@@ -1,0 +1,27 @@
+[#ftl]
+[@b.head/]
+[@b.grid items=tasks var="task"]
+  [@b.gridbar]
+    bar.addItem("${b.text("action.modify")}",action.edit());
+    bar.addItem("批量下载",action.multi('batchDownload','下载大纲数量较多时，等待时间较长，确定下载?',null,false));
+  [/@]
+  [@b.row]
+    [@b.boxcol /]
+    [@b.col width="10%" property="course.code" title="代码"/]
+    [@b.col width="20%" property="course.name" title="名称"][@b.a href="/profile/info/${task.course.id}" target="_blank"]${task.course.name}[/@][/@]
+    [@b.col width="5%" property="course.defaultCredits" title="学分"/]
+    [@b.col width="10%" property="course.creditHours" title="学时"]
+      ${task.course.creditHours}
+      [#if task.course.hours?size>1]
+        ([#list task.course.hours?sort_by(['nature','code']) as ch]${ch.creditHours}[#if ch_has_next]+[/#if][/#list])
+      [/#if]
+    [/@]
+    [@b.col width="15%" property="department.name" title="所属院系"/]
+    [@b.col width="15%" property="director.name" title="负责人"/]
+    [@b.col width="15%" property="courseType.name" title="课程类型"/]
+    [@b.col width="15%" title="简介/大纲"]
+      [@b.a href="!edit?id="+task.id title="点击可以维护课程简介与大纲"][#if hasProfileCourses?seq_contains(task.course.id)]有[#else]--[/#if]/[#if hasSyllabusCourses?seq_contains(task.course.id)]有[#else]--[/#if][/@]
+    [/@]
+  [/@]
+  [/@]
+[@b.foot/]

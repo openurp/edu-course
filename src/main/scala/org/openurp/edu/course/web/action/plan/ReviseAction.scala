@@ -24,7 +24,7 @@ import org.beangle.doc.core.PrintOptions
 import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.EmsApi
 import org.beangle.ems.app.web.WebBusinessLogger
-import org.beangle.template.freemarker.ProfileTemplateLoader
+import org.beangle.security.Securities
 import org.beangle.webmvc.support.action.EntityAction
 import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.hr.model.Teacher
@@ -145,22 +145,39 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     plan.office foreach { o =>
       plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
     }
+    val q1 = OqlBuilder.from(classOf[ClazzPlan], "p")
+    q1.where("p.writer.code=:me", Securities.user)
+    q1.where("p.semester.beginOn < :beginOn", semester.beginOn)
+    val myHistoryPlans = entityDao.search(q1)
+    //自己编写的计划中，每个课程、每个学期的只保留版本
+    val myPlans = myHistoryPlans.groupBy(x => s"${x.writer.id}_${x.semester.beginOn}").map(x => x._2.head)
+
     val q = OqlBuilder.from(classOf[ClazzPlan], "p")
     q.where("p.clazz.course=:course", clazz.course)
     q.where("p.semester.beginOn <=:beginOn", semester.beginOn)
+
+    if (plan.persisted) q.where("p.id != :pId", plan.id)
     val historyPlans = entityDao.search(q)
     if (historyPlans.nonEmpty) {
-      val lastBeginOn = historyPlans.map(_.semester.beginOn).toSet.max
-      //每个人只选一个
-      val lastPlans = historyPlans.filter(_.semester.beginOn == lastBeginOn).groupBy(_.writer).map(_._2.head)
-      put("lastPlans", lastPlans)
+      //同课程的历史计划中，每个人每个学期保留一个版本
+      val otherHistoryPlans = historyPlans.groupBy(x => s"${x.writer.id}_${x.semester.beginOn}").map(x => x._2.head)
+      val lastPlans = Collections.newSet[ClazzPlan]
+      lastPlans.addAll(myPlans)
+      lastPlans.addAll(otherHistoryPlans)
+      put("lastPlans", lastPlans.toBuffer.sortBy(_.semester.beginOn).reverse)
+
+      //同课程，通过的计划才能沿用
       val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
       if (!plan.persisted) {
-        val lastPassedPlans = historyPlans.filter(x => x.semester.beginOn == lastBeginOn && reuses.contains(x.status)).groupBy(_.writer).map(_._2.head)
-        put("lastPassedPlans", lastPassedPlans)
+        val passed = otherHistoryPlans.filter(x => reuses.contains(x.status))
+        if (passed.nonEmpty) {
+          val lastBeginOn = passed.map(_.semester.beginOn).toSet.max
+          val lastPassedPlans = historyPlans.filter(x => x.semester.beginOn == lastBeginOn && reuses.contains(x.status)).groupBy(_.writer).map(_._2.head)
+          put("lastPassedPlans", lastPassedPlans)
+        }
       }
     } else {
-      put("lastPlans", List.empty)
+      put("lastPlans", myPlans.toBuffer.sortBy(_.semester.beginOn).reverse)
     }
     forward()
   }
@@ -297,7 +314,8 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     //课程负责人
     if (isDirector) {
       val helper = new ClazzPlanHelper(entityDao)
-      val clzs = helper.getCourseTaskClazzes(tasks.head).filter(_.id != clazz.id)
+      //找到同一个修订任务中对应的教师非空的其他任务
+      val clzs = helper.getCourseTaskClazzes(tasks.head).filter(x => x.id != clazz.id && x.teachers.nonEmpty)
       val plans = entityDao.findBy(classOf[ClazzPlan], "clazz", clzs).map(x => (x.clazz, x)).toMap
 
       val mySchedule = LessonSchedule.convert(clazz)

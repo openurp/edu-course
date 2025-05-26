@@ -563,6 +563,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     if (isSubmitable(syllabus)) {
       syllabus.status = AuditStatus.Submited
+      if (null == syllabus.writer || syllabus.writer.code != Securities.user) {
+        val me = entityDao.findBy(classOf[User], "code", Securities.user).head
+        syllabus.writer = me
+      }
       entityDao.saveOrUpdate(syllabus)
       businessLogger.info(s"提交课程教学大纲:${syllabus.course.name}", syllabus.id, Map("course" -> syllabus.course.id.toString))
     }
@@ -754,6 +758,10 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department)
     }
     updateState(syllabus)
+    if (null == syllabus.writer || syllabus.writer.code != Securities.user) {
+      val me = entityDao.findBy(classOf[User], "code", Securities.user).head
+      syllabus.writer = me
+    }
     entityDao.saveOrUpdate(syllabus)
     getBoolean("submit") foreach { s =>
       syllabus.status = Submited
@@ -816,7 +824,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case Some(c) => hq.where("s.course.name = :courseName or s.course.cluster=:cluster", course.name, c)
     }
 
-    hq.where("s.semester.beginOn <= :beginOn", semester.beginOn)
+    hq.where("s.semester != :semester", semester)
     val histories = entityDao.search(hq)
 
     put("syllabuses", syllabuses)

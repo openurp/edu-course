@@ -10,7 +10,7 @@
   <td [#if t.endOn??]class="text-muted"[/#if]>${t.department.name}</td>
 [/#macro]
 <div class="container">
-  <h5>${courseTask.code} ${courseTask.name}</h5>
+  <h5>${courseTask.course.code} ${courseTask.name}</h5>
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">基本信息</h4>
@@ -18,7 +18,7 @@
     <table class="infoTable">
       <tr>
         <td class="title" width="20%">代码:</td>
-        <td class="content">${courseTask.code}</td>
+        <td class="content">${courseTask.course.code}</td>
         <td class="title" width="20%">名称:</td>
         <td class="content">${courseTask.name}</td>
       </tr>

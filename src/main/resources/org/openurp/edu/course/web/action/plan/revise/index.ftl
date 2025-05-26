@@ -23,7 +23,7 @@
             大纲缺失，请先修订
           [/#if]
           [#if plans.get(clazz)??]
-            [@b.a href="!report?plan.id="+plans.get(clazz).id target="_blank"]预览[/@]
+            [@b.a href="!report?plan.id="+plans.get(clazz).id target="_blank"]预览<span class="text-muted">(${plans.get(clazz).writer.name})</span>[/@]
             [@b.a href="!pdf?plan.id="+plans.get(clazz).id target="_blank"]下载PDF[/@]
           [/#if]
         [/@]

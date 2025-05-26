@@ -32,7 +32,7 @@ class StatHelper(entityDao: EntityDao) {
     val clazzQuery = OqlBuilder.from(classOf[Clazz], "c")
     clazzQuery.where("c.project=:project",course.project)
     clazzQuery.where("c.course=:course", course)
-    clazzQuery.where("c.semester.beginOn > :yearBefore", LocalDate.now().minusYears(10))
+    //clazzQuery.where("c.semester.beginOn > :yearBefore", LocalDate.now().minusYears(10))
     val clazzes = entityDao.search(clazzQuery)
     val clazzInfos = clazzes.groupBy(x => (x.course, x.semester, x.teachDepart))
       .map(x => ClazzInfo(x._1._1, x._1._2, x._1._3, collectTeachers(x._2), x._2.size))

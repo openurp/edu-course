@@ -26,8 +26,8 @@ import org.beangle.doc.transfer.exporter.ExportContext
 import org.beangle.doc.transfer.importer.ImportSetting
 import org.beangle.doc.transfer.importer.listener.ForeignerListener
 import org.beangle.webmvc.annotation.response
-import org.beangle.webmvc.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.{CourseDirector, TeachingOffice}
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.{AuditStatus, Department, Project, Semester}
@@ -73,7 +73,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
     val semester = entityDao.get(classOf[Semester], getIntId("courseTask.semester"))
     get("syllabus_status").foreach {
       case "1" => query.where(s"exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
-        s" and s.semester=courseTask.semester and s.status != :draft)", AuditStatus.Draft)
+        s" and :date between s.beginOn and s.endOn and s.status != :draft)", semester.beginOn.plusDays(30), AuditStatus.Draft)
       case "0" =>
         query.where("courseTask.syllabusRequired = true")
         query.where(s"not exists(from ${classOf[Syllabus].getName} s where s.course=courseTask.course" +
@@ -138,7 +138,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
     given project: Project = getProject
 
     val semester = entityDao.get(classOf[Semester], getIntId("courseTask.semester"))
-    courseTaskService.statTask(project, semester)
+    courseTaskService.initTask(project, semester)
     redirect("search", "初始化成功")
   }
 

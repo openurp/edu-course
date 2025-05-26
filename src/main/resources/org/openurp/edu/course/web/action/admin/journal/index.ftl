@@ -1,7 +1,7 @@
 [#ftl]
+[@b.head/]
 [@b.toolbar title="课程信息维护"]
 [/@]
-[@b.head/]
 <div class="search-container">
   <div class="search-panel">
     [@b.form name="journalSearchForm" action="!search" target="journallist" title="ui.searchForm" theme="search"]

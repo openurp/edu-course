@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openurp.edu.course.web.action.admin
+package org.openurp.edu.course.web.action.profile
 
 import jakarta.servlet.http.Part
 import org.beangle.commons.activation.MediaTypes
@@ -25,30 +25,30 @@ import org.beangle.commons.lang.Strings
 import org.beangle.commons.logging.Logging
 import org.beangle.commons.net.http.HttpUtils.followRedirect
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
-import org.beangle.data.model.Entity
 import org.beangle.ems.app.{Ems, EmsApp}
 import org.beangle.security.Securities
 import org.beangle.webmvc.annotation.{mapping, param}
 import org.beangle.webmvc.support.ActionSupport
 import org.beangle.webmvc.support.action.EntityAction
 import org.beangle.webmvc.view.{Stream, View}
-import org.openurp.base.edu.model.{Course, CourseProfile, TeachingOffice}
+import org.openurp.base.edu.model.{BookAdoption, Course, CourseProfile, TeachingOffice}
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature, CourseType}
-import org.openurp.edu.clazz.model.Clazz
-import org.openurp.edu.course.model.SyllabusDoc
+import org.openurp.edu.course.model.{CourseTask, SyllabusDoc}
 import org.openurp.edu.course.service.SyllabusService
 import org.openurp.edu.course.web.helper.StatHelper
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{File, FileOutputStream, InputStream, OutputStream}
 import java.net.URLConnection
-import java.time.{Instant, LocalDate}
+import java.time.Instant
 import java.util.Locale
 
-class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, Logging {
+class DepartAction extends ActionSupport, EntityAction[CourseTask], ProjectSupport, Logging {
   var entityDao: EntityDao = _
   var syllabusService: SyllabusService = _
+
+  override def simpleEntityName: String = "task"
 
   def index(): View = {
     given project: Project = getProject
@@ -58,41 +58,29 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, 
     put("courseNatures", getCodes(classOf[CourseNature]))
     put("teachingOffices", entityDao.getAll(classOf[TeachingOffice])) //FIXME for teachingGroup missing project
     put("departments", getDeparts)
-    put("project", getProject)
+    put("project", project)
+    put("semester", getSemester)
     forward()
   }
 
   def search(): View = {
     val query = getQueryBuilder
-    val courses = entityDao.search(query)
+    val tasks = entityDao.search(query)
+    val courses = tasks.map(_.course).toSet
     val statHelper = new StatHelper(entityDao)
     put("hasProfileCourses", statHelper.hasProfile(courses))
     put("hasSyllabusCourses", statHelper.hasSyllabus(courses))
-    put("courses", courses)
+    put("tasks", tasks)
     forward()
   }
 
-  protected override def getQueryBuilder: OqlBuilder[Course] = {
+  protected override def getQueryBuilder: OqlBuilder[CourseTask] = {
     given project: Project = getProject
 
     val builder = super.getQueryBuilder
-    builder.where("course.department in(:departs)", getDeparts)
-    builder.where(simpleEntityName + ".project = :project", getProject)
-    addTemporalOn(builder, Some(true))
-    val hasClazz = getBoolean("hasClazz")
-    val semesterId = getInt("semester.id")
-    hasClazz foreach {
-      case true =>
-        semesterId match {
-          case Some(sid) => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
-          case None => builder.where("exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
-        }
-      case false =>
-        semesterId match {
-          case Some(sid) => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course and clz.semester.id=:semesterId)", sid)
-          case None => builder.where("not exists(from " + classOf[Clazz].getName + " clz where clz.course=course)")
-        }
-    }
+    builder.where("task.department in(:departs)", getDeparts)
+    builder.where("task.course.project = :project", getProject)
+
     getBoolean("hasProfile") foreach {
       case true => builder.where("exists(from " + classOf[CourseProfile].getName + " clz where clz.course=course)")
       case false => builder.where("not exists(from " + classOf[CourseProfile].getName + " clz where clz.course=course)")
@@ -104,49 +92,41 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, 
     builder
   }
 
-  private def addTemporalOn[T <: Entity[_]](builder: OqlBuilder[T], active: Option[Boolean]): OqlBuilder[T] = {
-    active.foreach { active =>
-      if (active) {
-        builder.where(
-          builder.alias + ".beginOn <= :now and (" + builder.alias + ".endOn is null or " + builder.alias + ".endOn >= :now)",
-          LocalDate.now())
-      } else {
-        builder.where(
-          "not (" + builder.alias + ".beginOn <= :now and (" + builder.alias + ".endOn is null or " + builder.alias + ".endOn >= :now))",
-          LocalDate.now())
-      }
-    }
-    builder
-  }
-
   @mapping(value = "{id}/edit")
   def edit(@param("id") id: String): View = {
-    val course = entityDao.get(classOf[Course], id.toLong)
+    val task = entityDao.get(classOf[CourseTask], id.toLong)
+    val course = task.course
     val profile = getProfile(course) match {
       case Some(p) => p
       case None => val cp = new CourseProfile
         cp.course = course
         cp
     }
+    put("project", course.project)
     put("profile", profile)
     put("course", course)
+    put("task", task)
+    put("semester", task.semester)
     val syllabusQuery = OqlBuilder.from(classOf[SyllabusDoc], "s")
     syllabusQuery.where("s.course = :course", course)
     syllabusQuery.orderBy("s.semester.beginOn desc")
     syllabusQuery.limit(1, 1)
     put("syllabuses", entityDao.search(syllabusQuery))
+    put("bookAdoptions", BookAdoption.values.map(x => (x.id, x.name)).toMap)
     put("Ems", Ems)
     forward()
   }
 
   @mapping(value = "{id}", method = "put")
   def update(@param("id") id: String): View = {
-    val course = entityDao.get(classOf[Course], id.toLong)
+    val task = entityDao.get(classOf[CourseTask], id.toLong)
+    val course = task.course
     val profile = getProfile(course).getOrElse(new CourseProfile)
     val user = entityDao.findBy(classOf[User], "code", List(Securities.user)).headOption
     profile.course = course
     if (null == profile.department) profile.department = course.department
-    if (null == profile.beginOn) profile.beginOn = LocalDate.now
+    if (null == profile.semester) profile.semester = task.semester
+    if (null == profile.beginOn) profile.beginOn = task.semester.beginOn
     populate(profile, "profile")
     profile.updatedAt = Instant.now
     profile.writer = user
@@ -180,9 +160,10 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, 
   }
 
   def batchDownload(): View = {
-    val courseIds = getLongIds("course")
+    val taskIds = getLongIds("task")
+    val courses = entityDao.find(classOf[CourseTask], taskIds).map(_.course)
     val query = OqlBuilder.from(classOf[SyllabusDoc], "s")
-    query.where("s.course.id in(:courseIds)", courseIds)
+    query.where("s.course in(:courses)", courses)
     query.where("not exists(from " + classOf[SyllabusDoc].getName + " s2 where s2.course=s.course and s2.updatedAt>s.updatedAt)")
     val docs = entityDao.search(query)
     val departs = docs.map(_.course.department).distinct
@@ -194,7 +175,7 @@ class DepartAction extends ActionSupport, EntityAction[Course], ProjectSupport, 
     val blob = EmsApp.getBlobRepository(true)
     docs.foreach { doc =>
       blob.url(doc.docPath) foreach { url =>
-        val courseName = doc.course.code// + " " + doc.course.name
+        val courseName = doc.course.code // + " " + doc.course.name
         val fileName = dir.getAbsolutePath + Files./ + courseName + "." + Strings.substringAfterLast(doc.docPath, ".")
         downloading(url.openConnection(), new File(fileName))
         paperCount += 1

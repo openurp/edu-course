@@ -55,7 +55,7 @@
                <tbody>
                [#list departStat as stat]
                 <tr>
-                 <td width="80%">[@b.a href="!search?syllabus.department.id="+stat[0] target="syllabus_list"]${stat[1]}[/@]</td>
+                 <td width="80%">[@b.a href="!search?semester.id=" + semester.id + "&syllabus.department.id="+stat[0] target="syllabus_list"]${stat[1]}[/@]</td>
                  <td width="20%">${stat[2]}</td>
                 </tr>
                 [/#list]

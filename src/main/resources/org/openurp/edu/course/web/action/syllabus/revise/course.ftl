@@ -109,7 +109,7 @@
          <td style="width: 13%;">${syllabus.status}</td>
          <td style="width: 15%;">${syllabus.updatedAt?string('yyyy-MM-dd HH:mm')}</td>
          <td style="width: 20%;">
-           [#if task??]<a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>[/#if]
+           <a href="#" onclick="return copySetting('${syllabus.id}')">复制到..</a>
            [#if task?? && reuse?seq_contains(syllabus.status) && syllabus.endOn?? && syllabus.endOn < semester.endOn]
            [@b.a href="!reuse?syllabus.id=${syllabus.id}&semester.id="+semester.id onclick="return bg.Go(this,null,'确定沿用到该学期？')"]沿用..[/@]
            [/#if]

@@ -26,9 +26,10 @@ import org.beangle.doc.transfer.importer.ImportSetting
 import org.beangle.doc.transfer.importer.listener.ForeignerListener
 import org.beangle.event.bus.{DataEvent, DataEventBus}
 import org.beangle.webmvc.annotation.response
-import org.beangle.webmvc.view.{Stream, View}
 import org.beangle.webmvc.support.action.{ExportSupport, ImportSupport, RestfulAction}
+import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.{Course, CourseJournal, CourseJournalHour}
+import org.openurp.base.edu.service.CourseService
 import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.{CourseTag, ExamMode, TeachingNature}
@@ -36,7 +37,7 @@ import org.openurp.edu.course.web.helper.{CourseJournalImportListener, CourseJou
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.time.LocalDate
+import java.time.Instant
 import scala.collection.SortedMap
 
 /** 课程日志
@@ -44,6 +45,8 @@ import scala.collection.SortedMap
 class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, ExportSupport[CourseJournal], ImportSupport[CourseJournal] {
 
   var databus: DataEventBus = _
+
+  var courseService: CourseService = _
 
   override protected def indexSetting(): Unit = {
     super.indexSetting()
@@ -57,7 +60,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     forward()
   }
 
-  override protected def editSetting(entity: CourseJournal): Unit = {
+  override protected def editSetting(journal: CourseJournal): Unit = {
     given project: Project = getProject
 
     put("tags", codeService.get(classOf[CourseTag]))
@@ -65,12 +68,25 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     put("examModes", getCodes(classOf[ExamMode]))
     put("departments", getDeparts)
 
+    var editJournal = journal
+    getLong("grade.id") foreach { gradeId =>
+      val grade = entityDao.get(classOf[Grade], gradeId)
+      put("grade", grade)
+      if (grade.beginOn != journal.beginOn) {
+        if (getBoolean("clone", false)) {
+          val nj = journal.cloneToGrade(grade)
+          entityDao.saveOrUpdate(nj)
+          editJournal = nj
+        }
+      }
+    }
     val query = OqlBuilder.from(classOf[Grade], "g")
     query.where("g.project=:project", project)
     query.orderBy("g.code desc")
     val grades = entityDao.search(query)
     put("grades", SortedMap.from(grades.map(x => (x.beginOn.toString, x.beginOn.toString)).sortBy(_._1).reverse))
-    super.editSetting(entity)
+    put("journal", editJournal)
+    super.editSetting(editJournal)
   }
 
   override protected def saveAndRedirect(journal: CourseJournal): View = {
@@ -98,35 +114,10 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     journal.tags.clear()
     journal.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
     entityDao.saveOrUpdate(journal)
-
-    //计算journals的结束日期
-    val jq = OqlBuilder.from(classOf[CourseJournal], "j")
-    jq.where("j.course=:course", journal.course)
-    jq.orderBy("j.beginOn")
-    val journals = entityDao.search(jq)
-    if (journals.size > 1) {
-      var i = 0
-      while (i < journals.length - 1) { //最后一个不处理
-        val j = journals(i)
-        val jNext = journals(i + 1)
-        j.endOn = Some(jNext.beginOn.minusMonths(1))
-        i += 1
-      }
-      entityDao.saveOrUpdate(journals)
-    }
-    //last one
-    val last = journals.last
-    if (last.endOn.isEmpty) {
-      val course = entityDao.get(classOf[Course], journal.course.id)
-      if (last.enName.nonEmpty) {
-        course.enName = last.enName
-      }
-      course.name = last.name
-      course.creditHours = last.creditHours
-      entityDao.saveOrUpdate(course)
-      databus.publish(DataEvent.update(course))
-    }
+    val course = journal.course
+    courseService.rebuild(course)
     databus.publish(DataEvent.update(journal))
+    databus.publish(DataEvent.update(course))
     super.saveAndRedirect(journal)
   }
 
