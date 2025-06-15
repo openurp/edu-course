@@ -8,19 +8,32 @@
     .card-header{
       padding:.5rem 1.25rem;
     }
+    table td.title{
+      padding: 0.2rem 0rem;
+      text-align: right;
+      color: #6c757d !important;
+    }
   </style>
   <h5>${course.code} ${course.name}</h5>
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">基本信息</h4>
     </div>
-    <table class="infoTable">
+    <table class="table table-sm" style="table-layout:fixed">
+      <colgroup>
+        <col width="13%"/>
+        <col width="20%"/>
+        <col width="13%"/>
+        <col width="20%"/>
+        <col width="14%"/>
+        <col width="20%"/>
+      </colgroup>
       <tr>
-        <td class="title" width="10%">代码:</td>
+        <td class="title">代码:</td>
         <td class="content">${course.code}</td>
-        <td class="title" width="10%">名称:</td>
+        <td class="title">名称:</td>
         <td class="content">${course.name}</td>
-        <td class="title" width="10%">培养层次:</td>
+        <td class="title">培养层次:</td>
         <td class="content">
           [#list course.levels as level]
             ${level.level.name}
@@ -66,9 +79,9 @@
     <div class="card-header">
       <p class="card-title">课程介绍</p>
     </div>
-    <table class="infoTable">
+    <table class="table table-sm" style="table-layout:fixed">
       <tr>
-        <td class="title" width="10%">课程简介:</td>
+        <td class="title" width="13%">课程简介:</td>
         <td class="content" colspan="3">
           <div style="white-space:break-spaces; word-break:break-all;">${profile.description}</div>
         </td>

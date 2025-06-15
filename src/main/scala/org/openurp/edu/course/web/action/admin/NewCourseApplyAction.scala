@@ -97,7 +97,7 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
       q.where("g.project=:project", project)
       q.where("g.beginOn >:now ", LocalDate.now)
       q.orderBy("g.beginOn ")
-      val beginOn = entityDao.first(q).map(_.beginOn).getOrElse(LocalDate.now)
+      val beginOn = entityDao.first(q).map(_.beginIn.atDay(1)).getOrElse(LocalDate.now)
       apply.beginOn = beginOn
     }
     apply.status = Submited

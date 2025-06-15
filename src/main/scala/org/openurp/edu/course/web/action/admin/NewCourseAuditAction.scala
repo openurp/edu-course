@@ -161,7 +161,7 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
     val categoryCode = apply.category.code
 
     val seqCode = getSeq(apply, 3)
-    s"${departCode}${seqCode}${creditCode}${rankCode}${categoryCode}NEW"
+    s"${departCode}${seqCode}${creditCode}${rankCode}${categoryCode}"
   }
 
   private def getSeq(apply: NewCourseApply, seqLength: Int): String = {

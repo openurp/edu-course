@@ -39,7 +39,6 @@ import org.openurp.edu.course.model.*
 import org.openurp.edu.course.service.CourseTaskService
 import org.openurp.edu.course.web.helper.{SyllabusHelper, SyllabusValidator}
 import org.openurp.edu.schedule.service.LessonSchedule
-import org.openurp.edu.textbook.model.ClazzMaterial
 import org.openurp.starter.web.helper.ProjectProfile
 import org.openurp.starter.web.support.TeacherSupport
 
@@ -98,8 +97,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (get("step").contains("textbook")) {
       put("textbooks", entityDao.getAll(classOf[Textbook]))
       if (syllabus.textbooks.isEmpty) {
-        val materials = entityDao.findBy(classOf[ClazzMaterial], "clazz.course" -> syllabus.course, "clazz.semester" -> syllabus.semester)
-        val books = materials.flatMap(_.books).distinct
+        val clazzes = entityDao.findBy(classOf[Clazz], "course" -> syllabus.course, "semester" -> syllabus.semester)
+        val books = clazzes.flatMap(_.books).distinct
         syllabus.textbooks.addAll(books)
       }
       put("director", courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department))

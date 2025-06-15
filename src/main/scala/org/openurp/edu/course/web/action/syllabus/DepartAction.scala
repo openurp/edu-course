@@ -189,16 +189,19 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
   def stat(): View = {
     val project = getProject
     val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    //需要修订的总数
     val q = OqlBuilder.from[Array[Any]](classOf[CourseTask].getName, "t")
     q.where("t.course.project=:project and t.semester=:semester", project, semester)
     q.where("t.syllabusRequired=true")
-    q.groupBy("t.department.id,t.department.code,t.department.name")
-    q.select("t.department.id,t.department.code,t.department.name,count(*)")
+    q.groupBy("t.department.id,t.department.code,t.department.name,t.department.shortName")
+    q.select("t.department.id,t.department.code,t.department.name,t.department.shortName,count(*)")
     val taskStats = entityDao.search(q)
 
+    println(semester.beginOn.plusDays(30))
     val q2 = OqlBuilder.from[Array[Any]](classOf[Syllabus].getName, "s")
-    q2.where("s.course.project=:project and s.semester=:semester", project, semester)
-    q2.where(s"exists(from ${classOf[CourseTask].getName} ct where ct.course=s.course and ct.semester=s.semester and ct.syllabusRequired=true)")
+    q2.where(":date between s.beginOn and s.endOn", semester.beginOn.plusDays(30))
+    q2.where("s.course.project=:project", project)
+    q2.where(s"exists(from ${classOf[CourseTask].getName} ct where ct.course=s.course and ct.syllabusRequired=true and ct.semester=:semester)", semester)
     q2.groupBy("s.department.id")
     q2.select("s.department.id,count(distinct s.course.id)")
     q2.where("s.status != :status", AuditStatus.Draft)
@@ -207,11 +210,13 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val items = Collections.newBuffer[StatItem]
     taskStats foreach { stat =>
       val entry = Collections.newMap[String, Any]
-      entry.addAll(Map("id" -> stat(0).toString, "code" -> stat(1).toString, "name" -> stat(2).toString))
+      val enName = if null== stat(3) then stat(2) else stat(3)
+      entry.addAll(Map("id" -> stat(0).toString, "code" -> stat(1).toString, "name" -> stat(2).toString, "shortName" -> enName))
       val item = new StatItem
       item.entry = entry
       val s2 = syllabusStats.find(_(0) == stat(0)).map(_.apply(1).asInstanceOf[Number]).getOrElse(0)
-      item.counters = Seq(stat(3).asInstanceOf[Number], s2)
+      println((stat(4).asInstanceOf[Number], s2))
+      item.counters = Seq(stat(4).asInstanceOf[Number], s2)
       items.addOne(item)
     }
 

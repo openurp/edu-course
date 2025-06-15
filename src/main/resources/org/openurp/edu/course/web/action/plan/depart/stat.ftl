@@ -4,7 +4,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="brand">
     <img src="${b.static_url('local','/images/logo.png')}" width="50px"/>
-     [@b.a href="!index"]${project.school.name}·课程教学大纲上传统计[/@]
+     [@b.a href="!index"]${project.school.name}·课程授课计划上传统计[/@]
     </div>
     <ul class="navbar-nav ml-auto">
       <li class="nav-item">
@@ -81,6 +81,7 @@
           }
         },
         [#assign seriesSize=datas?first.counters?size/]
+        [#assign seriesSize=2/]
         series : [
         [#list 0..seriesSize-1 as counter]
           {
@@ -101,7 +102,7 @@
               show: true,
               position:'insideBottom'
             },
-            data:[[#list datas as d][#if counter==0]${displayCounter(d.counters[1])}[#else]${displayCounter(d.counters[0]-d.counters[1])}[/#if][#sep],[/#list]]
+            data:[[#list datas as d][#if counter==0]${displayCounter(d.counters[2])}[#else]${displayCounter(d.counters[0]-d.counters[2])}[/#if][#sep],[/#list]]
           }[#if counter_has_next],[/#if]
         [/#list]
         ]
@@ -123,20 +124,48 @@
       <tr>
         <td>序号</td>
         <td>院系</td>
-        <td>总数</td>
-        <td>已上传</td>
-        <td>完成度</td>
+        <td>总课程数</td>
+        <td>已上传大纲</td>
+        <td>大纲完成度</td>
+        <td>已上传计划</td>
+        <td>计划完成度</td>
       </tr>
     </thead>
     <tbody>
+    [#assign departIdx=1/]
     [#list items as item]
+      [#if item.counters[0]>9]
       <tr>
-        <td>${item_index+1}</td>
+        <td>${departIdx}[#assign departIdx = departIdx +1 /]</td>
         <td>${item.entry['name']}</td>
         <td>${item.counters[0]}</td>
         <td>${item.counters[1]}</td>
-        <td>[#if item.counters[0]==0]--[#else]${(item.counters[1]*1.0/item.counters[0])?string.percent}[/#if]</td>
+        <td>
+          [#if item.counters[0]==0]--[#else]${(item.counters[1]*1.0/item.counters[0])?string.percent}[/#if]
+        </td>
+        <td>${item.counters[2]}</td>
+        <td>
+          [#if item.counters[0]==0]--[#else]${(item.counters[2]*1.0/item.counters[0])?string.percent}[/#if]
+        </td>
       </tr>
+      [/#if]
+    [/#list]
+    [#list items as item]
+      [#if item.counters[0]<10]
+      <tr>
+        <td>${departIdx}[#assign departIdx = departIdx +1 /]</td>
+        <td>${item.entry['name']}</td>
+        <td>${item.counters[0]}</td>
+        <td>${item.counters[1]}</td>
+        <td>
+          [#if item.counters[0]==0]--[#else]${(item.counters[1]*1.0/item.counters[0])?string.percent}[/#if]
+        </td>
+        <td>${item.counters[2]}</td>
+        <td>
+          [#if item.counters[0]==0]--[#else]${(item.counters[2]*1.0/item.counters[0])?string.percent}[/#if]
+        </td>
+      </tr>
+      [/#if]
     [/#list]
     </tbody>
   </table>

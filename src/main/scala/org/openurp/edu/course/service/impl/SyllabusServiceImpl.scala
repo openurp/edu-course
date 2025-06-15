@@ -18,16 +18,16 @@
 package org.openurp.edu.course.service.impl
 
 import org.beangle.data.dao.{EntityDao, OqlBuilder}
+import org.beangle.data.model.pojo.TemporalOn
 import org.beangle.ems.app.EmsApp
-import org.openurp.base.edu.model.{Course, CourseDirector, TeachingOffice}
-import org.openurp.base.hr.model.Teacher
-import org.openurp.base.model.{Department, Semester, User}
+import org.openurp.base.edu.model.Course
+import org.openurp.base.model.{Semester, User}
 import org.openurp.base.service.SemesterService
-import org.openurp.edu.course.model.{CourseTask, SyllabusDoc}
+import org.openurp.edu.course.model.SyllabusDoc
 import org.openurp.edu.course.service.SyllabusService
 
 import java.io.InputStream
-import java.time.{Instant, ZoneId}
+import java.time.Instant
 import java.util.Locale
 
 class SyllabusServiceImpl extends SyllabusService {
@@ -36,32 +36,32 @@ class SyllabusServiceImpl extends SyllabusService {
 
   var validateYears = 4
 
-  override def upload(course: Course, writer: User, data: InputStream, extension: String, locale: Locale, updatedAt: Instant): SyllabusDoc = {
+  override def upload(course: Course, writer: User, data: InputStream, extension: String, locale: Locale, semester: Semester): SyllabusDoc = {
     val blob = EmsApp.getBlobRepository(true)
-
-    val today = updatedAt.atZone(ZoneId.systemDefault()).toLocalDate
     val existed = getLastSyllabusDoc(course, locale, writer)
     val doc = existed.getOrElse(new SyllabusDoc)
     doc.course = course
-    doc.updatedAt = updatedAt
+    doc.updatedAt = Instant.now
     doc.writer = writer
     doc.docLocale = locale
     doc.department = course.department
-    doc.semester = semesterService.get(course.project, today)
+    doc.semester = semester
     if (doc.beginOn == null) {
-      doc.beginOn = today
+      doc.beginOn = semester.beginOn
     }
-    doc.endOn = Some(today.plusYears(validateYears))
     if (doc.docPath != null) {
       blob.remove(doc.docPath)
     }
     val fileName = course.code + "大纲." + extension
-    val meta = blob.upload(s"/course/${course.id}/syllabus/${writer.id}_${today.toString}/",
+    val meta = blob.upload(s"/course/${course.id}/syllabus/${writer.id}_${doc.beginOn.toString}/",
       data, fileName, writer.code + " " + writer.name)
 
     doc.docSize = meta.fileSize
     doc.docPath = meta.filePath
     entityDao.saveOrUpdate(doc)
+    val docs = entityDao.findBy(classOf[SyllabusDoc], "course", course)
+    TemporalOn.calcEndOn(docs)
+    entityDao.saveOrUpdate(docs)
     doc
   }
 

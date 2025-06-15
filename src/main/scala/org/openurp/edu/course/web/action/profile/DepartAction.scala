@@ -139,7 +139,7 @@ class DepartAction extends ActionSupport, EntityAction[CourseTask], ProjectSuppo
       val writer = entityDao.get(classOf[User], writerId.get)
       val syllabus = syllabusService.upload(course, writer, part.getInputStream,
         Strings.substringAfterLast(part.getSubmittedFileName, "."),
-        Locale.SIMPLIFIED_CHINESE, Instant.now)
+        Locale.SIMPLIFIED_CHINESE, task.semester)
       syllabus.status = AuditStatus.Published
       entityDao.saveOrUpdate(syllabus)
     }

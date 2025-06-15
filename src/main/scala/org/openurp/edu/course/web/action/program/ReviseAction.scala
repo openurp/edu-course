@@ -156,22 +156,27 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzProgram] {
       copyTo(fromDesign, design)
       put("fromDesign", fromDesign)
     }
+
+    // 查询本学期不是自己编写的同课程其他教案
     val q = OqlBuilder.from(classOf[LessonDesign], "d")
     q.where("d.program.clazz.project=:project", program.clazz.project)
     q.where("d.idx = :idx", design.idx)
     q.where("d.program.clazz.course=:course", program.clazz.course)
     q.where("d.program.clazz.semester=:semester", program.clazz.semester)
     if (design.persisted) {
-      q.where("d.id!=:me", design.id)
+      q.where("d.id != :designId", design.id)
     }
     val otherDesigns = entityDao.search(q).toBuffer
 
-    //自己编写的历史教案，或者同课程其他教案
+    //自己编写的本学期和历史教案，或者同课程其他教案
     val q2 = OqlBuilder.from(classOf[LessonDesign], "d")
     q2.where("d.program.clazz.project=:project", program.clazz.project)
     q2.where("d.idx = :idx", design.idx)
-    q2.where("d.program.clazz.semester.beginOn <:beginOn", program.clazz.semester.beginOn)
+    q2.where("d.program.clazz.semester.beginOn <= :beginOn", program.clazz.semester.beginOn)
     q2.where("(d.program.clazz.course=:course or d.program.writer.code=:me)", program.clazz.course, Securities.user)
+    if (design.persisted) {
+      q2.where("d.id != :designId", design.id)
+    }
     otherDesigns.addAll(entityDao.search(q2))
 
     put("otherDesigns", otherDesigns)

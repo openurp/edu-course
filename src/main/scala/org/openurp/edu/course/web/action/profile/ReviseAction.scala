@@ -229,7 +229,7 @@ class ReviseAction extends TeacherSupport, EntityAction[CourseProfile], ServletS
       val writer = entityDao.get(classOf[User], writerId.get)
       val doc = syllabusService.upload(course, writer, part.getInputStream,
         Strings.substringAfterLast(part.getSubmittedFileName, "."),
-        Locale.SIMPLIFIED_CHINESE, Instant.now)
+        Locale.SIMPLIFIED_CHINESE, semester)
       doc.status = AuditStatus.Published
       entityDao.saveOrUpdate(doc)
     }

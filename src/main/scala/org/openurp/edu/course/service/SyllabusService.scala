@@ -28,5 +28,5 @@ import java.util.Locale
 
 trait SyllabusService {
 
-  def upload(course: Course, writer: User, data: InputStream, extension: String, locale: Locale, updatedAt: Instant): SyllabusDoc
+  def upload(course: Course, writer: User, data: InputStream, extension: String, locale: Locale, semester: Semester): SyllabusDoc
 }

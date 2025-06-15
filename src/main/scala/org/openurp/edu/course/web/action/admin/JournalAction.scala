@@ -72,7 +72,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     getLong("grade.id") foreach { gradeId =>
       val grade = entityDao.get(classOf[Grade], gradeId)
       put("grade", grade)
-      if (grade.beginOn != journal.beginOn) {
+      if (grade.beginIn.atDay(1) != journal.beginOn) {
         if (getBoolean("clone", false)) {
           val nj = journal.cloneToGrade(grade)
           entityDao.saveOrUpdate(nj)
@@ -84,7 +84,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     query.where("g.project=:project", project)
     query.orderBy("g.code desc")
     val grades = entityDao.search(query)
-    put("grades", SortedMap.from(grades.map(x => (x.beginOn.toString, x.beginOn.toString)).sortBy(_._1).reverse))
+    put("grades", SortedMap.from(grades.map(x => (x.beginIn.atDay(1).toString, x.beginIn.atDay(1).toString)).sortBy(_._1).reverse))
     put("journal", editJournal)
     super.editSetting(editJournal)
   }
@@ -131,7 +131,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     queryByDepart(query, "journal.department")
     getLong("grade.id") foreach { gradeId =>
       val grade = entityDao.get(classOf[Grade], gradeId)
-      query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginOn)
+      query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginIn.atDay(1))
     }
     getBoolean("creditHourStatus") foreach { status =>
       if (status) {
@@ -158,7 +158,7 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     val grade = entityDao.get(classOf[Grade], getLong("grade.id").get)
     val query = OqlBuilder.from(classOf[Course], "c")
     query.where("c.project=:project and c.endOn is null", project)
-    query.where("not exists(from c.journals j where j.beginOn=:beginOn)", grade.beginOn)
+    query.where("not exists(from c.journals j where j.beginOn=:beginOn)", grade.beginIn.atDay(1))
     val courses = entityDao.search(query)
     courses.foreach { c =>
       val j = c.getJournal(grade)

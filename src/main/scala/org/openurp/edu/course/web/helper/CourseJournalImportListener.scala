@@ -46,9 +46,9 @@ class CourseJournalImportListener(entityDao: EntityDao, grade: Grade,
         case None => tr.addFailure("找不到对应的课程", code)
         case Some(course) =>
           val query = OqlBuilder.from(classOf[CourseJournal], "ct")
-          query.where("ct.beginOn=:beginOn", grade.beginOn)
+          query.where("ct.beginOn=:beginOn", grade.beginIn.atDay(1))
           query.where("ct.course =:course", course)
-          val journal = entityDao.search(query).headOption.getOrElse(new CourseJournal(course, grade.beginOn))
+          val journal = entityDao.search(query).headOption.getOrElse(new CourseJournal(course, grade.beginIn.atDay(1)))
           transfer.current = journal
     }
   }

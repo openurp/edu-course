@@ -1,6 +1,10 @@
 [#ftl]
 [@b.head/]
 [@b.toolbar title="授课计划学院管理"]
+  bar.addItem("上传统计","stat()");
+  function stat(){
+    bg.form.submit(document.planSearchForm,"${b.url('!stat')}","main");
+  }
 [/@]
 <div class="search-container">
   <div class="search-panel">

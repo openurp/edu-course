@@ -54,7 +54,7 @@ class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
         case None => ""
         case Some(h) => h.creditHours
     } else if (property == "textbooks") {
-      syllabus.textbooks.map { b => s"${b.name} ${b.author} ${b.press.map(_.name).getOrElse("--")} ${publishDatePattern.format(b.publishedOn)} 版次:第${b.edition}版" }.mkString(";")
+      syllabus.textbooks.map { b => s"${b.name} ${b.author} ${b.press.map(_.name).getOrElse("--")} ${publishDatePattern.format(b.publishedIn.atDay(1))} 版次:第${b.edition}版" }.mkString(";")
     } else if ("uncompleteReason" == property) {
       if (syllabus.complete) then ""
       else SyllabusValidator.validate(syllabus).mkString(";")
