@@ -5,7 +5,7 @@
     [@b.field  label="课程"]
        ${journal.course.code!} ${journal.course.name!} ${journal.course.defaultCredits!}学分 ${journal.creditHours}学时
     [/@]
-    [@b.field label="生效日期"]${journal.beginOn?string}[/@]
+    [@b.field label="生效日期"]${journal.beginOn?string}~${(journal.endOn?string)!}[/@]
     [#if departments?size>2]
       [@b.textfield name="journal.name" label="名称" value=journal.name! required="true" maxlength="100"/]
       [@b.textfield name="journal.enName" label="英文名" value=journal.enName! maxlength="200" style="width:500px"/]
@@ -39,7 +39,7 @@
 
     [@b.formfoot]
       [@b.reset/]&nbsp;&nbsp;
-      [#if grade?? && grade.beginOn != journal.beginOn]
+      [#if grade?? && grade.beginIn != journal.beginOn]
         <input type="hidden" name="grade.id" value="${grade.id}"/>
         <input type="hidden" name="clone" value="1"/>
         [@b.submit value="复制后编辑"/]
@@ -49,7 +49,7 @@
     [/@]
   [/@]
 <script>
-   [#if grade?? && grade.beginOn != journal.beginOn]
+   [#if grade?? && grade.beginIn != journal.beginOn]
      var form = document.journalForm;
      jQuery("#journalForm input:visible").attr('disabled', true);
      jQuery("#journalForm select").attr('disabled', true);

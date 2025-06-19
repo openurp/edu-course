@@ -34,10 +34,10 @@ import org.openurp.base.model.Project
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.{CourseTag, ExamMode, TeachingNature}
 import org.openurp.edu.course.web.helper.{CourseJournalImportListener, CourseJournalPropertyExtractor}
+import org.openurp.edu.program.model.MajorPlanCourse
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.time.Instant
 import scala.collection.SortedMap
 
 /** 课程日志
@@ -56,7 +56,10 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     val departs = getDeparts
     put("departments", departs)
     put("project", project)
-    put("grades", entityDao.findBy(classOf[Grade], "project" -> project).sortBy(_.code).reverse)
+    val grades = entityDao.findBy(classOf[Grade], "project" -> project).sortBy(_.code).reverse
+    val grade = getLong("grade.id").map(id => entityDao.get(classOf[Grade], id)).getOrElse(grades.head)
+    put("grade",grade)
+    put("grades",grades )
     forward()
   }
 
@@ -74,8 +77,9 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
       put("grade", grade)
       if (grade.beginIn.atDay(1) != journal.beginOn) {
         if (getBoolean("clone", false)) {
+          journal.endOn = Some(grade.beginIn.atDay(1).minusDays(1))
           val nj = journal.cloneToGrade(grade)
-          entityDao.saveOrUpdate(nj)
+          entityDao.saveOrUpdate(journal, nj)
           editJournal = nj
         }
       }
@@ -129,8 +133,9 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     val query = super.getQueryBuilder
     queryByDepart(query, "journal.department")
+    var grade: Grade = null
     getLong("grade.id") foreach { gradeId =>
-      val grade = entityDao.get(classOf[Grade], gradeId)
+      grade = entityDao.get(classOf[Grade], gradeId)
       query.where("journal.beginOn <=:beginOn and (journal.endOn is null or journal.endOn >= :beginOn)", grade.beginIn.atDay(1))
     }
     getBoolean("creditHourStatus") foreach { status =>
@@ -143,6 +148,11 @@ class JournalAction extends RestfulAction[CourseJournal], ProjectSupport, Export
     getBoolean("tagStatus") foreach { status =>
       if status then query.where(s"size(journal.tags)>0")
       else query.where(s"size(journal.tags)=0")
+    }
+    getBoolean("planIncluded") foreach { status =>
+      var con = s"exists(from ${classOf[MajorPlanCourse].getName} as mpc where mpc.course=journal.course and mpc.group.plan.program.grade=:grade and mpc.group.plan.program.project=:project)"
+      if !status then con = "not " + con
+      query.where(con, grade, project)
     }
     get("tagName") foreach { tagName =>
       if (Strings.isNotBlank(tagName)) {

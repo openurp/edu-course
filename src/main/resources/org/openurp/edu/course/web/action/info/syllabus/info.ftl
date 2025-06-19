@@ -85,7 +85,7 @@
         <td class="title">教材:</td>
         <td class="content" colspan="3">
         [#list syllabus.textbooks as textbook]
-          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy-MM")} [#if syllabus.docLocale=="zh_CN"]版次:[#else]Edition:[/#if]${(textbook.edition)!}[#sep]<br/>
+          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedIn?string("yyyy-MM")} [#if syllabus.docLocale=="zh_CN"]版次:[#else]Edition:[/#if]${(textbook.edition)!}[#sep]<br/>
         [/#list]
         </td>
       </tr>

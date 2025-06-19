@@ -20,8 +20,8 @@ package org.openurp.edu.course.web.action.admin
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.security.Securities
 import org.beangle.webmvc.annotation.{mapping, param}
-import org.beangle.webmvc.view.View
 import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.view.View
 import org.openurp.base.model.AuditStatus.Submited
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.base.std.model.Grade
@@ -30,7 +30,7 @@ import org.openurp.edu.course.flow.{NewCourseApply, NewCourseApplyHour, NewCours
 import org.openurp.edu.course.service.NewCourseApplyService
 import org.openurp.starter.web.support.ProjectSupport
 
-import java.time.{Instant, LocalDate}
+import java.time.{Instant, LocalDate, YearMonth}
 
 /** 新开课程申请
  */
@@ -95,8 +95,8 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
     if (null == apply.beginOn) { //选择最近一个没有开始的年级
       val q = OqlBuilder.from(classOf[Grade], "g")
       q.where("g.project=:project", project)
-      q.where("g.beginOn >:now ", LocalDate.now)
-      q.orderBy("g.beginOn ")
+      q.where("g.beginIn >:now ", YearMonth.now)
+      q.orderBy("g.beginIn ")
       val beginOn = entityDao.first(q).map(_.beginIn.atDay(1)).getOrElse(LocalDate.now)
       apply.beginOn = beginOn
     }

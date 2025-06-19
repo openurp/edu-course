@@ -39,7 +39,7 @@
       <td class="title">教    材</td>
       <td colspan="3">
         [#list syllabus.textbooks as textbook]
-          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}
+          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedIn?string("yyyy年MM月")} 版次：${(textbook.edition)!}
         [/#list]
       </td>
     </tr>

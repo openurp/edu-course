@@ -27,7 +27,7 @@ ThisBuild / resolvers += Resolver.mavenLocal
 
 val apiVer = "0.44.0"
 val starterVer = "0.3.58"
-val baseVer = "0.4.51-SNAPSHOT"
+val baseVer = "0.4.51"
 val eduCoreVer = "0.3.11"
 
 val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer

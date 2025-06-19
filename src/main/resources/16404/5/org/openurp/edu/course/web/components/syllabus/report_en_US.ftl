@@ -447,7 +447,7 @@ Graduation requirements【${o.title}】：${o.contents}
     [@header_title "（${numSeq[1]}）Textbooks used in the course"/]
       [#if syllabus.textbooks?size>0]
         [#list syllabus.textbooks as textbook]
-          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy-MM")} Edition:${(textbook.edition)!}
+          ${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedIn?string("yyyy-MM")} Edition:${(textbook.edition)!}
         [/#list]
       [#else]
         Using other teaching materials.

@@ -438,7 +438,7 @@
     [@header_title "（一）本课程使用教材"/]
       [#if syllabus.textbooks?size>0]
         [#list syllabus.textbooks as textbook]
-          [@p]${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedOn?string("yyyy年MM月")} 版次：${(textbook.edition)!}[/@]
+          [@p]${textbook.name} ${textbook.author!} ${(textbook.press.name)!} ${textbook.publishedIn?string("yyyy年MM月")} 版次：${(textbook.edition)!}[/@]
         [/#list]
       [#else]
         [@p]使用其他教学资料[/@]
