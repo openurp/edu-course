@@ -183,7 +183,7 @@ object SyllabusValidator {
       }
     }
     //验证实验学时
-    val totalExperimentHours = syllabus.experiments.map(_.creditHours).sum
+    val totalExperimentHours = syllabus.experiments.map(_.experiment.creditHours).sum
     val totalPracticalHours = syllabus.hours.find(_.nature.id == TeachingNature.Practice).map(_.creditHours).getOrElse(0f)
     if (totalExperimentHours > totalPracticalHours) {
       messages += s"实验要求${totalExperimentHours}学时，超过了${totalPracticalHours}总的实践学时，请检查。"

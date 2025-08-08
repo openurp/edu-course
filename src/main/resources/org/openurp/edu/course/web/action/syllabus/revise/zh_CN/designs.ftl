@@ -87,7 +87,7 @@
        }
        if(hasCase){
          var caseCnt =0;
-         for(var i=0; i<=9;i++){
+         for(var i=1; i<=15;i++){
            if(form["case"+i+".name"].value){
              caseCnt +=1;
            }
@@ -98,29 +98,24 @@
          }
        }
        if(hasExperiment){
-         var totalHours = 0;
-         var experimentCnt = 0;
-         var missingHoursExperiments = [];
-         for(var i=0; i<=9;i++){
-           if(form["experiment"+i+".name"].value){
-             var hours = parseFloat(form["experiment"+i+".creditHours"].value||"0");
-             if(hours<=0){
-               missingHoursExperiments.push(i+1);
-             }
-             experimentCnt += 1;
-             totalHours += hours;
+         var experimentIds=[];
+         for(var i=1; i<=15;i++){
+           if(form["experiment"+i+".id"].value){
+             experimentIds.push(form["experiment"+i+".id"].value);
            }
          }
-         if(experimentCnt==0){
+         if(experimentIds.length==0){
            alert("请至少填写一个实验项目");
            return false;
          }
-         if(missingHoursExperiments.length>0){
-           alert("实验项目"+missingHoursExperiments.join(',')+"缺少实验学时");
-           return false;
-         }
+         var totalHours = 0;
          [#assign practicalHours = 0/]
          [#list syllabus.hours as h][#if h.nature.id=9][#assign practicalHours = practicalHours + h.creditHours/][/#if][/#list]
+         $.ajaxSettings.async = false;
+         $.get("${b.url('!experimentCreditHours')}?experiment.ids="+experimentIds.join(","), function(response) {
+           totalHours = Number.parseFloat(response);
+         });
+         $.ajaxSettings.async = true;
          if(totalHours > ${practicalHours}){
             alert("实验项目总学时为"+totalHours+",不应超过课程实践${practicalHours}学时");
             return false;

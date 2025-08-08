@@ -14,12 +14,12 @@
         <p>${design.contents}</p>
         [#if design.hasCase]
         <ul>Cases：
-        [#list syllabus.cases as c]<li>${c.idx+1}:${c.name}</li>[/#list]
+        [#list syllabus.cases as c]<li>${c.idx}:${c.name}</li>[/#list]
         </ul>
         [/#if]
         [#if design.hasExperiment]
         <ul>Experiments：
-        [#list syllabus.experiments as e]<li>${e.idx+1}:${e.name} ${e.creditHours} hours ${e.experimentType.name} ${e.online?string("Online","Offline")}</li>[/#list]
+        [#list syllabus.experiments as e]<li>${e.idx}:${e.experiment.name} ${e.experiment.creditHours} hours ${e.experiment.experimentType.name} ${e.experiment.online?string("Online","Offline")}</li>[/#list]
         </ul>
         [/#if]
       </div>

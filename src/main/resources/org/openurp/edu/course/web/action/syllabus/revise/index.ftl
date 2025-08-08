@@ -36,7 +36,6 @@
              <table class="table table-hover table-sm">
                <tbody>
                [#list taskCourses as course]
-                  [#assign error_msg=""/]
                 <tr>
                  <td>
                    <span style="color:#6c757d;font-size:0.8em">${course.code}</span>
@@ -65,7 +64,6 @@
              <table class="table table-hover table-sm">
                <tbody>
                [#list clazzCourses as course]
-                  [#assign error_msg=""/]
                 <tr>
                  <td>
                    <span style="color:#6c757d;font-size:0.8em">${course.code}</span>
@@ -94,7 +92,6 @@
              <table class="table table-hover table-sm">
                <tbody>
                [#list hisCourses as course]
-                  [#assign error_msg=""/]
                 <tr>
                  <td>
                    <span style="color:#6c757d;font-size:0.8em">${course.code}</span>

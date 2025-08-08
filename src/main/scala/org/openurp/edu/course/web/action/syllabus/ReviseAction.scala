@@ -17,7 +17,7 @@
 
 package org.openurp.edu.course.web.action.syllabus
 
-import org.beangle.commons.collection.Collections
+import org.beangle.commons.collection.{Collections, Properties}
 import org.beangle.commons.lang.{Locales, Strings}
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.doc.core.PrintOptions
@@ -25,10 +25,11 @@ import org.beangle.doc.pdf.SPDConverter
 import org.beangle.ems.app.EmsApi
 import org.beangle.ems.app.web.WebBusinessLogger
 import org.beangle.security.Securities
-import org.beangle.webmvc.annotation.mapping
+import org.beangle.webmvc.annotation.{mapping, response}
 import org.beangle.webmvc.support.action.EntityAction
+import org.beangle.webmvc.support.helper.PopulateHelper
 import org.beangle.webmvc.view.{Status, Stream, View}
-import org.openurp.base.edu.model.{Course, CourseProfile, Major, Textbook}
+import org.openurp.base.edu.model.*
 import org.openurp.base.hr.model.Teacher
 import org.openurp.base.model.*
 import org.openurp.base.model.AuditStatus.Submited
@@ -583,13 +584,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val caseAndExps = getAll("caseAndExperiments", classOf[String]).toSet
     if (caseAndExps.contains("hasCase")) {
       val cases = syllabus.cases.map(x => (x.idx, x)).toMap
-      (0 to 14) foreach { i =>
+      (1 to 15) foreach { i =>
         val name = get(s"case${i}.name", "")
         cases.get(i) match
           case None =>
-            if (Strings.isNotBlank(name)) {
-              syllabus.cases += new SyllabusCase(syllabus, i, name)
-            }
+            if Strings.isNotBlank(name) then syllabus.cases += new SyllabusCase(syllabus, i, name)
           case Some(c) =>
             if Strings.isBlank(name) then syllabus.cases -= c else c.name = name
       }
@@ -599,27 +598,19 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
     if (caseAndExps.contains("hasExperiment")) {
       val experiments = syllabus.experiments.map(x => (x.idx, x)).toMap
-      (0 to 14) foreach { i =>
-        val name = get(s"experiment${i}.name", "")
+      (1 to 15) foreach { i =>
+        val experimentId = getLong(s"experiment${i}.id")
         experiments.get(i) match
           case None =>
-            if (Strings.isNotBlank(name)) {
-              val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
-              val online = getBoolean(s"experiment${i}.online", false)
-              val hours = getFloat(s"experiment${i}.creditHours").getOrElse(0f)
-              syllabus.experiments += new SyllabusExperiment(syllabus, i, name, hours, experimentType, online)
+            if (experimentId.nonEmpty) {
+              val experiment = entityDao.get(classOf[Experiment], experimentId.get)
+              syllabus.experiments += new SyllabusExperiment(syllabus, i, experiment)
             }
           case Some(c) =>
-            if Strings.isBlank(name) then syllabus.experiments -= c
+            if experimentId.isEmpty then syllabus.experiments -= c
             else
-              val experimentType = entityDao.get(classOf[ExperimentType], getInt(s"experiment${i}.experimentType.id", 0))
-              val online = getBoolean(s"experiment${i}.online", false)
-              val hours = getFloat(s"experiment${i}.creditHours").getOrElse(0f)
-              c.name = name
-              c.creditHours = hours
-              c.experimentType = experimentType
-              c.online = online
-
+              val experiment = entityDao.get(classOf[Experiment], experimentId.get)
+              c.experiment = experiment
       }
       design.hasExperiment = true
     } else {
@@ -631,11 +622,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (!syllabus.designs.exists(_.hasExperiment)) {
       syllabus.experiments.clear()
     }
-    var idx = 0
-    syllabus.designs.sortBy(_.idx) foreach { d =>
-      d.idx = idx
-      idx += 1
-    }
+    syllabus.reIndex()
     updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("edit", s"syllabus.id=${syllabus.id}&step=designs", "info.save.success")
@@ -687,6 +674,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val assessment = entityDao.get(classOf[SyllabusAssessment], getLongId("assessment"))
     val syllabus = assessment.syllabus
     syllabus.assessments -= assessment
+    syllabus.reIndex()
     updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
     redirect("assesses", s"syllabus.id=${syllabus.id}", "info.remove.success")
@@ -699,28 +687,42 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   def moveAssess(): View = {
     val assessment = entityDao.get(classOf[SyllabusAssessment], getLongId("assessment"))
     val syllabus = assessment.syllabus
-    val idx = getInt("idx", 1) - 1
+    var idx = getInt("idx", 1)
+    val usualAssessments = syllabus.assessments.filter(_.component.nonEmpty).toBuffer
+    if (idx < 1) then idx = 1
+    else if (idx > usualAssessments.size) idx = usualAssessments.size
+
     assessment.idx = idx
-    syllabus.assessments foreach { a =>
-      if (a.component.nonEmpty) {
-        if (a.idx >= idx && a != assessment) {
-          a.idx += 1
-        }
-      }
+    usualAssessments.subtractOne(assessment)
+
+    var index = 1
+    usualAssessments.sortBy(_.idx) foreach { a =>
+      if index == idx then index += 1
+      a.idx = index
+      index += 1
     }
+    syllabus.reIndex()
     entityDao.saveOrUpdate(syllabus)
     redirect("assesses", s"syllabus.id=${syllabus.id}", "info.save.success")
   }
 
+  /** index 以0开始
+   *
+   * @param syllabus
+   * @param gradeType
+   * @param index
+   * @param componentName
+   * @return
+   */
   private def populateAssessment(syllabus: Syllabus, gradeType: GradeType, index: Int, componentName: Option[String]): SyllabusAssessment = {
     val assessment =
       if componentName.isEmpty then syllabus.getAssessment(gradeType, null).getOrElse(new SyllabusAssessment(syllabus, gradeType, None))
-      else syllabus.getUsualAssessment(index).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
+      else syllabus.getUsualAssessment(index + 1).getOrElse(new SyllabusAssessment(syllabus, gradeType, componentName))
 
     if (!assessment.persisted) {
       syllabus.assessments += assessment
     }
-    assessment.idx = index
+    assessment.idx = if (index == 0) 0 else index + 1
     val prefix = componentName match
       case None => "grade" + gradeType.id
       case Some(n) => "grade" + gradeType.id + "_" + index
@@ -956,6 +958,78 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     } else {
       redirect("course", s"&semester.id=${semester.id}&course.id=${course.id}", "不是负责人，无法复制")
     }
+  }
+
+  def experiments(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    var experiments = entityDao.findBy(classOf[Experiment], "course", syllabus.course).sortBy(_.code)
+    put("experiments", experiments)
+    put("syllabus", syllabus)
+    forward()
+  }
+
+  def editExperiment(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val expr = getLong("experiment.id") match {
+      case None => new Experiment(syllabus.course)
+      case Some(id) => entityDao.get(classOf[Experiment], id)
+    }
+    put("experiment", expr)
+
+    given project: Project = syllabus.course.project
+
+    put("categories", getCodes(classOf[ExperimentCategory]))
+    put("experimentTypes", getCodes(classOf[ExperimentType]))
+    put("disciplines", getCodes(classOf[Level1Discipline]))
+    put("syllabus", syllabus)
+    forward("experimentForm")
+  }
+
+  def saveExperiment(): View = {
+    val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
+    val experiment = getLong("experiment.id") match {
+      case None => new Experiment()
+      case Some(id) => entityDao.get(classOf[Experiment], id)
+    }
+    val exp = PopulateHelper.populate(experiment, entityDao.domain.getEntity(classOf[Experiment]).get, "experiment")
+    if (!exp.persisted) {
+      exp.code = nextExpCode(syllabus.course)
+      exp.beginOn = syllabus.semester.beginOn
+    }
+    exp.updatedAt = Instant.now
+    entityDao.saveOrUpdate(exp)
+    redirect("experiments", s"&syllabus.id=${syllabus.id}", "info.save.success")
+  }
+
+  private def nextExpCode(course: Course): String = {
+    val exps = entityDao.findBy(classOf[Experiment], "course" -> course)
+    val idx =
+      if (exps.isEmpty) then 1
+      else exps.map(_.code).max.toInt + 1
+    Strings.leftPad(idx.toString, 2, '0')
+  }
+
+  /** 返回课程对应的实验列表
+   *
+   * @return
+   */
+  @response
+  def experimentData(): Seq[Properties] = {
+    val course = entityDao.get(classOf[Course], getLongId("course"))
+    var experiments = entityDao.findBy(classOf[Experiment], "course", course).sortBy(_.code)
+    get("q") foreach { e =>
+      if (Strings.isNotBlank(e)) {
+        val q = e.trim()
+        experiments = experiments.filter(_.description.contains(q))
+      }
+    }
+    experiments.map { x => new Properties(x, "id", "description") }
+  }
+
+  @response
+  def experimentCreditHours(): Float = {
+    val experiments = entityDao.find(classOf[Experiment], getLongIds("experiment"))
+    experiments.map(_.creditHours).sum
   }
 
   private def updateState(syllabus: Syllabus): Unit = {

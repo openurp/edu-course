@@ -291,12 +291,12 @@
       [@multi_line_p design.contents/]
       [#if design.hasCase]
       <ul>案例：
-      [#list syllabus.cases?sort_by("idx") as c]<li>${c.idx+1}:${c.name}</li>[/#list]
+      [#list syllabus.cases?sort_by("idx") as c]<li>${c.idx}:${c.name}</li>[/#list]
       </ul>
       [/#if]
       [#if design.hasExperiment]
       <ul>实验：
-      [#list syllabus.experiments?sort_by("idx") as e]<li>${e.idx+1}:${e.name} [#if e.creditHours>0]${e.creditHours}学时 [/#if]${e.experimentType.name} ${e.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
+      [#list syllabus.experiments?sort_by("idx") as e]<li>${e.idx}:${e.experiment.name} [#if e.experiment.creditHours>0]${e.experiment.creditHours}学时 [/#if]${e.experiment.experimentType.name} ${e.experiment.online?string("线上虚拟仿真实验","线下课堂教学实验")}</li>[/#list]
       </ul>
       [/#if]
     [/#list]

@@ -27,7 +27,7 @@ import org.openurp.base.model.AuditStatus.{Passed, Rejected}
 import org.openurp.base.model.{AuditStatus, Project}
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseCategory, NewCourseDepart}
-import org.openurp.edu.course.service.NewCourseApplyService
+import org.openurp.edu.course.service.NewCourseService
 import org.openurp.starter.web.support.ProjectSupport
 
 /** 新开课程申请
@@ -36,7 +36,7 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
 
   override def simpleEntityName: String = "apply"
 
-  var newCourseApplyService: NewCourseApplyService = _
+  var newCourseService: NewCourseService = _
 
   override protected def indexSetting(): Unit = {
     given project: Project = getProject
@@ -111,7 +111,7 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
         entityDao.saveOrUpdate(apply)
         return redirect("search", "审核成功")
       }
-      val errors = newCourseApplyService.check(apply)
+      val errors = newCourseService.check(apply)
       if (errors.nonEmpty) {
         return redirect("search", errors.mkString(","))
       }

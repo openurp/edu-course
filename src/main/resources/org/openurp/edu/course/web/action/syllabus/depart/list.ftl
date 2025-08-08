@@ -15,7 +15,7 @@
                 "examCreditHours:期末考核学时,learningHours:自主学习学时,stage.name:学期阶段,module.name:模块,"+
                 "rank.name:必修选修,nature.name:课程性质,examMode.name:考核方式,"+
                 "assessment.usual_percent:平时成绩百分比,assessment.usual_percents:过程性考核百分比,assessment.end_percent:期末成绩百分比,"+
-                "status:状态,complete:大纲是否完整,uncompleteReason:不完整的具体原因",
+                "status:状态,complete:大纲是否完整,uncompleteReason:不完整的具体原因,reuse:是否沿用",
                 null,'fileName=课程大纲信息'));
     function notUploaded(){
       bg.form.submit(document.courseTaskForm);

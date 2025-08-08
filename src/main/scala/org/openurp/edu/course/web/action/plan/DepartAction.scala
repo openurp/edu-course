@@ -141,7 +141,6 @@ class DepartAction extends RestfulAction[ClazzPlan], ProjectSupport {
     }
   }
 
-
   /** 授课计划统计
    *
    * @return

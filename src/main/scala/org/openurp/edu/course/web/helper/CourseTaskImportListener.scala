@@ -94,9 +94,16 @@ class CourseTaskImportListener(entityDao: EntityDao, semester: Semester, project
       if (task.courseType == null) task.courseType = task.course.courseType.orNull
       if (null == task.semester) task.semester = semester
       if (task.director.nonEmpty) {
-        val cd = entityDao.findBy(classOf[CourseDirector], "course", task.course).headOption.getOrElse(new CourseDirector(task.course))
+        val directors = entityDao.findBy(classOf[CourseDirector], "course", task.course).find(_.within(semester.beginOn))
+        val cd = directors match {
+          case Some(d) => d
+          case None =>
+            val ncd = new CourseDirector(task.course)
+            ncd.beginOn = semester.beginOn
+            ncd
+        }
         if (task.office.nonEmpty) cd.office = task.office
-        cd.director = task.director
+        cd.director = task.director.get
         entityDao.saveOrUpdate(task, cd)
       } else {
         entityDao.saveOrUpdate(task)

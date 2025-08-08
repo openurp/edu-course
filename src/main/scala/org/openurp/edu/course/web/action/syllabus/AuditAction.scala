@@ -144,6 +144,7 @@ class AuditAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport
 
   protected override def configExport(context: ExportContext): Unit = {
     super.configExport(context)
-    context.extractor = new SyllabusPropertyExtractor()
+    val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
+    context.extractor = new SyllabusPropertyExtractor(semester)
   }
 }

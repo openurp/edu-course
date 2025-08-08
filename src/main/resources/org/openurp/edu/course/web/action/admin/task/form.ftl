@@ -11,6 +11,7 @@
     [/@]
     [@b.select name="courseTask.director.id" label="负责人" value=courseTask.director! items=directors?sort_by("name")  option="id,description" required="true"/]
     [@b.radios label="是否需要大纲"  name="courseTask.syllabusRequired" value=courseTask.syllabusRequired items="1:common.yes,0:common.no" required="true"/]
+    [@b.radios label="是否设置实验"  name="courseTask.hasExperiment" value=courseTask.hasExperiment!false items="1:common.yes,0:common.no" required="true"/]
     [@b.number label="课外学时" name="courseTask.extraHours" value=courseTask.extraHours! /]
     [@b.radios name="courseTask.confirmed" items={'1':'确认','0':'可以根据排课信息自动更新'} label="是否确认" value=courseTask.confirmed/]
     [@b.formfoot]

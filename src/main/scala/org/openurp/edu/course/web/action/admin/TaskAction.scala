@@ -122,12 +122,12 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
     put("departments", departs)
     put("offices", entityDao.findBy(classOf[TeachingOffice], "project" -> project, "department" -> task.department))
     //课程负责人和上课老师作为该学期负责人的候选人
-    val director = entityDao.findBy(classOf[CourseDirector], "course", task.course).headOption
+    val director = entityDao.findBy(classOf[CourseDirector], "course", task.course).find(_.endOn.isEmpty)
     put("director", director)
     val directors = Collections.newBuffer[Teacher]
     directors ++= task.teachers
-    for (d <- director; t <- d.director) {
-      if !directors.contains(t) then directors += t
+    for (d <- director) {
+      if !directors.contains(d.director) then directors += d.director
     }
 
     put("directors", directors)
@@ -150,9 +150,7 @@ class TaskAction extends RestfulAction[CourseTask], ProjectSupport, ImportSuppor
           t.director = t.teachers.headOption
         } else {
           entityDao.findBy(classOf[CourseDirector], "course", t.course).foreach { d =>
-            d.director foreach { dd =>
-              if t.teachers.contains(dd) then t.director = Some(dd)
-            }
+            if t.teachers.contains(d.director) && d.within(t.semester.beginOn) then t.director = Some(d.director)
             d.office foreach { o =>
               t.office = Some(o)
             }

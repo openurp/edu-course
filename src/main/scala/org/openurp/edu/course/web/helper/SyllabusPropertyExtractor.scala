@@ -19,13 +19,15 @@ package org.openurp.edu.course.web.helper
 
 import org.beangle.commons.bean.DefaultPropertyExtractor
 import org.beangle.commons.lang.Strings
+import org.openurp.base.model.Semester
 import org.openurp.code.edu.model.GradeType
 import org.openurp.edu.course.model.Syllabus
 
 import java.time.format.DateTimeFormatter
 
-class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
+class SyllabusPropertyExtractor(semester: Semester) extends DefaultPropertyExtractor {
   val publishDatePattern = DateTimeFormatter.ofPattern("yyyy年MM月")
+
 
   override def get(target: Object, property: String): Any = {
     val syllabus = target.asInstanceOf[Syllabus]
@@ -58,6 +60,9 @@ class SyllabusPropertyExtractor extends DefaultPropertyExtractor {
     } else if ("uncompleteReason" == property) {
       if (syllabus.complete) then ""
       else SyllabusValidator.validate(syllabus).mkString(";")
-    } else super.get(target, property)
+    } else if ("reuse" == property) {
+      if (syllabus.semester == semester) then "否" else "是"
+    }
+    else super.get(target, property)
   }
 }

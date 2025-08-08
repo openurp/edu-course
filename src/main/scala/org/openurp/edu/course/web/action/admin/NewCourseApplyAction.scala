@@ -27,7 +27,7 @@ import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.base.std.model.Grade
 import org.openurp.code.edu.model.*
 import org.openurp.edu.course.flow.{NewCourseApply, NewCourseApplyHour, NewCourseCategory, NewCourseDepart}
-import org.openurp.edu.course.service.NewCourseApplyService
+import org.openurp.edu.course.service.NewCourseService
 import org.openurp.starter.web.support.ProjectSupport
 
 import java.time.{Instant, LocalDate, YearMonth}
@@ -38,7 +38,7 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
 
   override def simpleEntityName: String = "apply"
 
-  var newCourseApplyService: NewCourseApplyService = _
+  var newCourseService: NewCourseService = _
 
   override protected def indexSetting(): Unit = {
     given project: Project = getProject
@@ -132,7 +132,7 @@ class NewCourseApplyAction extends RestfulAction[NewCourseApply], ProjectSupport
     apply.tags.clear()
     apply.tags.addAll(entityDao.find(classOf[CourseTag], getIntIds("tag")))
 
-    val errors = newCourseApplyService.check(apply)
+    val errors = newCourseService.check(apply)
     if (errors.isEmpty) {
       super.saveAndRedirect(apply)
     } else {

@@ -14,7 +14,7 @@
       color: #6c757d !important;
     }
   </style>
-  <h5>${course.code} ${course.name}</h5>
+  <h5><i class="fa-solid fa-book-open"></i>&nbsp;${course.code} ${course.name}</h5>
   <div class="card card-info card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">基本信息</h4>
@@ -24,8 +24,8 @@
         <col width="13%"/>
         <col width="20%"/>
         <col width="13%"/>
-        <col width="20%"/>
-        <col width="14%"/>
+        <col width="22%"/>
+        <col width="12%"/>
         <col width="20%"/>
       </colgroup>
       <tr>

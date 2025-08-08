@@ -45,7 +45,7 @@ import java.io.File
 import java.net.URI
 import java.util.Locale
 
-/** 学院查询教学大纲
+/** 学院管理教学大纲
  */
 class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSupport[Syllabus] {
   override protected def indexSetting(): Unit = {
@@ -183,7 +183,8 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
 
   protected override def configExport(context: ExportContext): Unit = {
     super.configExport(context)
-    context.extractor = new SyllabusPropertyExtractor()
+    val semester = entityDao.get(classOf[Semester], getInt("semester.id", 0))
+    context.extractor = new SyllabusPropertyExtractor(semester)
   }
 
   def stat(): View = {
@@ -197,7 +198,6 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     q.select("t.department.id,t.department.code,t.department.name,t.department.shortName,count(*)")
     val taskStats = entityDao.search(q)
 
-    println(semester.beginOn.plusDays(30))
     val q2 = OqlBuilder.from[Array[Any]](classOf[Syllabus].getName, "s")
     q2.where(":date between s.beginOn and s.endOn", semester.beginOn.plusDays(30))
     q2.where("s.course.project=:project", project)
@@ -210,12 +210,11 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
     val items = Collections.newBuffer[StatItem]
     taskStats foreach { stat =>
       val entry = Collections.newMap[String, Any]
-      val enName = if null== stat(3) then stat(2) else stat(3)
+      val enName = if null == stat(3) then stat(2) else stat(3)
       entry.addAll(Map("id" -> stat(0).toString, "code" -> stat(1).toString, "name" -> stat(2).toString, "shortName" -> enName))
       val item = new StatItem
       item.entry = entry
       val s2 = syllabusStats.find(_(0) == stat(0)).map(_.apply(1).asInstanceOf[Number]).getOrElse(0)
-      println((stat(4).asInstanceOf[Number], s2))
       item.counters = Seq(stat(4).asInstanceOf[Number], s2)
       items.addOne(item)
     }

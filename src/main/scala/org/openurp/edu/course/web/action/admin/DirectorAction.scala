@@ -78,11 +78,8 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
 
   override protected def saveAndRedirect(director: CourseDirector): View = {
     val directorId = getLong("director.id")
-    directorId match {
-      case None => director.director = None
-      case Some(id) =>
-        val t = entityDao.get(classOf[Teacher], id)
-        director.director = Some(t)
+    directorId foreach { id =>
+      director.director = entityDao.get(classOf[Teacher], id)
     }
     super.saveAndRedirect(director)
   }
@@ -112,11 +109,9 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
   def batchSave(): View = {
     val directors = entityDao.find(classOf[CourseDirector], getLongIds("director"))
     val directorId = getLong("teacher.id")
-    directorId match {
-      case None => directors foreach (_.director = None)
-      case Some(id) =>
-        val t = entityDao.get(classOf[Teacher], id)
-        directors foreach (_.director = Some(t))
+    directorId foreach { id =>
+      val t = entityDao.get(classOf[Teacher], id)
+      directors foreach (_.director = t)
     }
     val officeId = getLong("office.id")
     officeId match {
@@ -142,7 +137,7 @@ class DirectorAction extends RestfulAction[CourseDirector], ProjectSupport {
       q.orderBy("task.semester.beginOn desc")
       entityDao.first(q) foreach { last =>
         last.director foreach { d =>
-          director.director = Some(d)
+          director.director = d
         }
         last.office foreach { o =>
           director.office = Some(o)
