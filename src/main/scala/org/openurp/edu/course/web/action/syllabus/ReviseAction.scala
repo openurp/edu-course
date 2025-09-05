@@ -376,6 +376,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     new SyllabusHelper(entityDao).cleanMissingObjectives(syllabus)
     updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
+    entityDao.refresh(syllabus)
+
+    val olders = syllabus.objectives.filter(o1 => syllabus.objectives.exists(o2 => o2.code == o1.code && o1.id > o2.id))
+    syllabus.objectives.subtractAll(olders)
+    entityDao.saveOrUpdate(syllabus)
+
     val justSave = getBoolean("justSave", false)
     if justSave then redirect("edit", s"syllabus.id=${syllabus.id}&step=objectives", "info.save.success")
     else toStep(syllabus)
@@ -622,6 +628,14 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     if (!syllabus.designs.exists(_.hasExperiment)) {
       syllabus.experiments.clear()
     }
+    //FIXME remove reduant items
+    val olders = syllabus.experiments.filter(o1 => syllabus.experiments.exists(o2 => o2.experiment == o1.experiment && o1.id > o2.id))
+    syllabus.experiments.subtractAll(olders)
+
+    val oldercases = syllabus.cases.filter(o1 => syllabus.cases.exists(o2 => o2.name == o1.name && o1.id > o2.id))
+    syllabus.cases.subtractAll(oldercases)
+    entityDao.saveOrUpdate(syllabus)
+
     syllabus.reIndex()
     updateState(syllabus)
     entityDao.saveOrUpdate(syllabus)
@@ -658,7 +672,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     //max 7
     (0 to 6) foreach { i =>
       val component = get(s"grade${usualType.id}_${i}.component", "")
-      val percent = getInt(s"grade${usualType.id}_${i}.scorePercent", 0)
+      val percent = getInt(s"grade${usualType.id}_${i}.weight", 0)
       if (percent > 0 && Strings.isNotBlank(component)) {
         populateAssessment(syllabus, usualType, i, Some(component))
       }
@@ -728,7 +742,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       case Some(n) => "grade" + gradeType.id + "_" + index
     populate(assessment, prefix)
     val percents = Collections.newMap[String, Float]
-    if (assessment.scorePercent >= 0 && !(gradeType.id == GradeType.Usual && index == 0 && componentName.isEmpty)) {
+    if (assessment.weight >= 0 && !(gradeType.id == GradeType.Usual && index == 0 && componentName.isEmpty)) {
       syllabus.objectives foreach { co =>
         val p =
           if gradeType.id == GradeType.Usual then getFloat(s"usual_${index}_co${co.id}").getOrElse(0f)
@@ -791,10 +805,12 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
     val cancel = getBoolean("cancel", false)
     val reuses = Set(AuditStatus.PassedByDepart, AuditStatus.Passed, AuditStatus.Published)
+    var message = "沿用成功"
     if (cancel) {
-      if (reuses.contains(syllabus.status) && syllabus.endOn.isAfter(semester.beginOn)) {
+      if (syllabus.endOn.isAfter(semester.beginOn)) {
         syllabus.endOn = semester.beginOn.minusDays(30)
         entityDao.saveOrUpdate(syllabus)
+        message = "取消沿用成功"
       }
     } else {
       if (reuses.contains(syllabus.status) && syllabus.endOn.isBefore(semester.beginOn)) {
@@ -803,7 +819,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       }
     }
 
-    redirect("course", s"&course.id=${syllabus.course.id}&semester.id=${semester.id}", "沿用成功")
+    redirect("course", s"&course.id=${syllabus.course.id}&semester.id=${semester.id}", message)
   }
 
   def course(): View = {
@@ -962,7 +978,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
 
   def experiments(): View = {
     val syllabus = entityDao.get(classOf[Syllabus], getLongId("syllabus"))
-    var experiments = entityDao.findBy(classOf[Experiment], "course", syllabus.course).sortBy(_.code)
+    val experiments = entityDao.findBy(classOf[Experiment], "course", syllabus.course).sortBy(_.code)
     put("experiments", experiments)
     put("syllabus", syllabus)
     forward()
@@ -994,6 +1010,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     val exp = PopulateHelper.populate(experiment, entityDao.domain.getEntity(classOf[Experiment]).get, "experiment")
     if (!exp.persisted) {
       exp.code = nextExpCode(syllabus.course)
+      exp.course = syllabus.course
       exp.beginOn = syllabus.semester.beginOn
     }
     exp.updatedAt = Instant.now

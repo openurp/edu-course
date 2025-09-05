@@ -7,10 +7,10 @@
 [#include "step.ftl"/]
 [@displayStep 5/]
 
-[#if ((syllabus.getAssessment(usualType,null).scorePercent)!0)>0]
+[#if ((syllabus.getAssessment(usualType,null).weight)!0)>0]
   [#assign totalPercent=0/]
   [#list syllabus.getAssessments(usualType) as a]
-    [#if a.component??][#assign totalPercent=totalPercent + a.scorePercent/][/#if]
+    [#if a.component??][#assign totalPercent=totalPercent + a.weight/][/#if]
   [/#list]
   [#if totalPercent!=100]
   <div class="alert alert-warning">平时组成部分百分总计${totalPercent}%,不足100%。</div>
@@ -19,8 +19,8 @@
 
 <div class="border-colored border-1px border-0px-tb" style="margin-bottom:20px">
   [@b.form name="assessForm" theme="list" action="!saveAssess" onsubmit="validateForm"]
-    [@b.textfield name="grade${usualType.id}.scorePercent" label="Usual score accounts for" value=(syllabus.getAssessment(usualType,null).scorePercent)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
-    [@b.textfield name="grade${endType.id}.scorePercent" label="Final grade accounts for" value=(syllabus.getAssessment(endType,null).scorePercent)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
+    [@b.textfield name="grade${usualType.id}.weight" label="Usual score accounts for" value=(syllabus.getAssessment(usualType,null).weight)! comment="%<span id='usual_comment'><span>" onchange="checkPercent()"/]
+    [@b.textfield name="grade${endType.id}.weight" label="Final grade accounts for" value=(syllabus.getAssessment(endType,null).weight)! comment="%<span id='end_comment'><span>" onchange="checkPercent();checkEndCoPercent()"/]
     [@b.field label="Objectives(final grade)"]
       [#assign endPercentMap={}/]
       [#if syllabus.getAssessment(endType,null)??]
@@ -53,7 +53,7 @@
            [/@]
           <div class="card-body">
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="Name" value=assessment.component required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="Accounts for" value=assessment.scorePercent comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".weight" label="Accounts for" value=assessment.weight comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
             [@b.field label="Course objectives"]
               [#assign objectivePercentMap=assessment.objectivePercentMap/]
               [#list orderedObjectives as co]
@@ -87,7 +87,7 @@
            [/@]
           <div class="card-body">
             [@b.textfield name="grade${usualType.id}_"+rnIndex+".component" label="Name" value="" required="false" /]
-            [@b.textfield name="grade${usualType.id}_"+rnIndex+".scorePercent" label="Accounts for" value="" comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
+            [@b.textfield name="grade${usualType.id}_"+rnIndex+".weight" label="Accounts for" value="" comment="%" required="false" onchange="checkUsual(${rnIndex})"/]
             [@b.field label="Course objectives"]
               [#list orderedObjectives as co]
                 <label for="usual_${rnIndex}_co${co.id}">${co.code}</label><input name="usual_${rnIndex}_co${co.id}" id="usual_${rnIndex}_${co.id}" type="number" style="width:50px" onchange="checkUsual(${rnIndex})">
@@ -119,7 +119,7 @@
       var form = document.assessForm;
       var name=form["grade${usualType.id}_"+idx+".component"].value;
       if(name.length==0) return;
-      var percent=form["grade${usualType.id}_"+idx+".scorePercent"].value;
+      var percent=form["grade${usualType.id}_"+idx+".weight"].value;
       var totalPercent=Number.parseInt(percent);
       var coTotalPercent=0;
       var coPercent="";
@@ -131,7 +131,7 @@
       [/#list]
       if(Number.isNaN(totalPercent)){
         document.getElementById("UsualCoTip"+idx).innerHTML="分项累计为"+coTotalPercent+"%";
-        form["grade${usualType.id}_"+idx+".scorePercent"].value=coTotalPercent;
+        form["grade${usualType.id}_"+idx+".weight"].value=coTotalPercent;
         document.getElementById("UsualCoTip"+idx).style.color="";
       }else if(totalPercent!=coTotalPercent){
         document.getElementById("UsualCoTip"+idx).innerHTML="分项累计为"+coTotalPercent+"%和该项占比"+totalPercent+"%不相等";
@@ -163,7 +163,7 @@
     }
     function checkEndCoPercent(){
       var form = document.assessForm;
-      var percent=form["grade${endType.id}.scorePercent"].value;
+      var percent=form["grade${endType.id}.weight"].value;
       var totalPercent=Number.parseInt(percent);
       var coTotalPercent=0;
       var coPercent="";
@@ -194,11 +194,11 @@
     function checkPercent(){
       var form = document.assessForm;
       var totalPercent=0;
-      var percent = form['grade${usualType.id}.scorePercent'].value
+      var percent = form['grade${usualType.id}.weight'].value
       if(percent){
         totalPercent += Number.parseInt(percent);
       }
-      percent = form['grade${endType.id}.scorePercent'].value
+      percent = form['grade${endType.id}.weight'].value
       if(percent){
         totalPercent += Number.parseInt(percent);
       }

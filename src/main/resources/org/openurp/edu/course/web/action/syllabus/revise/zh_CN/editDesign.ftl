@@ -26,7 +26,7 @@
       [/#list]
       <div style="display: inline-block;">
         修改和新增项目可以从<a href='${b.url("!experiments?syllabus.id=" + syllabus.id)}'
-           data-toggle="modal" data-target="#experimentDialog">课程项目库</a>进行维护。
+           data-toggle="modal" data-target="#experimentDialog">课程项目库</a>进行维护,然后添加到此处。
         <ul style="padding-left: 1rem;">
         [#list 1..15 as i]
           <ol style="padding-left:0rem;">
@@ -43,5 +43,5 @@
       [@b.submit value="保存" /]
     [/@]
   [/@]
-  [@b.dialog title="课程项目库"  id="experimentDialog"/]
+
 [@b.foot/]

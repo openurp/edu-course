@@ -296,7 +296,7 @@ Graduation requirements【${o.title}】：${o.contents}
       [/#if]
       [#if design.hasExperiment]
       <ul>Experiments：
-      [#list syllabus.experiments?sort_by("idx") as e]<li>${e.idx}:${e.name} [#if e.experiment.creditHours>0]${e.experiment.creditHours}hours [/#if]${e.experiment.experimentType.name} ${e.experiment.online?string("Online","Offline")}</li>[/#list]
+      [#list syllabus.experiments?sort_by("idx") as e]<li>${e.idx}:${e.experiment.name} [#if e.experiment.creditHours>0]${e.experiment.creditHours}hours [/#if]${e.experiment.experimentType.name} ${e.experiment.online?string("Online","Offline")}</li>[/#list]
       </ul>
       [/#if]
     [/#list]
@@ -318,7 +318,7 @@ Graduation requirements【${o.title}】：${o.contents}
     [@p]
     This course combines formative evaluation and outcome evaluation, and the total
     scores reflects the students’ overall learning achievements. Among them, the usual
-    score accounts for ${usualAssess.scorePercent} %, and the final grade accounts for ${endAssess.scorePercent} %. See the following
+    score accounts for ${usualAssess.weight} %, and the final grade accounts for ${endAssess.weight} %. See the following
     table for the composition of usual score.
     [/@]
 
@@ -350,11 +350,11 @@ Graduation requirements【${o.title}】：${o.contents}
         <tr>
           <td>Proportion of assessment scores</td>
           [#if usualAssessments?size>0]
-          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          [#list usualAssessments as a]<th>${a.weight}%</th>[/#list]
           <td>100%</td>
           [/#if]
-          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
-          <td>${endAssess.scorePercent}%</td><td>100%</td>
+          <td>${usualAssess.weight}%</td><td>[#if endAssess.weight>0]100%[#else]0%[/#if]</td>
+          <td>${endAssess.weight}%</td><td>100%</td>
         </tr>
         [#if orderedObjectives?size>0]
         [#assign firstObj=orderedObjectives?first/]
@@ -368,8 +368,8 @@ Graduation requirements【${o.title}】：${o.contents}
           [/#list]
           <td>${coPercent}%</td>
           [/#if]
-          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
-          <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
+          <td>${(coPercent*usualAssess.weight*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.weight*1.0/100}%</td>
+          <td>${(coPercent*usualAssess.weight + endAssess.weight * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
         [/#if]
         [#list orderedObjectives as co]
@@ -384,18 +384,18 @@ Graduation requirements【${o.title}】：${o.contents}
           [/#list]
           <td>${coPercent}%</td>
           [/#if]
-          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
-          <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[co.code]!0))/100}%</td>
+          <td>${(coPercent*usualAssess.weight*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.weight/100.0}%</td>
+          <td>${(coPercent*usualAssess.weight + endAssess.weight * (endPercentMap[co.code]!0))/100}%</td>
         </tr>
         [/#list]
         <tr>
           <td colspan="2">Subtotal of assessment</td>
           [#if usualAssessments?size>0]
-          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          [#list usualAssessments as a]<th>${a.weight}%</th>[/#list]
           <td>100%</td>
           [/#if]
-          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
-          <td>${endAssess.scorePercent}%</td><td>100%</td>
+          <td>${usualAssess.weight}%</td><td>[#if endAssess.weight>0]100%[#else]0%[/#if]</td>
+          <td>${endAssess.weight}%</td><td>100%</td>
         </tr>
         <tr>
           <td colspan="[#if usualAssessments?size>0]${7+usualAssessments?size}[#else]${6}[/#if]" style="text-align:left;">
@@ -410,7 +410,7 @@ Graduation requirements【${o.title}】：${o.contents}
       The basis and standard of the assessment are as follows:
       <ul style="list-style: none;">
       [#list usualAssessments as a]
-        <li>（${a_index+1}）${a.component} ${a.scorePercent}%</li>
+        <li>（${a_index+1}）${a.component} ${a.weight}%</li>
       [/#list]
       </ul>
 
@@ -433,7 +433,7 @@ Graduation requirements【${o.title}】：${o.contents}
     [#--添加统一的期末考试说明--]
     [#if syllabus.getAssessment(endType,null)?exists]
       [#assign endAssess = syllabus.getAssessment(endType,null)!/]
-      [#if endAssess.scorePercent>0]
+      [#if endAssess.weight>0]
         [#assign title]${assessIdx+1}. Grading standard of final exam[/#assign]
         [@header_title title/]
         [@multi_line_p "(1) In the end, the final exam will be conducted. \n(2) The full score of the final exam is 100 score; the final exam is organized according to the requirements of SLU. See \"Final Papers, Reference Answers and Scoring Standards\" for the grading standards of final exams."/]

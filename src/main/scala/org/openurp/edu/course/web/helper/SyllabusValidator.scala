@@ -65,13 +65,13 @@ object SyllabusValidator {
     val usualType = new GradeType(GradeType.Usual)
     val endType = new GradeType(GradeType.End)
     val endAssessment = syllabus.getAssessment(endType, null)
-    val usualPercent = syllabus.getAssessment(usualType, null).map(_.scorePercent).getOrElse(0)
-    val endPercent = endAssessment.map(_.scorePercent).getOrElse(0)
+    val usualPercent = syllabus.getAssessment(usualType, null).map(_.weight).getOrElse(0)
+    val endPercent = endAssessment.map(_.weight).getOrElse(0)
     if (usualPercent + endPercent != 100) {
       messages.addOne(s"平时期末百分比合计为${usualPercent + endPercent}，应等于100.")
     }
     endAssessment foreach { a =>
-      if (a.scorePercent > 0) {
+      if (a.weight > 0) {
         val s = a.objectivePercentMap.values.sum
         if (s != 100) {
           messages.addOne(s"期末成绩对课程目标的占比合计为${s}，应等于100.")
@@ -80,14 +80,14 @@ object SyllabusValidator {
     }
     if (usualPercent > 0) {
       val usualAssessments = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty)
-      val usualTotal = usualAssessments.map(_.scorePercent).sum
+      val usualTotal = usualAssessments.map(_.weight).sum
       if (usualTotal != 100) {
         messages.addOne(s"平时成绩，各个环节合计占比为${usualTotal}，应等于100.")
       }
       usualAssessments foreach { a =>
         val s = a.objectivePercentMap.values.sum
-        if (s != a.scorePercent) {
-          messages.addOne(s"平时成绩--${a.component.get}的课程目标的占比合计为${s}，应等于${a.scorePercent}.")
+        if (s != a.weight) {
+          messages.addOne(s"平时成绩--${a.component.get}的课程目标的占比合计为${s}，应等于${a.weight}.")
         }
       }
     }
@@ -162,7 +162,8 @@ object SyllabusValidator {
     syllabus.topics foreach { t =>
       totalLearningHours += t.learningHours
     }
-    if (java.lang.Double.compare(totalLearningHours, syllabus.learningHours) != 0) {
+    //按照百分位进行比较
+    if ((totalLearningHours * 100).intValue != (syllabus.learningHours * 100).intValue) {
       messages += s"自主学习要求${syllabus.learningHours}学时，教学内容累计${totalLearningHours}学时，请检查。"
     }
 

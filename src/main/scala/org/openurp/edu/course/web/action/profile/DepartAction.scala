@@ -31,7 +31,7 @@ import org.beangle.webmvc.annotation.{mapping, param}
 import org.beangle.webmvc.support.ActionSupport
 import org.beangle.webmvc.support.action.EntityAction
 import org.beangle.webmvc.view.{Stream, View}
-import org.openurp.base.edu.model.{BookAdoption, Course, CourseProfile, TeachingOffice}
+import org.openurp.base.edu.model.*
 import org.openurp.base.model.{AuditStatus, Project, User}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature, CourseType}
 import org.openurp.edu.course.model.{CourseTask, SyllabusDoc}
@@ -130,6 +130,15 @@ class DepartAction extends ActionSupport, EntityAction[CourseTask], ProjectSuppo
     populate(profile, "profile")
     profile.updatedAt = Instant.now
     profile.writer = user
+
+    import org.openurp.base.edu.model.BookAdoption.{UseLecture, UseTextBook}
+    profile.books.clear()
+    profile.books.addAll(entityDao.find(classOf[Textbook], getLongIds("textbook")))
+    if (profile.books.isEmpty) {
+      if (profile.bookAdoption == UseTextBook) profile.bookAdoption = UseLecture
+    } else {
+      profile.bookAdoption = UseTextBook
+    }
     entityDao.saveOrUpdate(profile)
 
     val parts = getAll("attachment", classOf[Part])

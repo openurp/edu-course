@@ -59,7 +59,7 @@
     }
   }
 </style>
-[#assign numSeq= ["一","二","三","四","五","六","七","八","九","十"] /]
+[#assign numSeq= ["","一","二","三","四","五","六","七","八","九","十"] /]
 [#assign tableIndex=1/]
 [#macro header_title title]
   <p style="width:100%;font-weight:bold;font-family: 宋体;font-size: 14pt;margin:0.5rem 0rem 0.5rem 0rem;">${title}</p>
@@ -316,7 +316,7 @@
     [@header_title "七、课程考核方式与评分标准"/]
     [@header_title "（一）课程考核方式"/]
     [@header_title "&nbsp;&nbsp;1.课程成绩构成"/]
-    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.scorePercent)!}%，期末成绩占${(endAssess.scorePercent)!}%。平时成绩构成见下表。[/@]
+    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.weight)!}%，期末成绩占${(endAssess.weight)!}%。平时成绩构成见下表。[/@]
 
     <table class="info-table" style="table-layout:fixed;text-align: center;">
       <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
@@ -346,11 +346,11 @@
         <tr>
           <td>考核分值占比</td>
           [#if usualAssessments?size>0]
-          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          [#list usualAssessments as a]<th>${a.weight}%</th>[/#list]
           <td>100%</td>
           [/#if]
-          <td>${(usualAssess.scorePercent)!}%</td><td>[#if ((endAssess.scorePercent)!0)>0]100%[#else]0%[/#if]</td>
-          <td>${(endAssess.scorePercent)!}%</td><td>100%</td>
+          <td>${(usualAssess.weight)!}%</td><td>[#if ((endAssess.weight)!0)>0]100%[#else]0%[/#if]</td>
+          <td>${(endAssess.weight)!}%</td><td>100%</td>
         </tr>
         [#if orderedObjectives?size>0]
         [#assign firstObj=orderedObjectives?first/]
@@ -364,8 +364,8 @@
           [/#list]
           <td>${coPercent}%</td>
           [/#if]
-          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.scorePercent*1.0/100}%</td>
-          <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[firstObj.code]!0))/100}%</td>
+          <td>${(coPercent*usualAssess.weight*1.0/100)}%</td><td>${(endPercentMap[firstObj.code]!0)}%</td><td>${(endPercentMap[firstObj.code]!0)*endAssess.weight*1.0/100}%</td>
+          <td>${(coPercent*usualAssess.weight + endAssess.weight * (endPercentMap[firstObj.code]!0))/100}%</td>
         </tr>
         [/#if]
         [#list orderedObjectives as co]
@@ -380,18 +380,18 @@
           [/#list]
           <td>${coPercent}%</td>
           [/#if]
-          <td>${(coPercent*usualAssess.scorePercent*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.scorePercent/100.0}%</td>
-          <td>${(coPercent*usualAssess.scorePercent + endAssess.scorePercent * (endPercentMap[co.code]!0))/100}%</td>
+          <td>${(coPercent*usualAssess.weight*1.0/100)}%</td><td>${(endPercentMap[co.code]!0)}%</td><td>${(endPercentMap[co.code]!0)*endAssess.weight/100.0}%</td>
+          <td>${(coPercent*usualAssess.weight + endAssess.weight * (endPercentMap[co.code]!0))/100}%</td>
         </tr>
         [/#list]
         <tr>
           <td colspan="2">考核方式小计</td>
           [#if usualAssessments?size>0]
-          [#list usualAssessments as a]<th>${a.scorePercent}%</th>[/#list]
+          [#list usualAssessments as a]<th>${a.weight}%</th>[/#list]
           <td>100%</td>
           [/#if]
-          <td>${usualAssess.scorePercent}%</td><td>[#if endAssess.scorePercent>0]100%[#else]0%[/#if]</td>
-          <td>${endAssess.scorePercent}%</td><td>100%</td>
+          <td>${usualAssess.weight}%</td><td>[#if endAssess.weight>0]100%[#else]0%[/#if]</td>
+          <td>${endAssess.weight}%</td><td>100%</td>
         </tr>
         <tr>
           <td colspan="[#if usualAssessments?size>0]${7+usualAssessments?size}[#else]${6}[/#if]" style="text-align:left;">注：①平时成绩考核依托网络教学平台完成。②思想政治素质教育和诚信教育，融合在课程教学的全过程，根据课程实际进行课程考核。</td>
@@ -401,7 +401,7 @@
       [@p]平时成绩考核评定依据如下:[/@]
       <ul style="list-style: none;">
       [#list usualAssessments as a]
-        <li>（${a_index+1}）${a.component}${a.scorePercent}%，${a.assessCount}次。</li>
+        <li>（${a_index+1}）${a.component}${a.weight}%，${a.assessCount}次。</li>
       [/#list]
       </ul>
 
@@ -424,7 +424,7 @@
     [#--添加统一的期末考试说明--]
     [#if syllabus.getAssessment(endType,null)?exists]
       [#assign endAssess = syllabus.getAssessment(endType,null)!/]
-      [#if endAssess.scorePercent>0]
+      [#if endAssess.weight>0]
         [#assign title]${assessIdx+1}.期末考试的评分标准[/#assign]
         [@header_title title/]
         [@multi_line_p "(1)课程结束后统一进行期末考试。\n(2)期末考试满分为100分;根据学校要求组织期末考试。期末考试评分标准详见“期末试卷、参考答案及评分标准”。"/]

@@ -107,7 +107,7 @@
     [#assign usualAssess = syllabus.getAssessment(usualType,null)!/]
     [#assign endAssess = syllabus.getAssessment(endType,null)!/]
     [#assign endPercentMap = (endAssess.objectivePercentMap)!/]
-    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.scorePercent)!}%，期末成绩占${(endAssess.scorePercent)!}%。平时成绩构成见下表。[/@]
+    [@p]本课程对学生的学习成果进行形成性评价和结果性评价相结合，总成绩反映学生对课程掌握的总体情况。其中：平时成绩占${(usualAssess.weight)!}%，期末成绩占${(endAssess.weight)!}%。平时成绩构成见下表。[/@]
 
     <table class="info-table" style="table-layout:fixed;text-align: center;">
       <caption style="caption-side: top;text-align: center;padding: 0px;">表 ${tableIndex}：课程考核项目及课程目标达成设计</caption>
@@ -115,7 +115,7 @@
         <tr style="text-align:center;">
           <th>课程目标</th>
           [#list usualAssessments as a]<th>${a.component}</th>[/#list]
-          [#if endAssess.scorePercent>0]
+          [#if endAssess.weight>0]
           <th>期末考试</th>
           [/#if]
         </tr>
@@ -173,9 +173,9 @@
 
         [#assign displayLabel=false/]
         [#assign coTotal=0.0/]
-        [#assign coTotal=coTotal + endAssess.scorePercent * (endPercentMap[co.code]!0)/]
+        [#assign coTotal=coTotal + endAssess.weight * (endPercentMap[co.code]!0)/]
         [#list usualAssessments as a]
-          [#assign coTotal = coTotal + usualAssess.scorePercent * (a.objectivePercentMap[co.code]!0)/]
+          [#assign coTotal = coTotal + usualAssess.weight * (a.objectivePercentMap[co.code]!0)/]
         [/#list]
 
         [#if hasEnd]
@@ -183,7 +183,7 @@
           [#assign displayLabel=true/]
           <td rowspan="${usualCnt+1}">课程目标${co.code}</td>
           <td>期末考试</td>
-          <td>${(endAssess.scorePercent*(endPercentMap[co.code]!0)/coTotal)?string.percent}</td>
+          <td>${(endAssess.weight*(endPercentMap[co.code]!0)/coTotal)?string.percent}</td>
           [#assign coTotalScore=0/]
           [#assign coTotalAvgScore=0/]
           [#list questionScores as qs][#if qs.supportWith(co)][#assign coTotalScore=coTotalScore+qs.score/] [#assign coTotalAvgScore=coTotalAvgScore+qs.avgScore/][/#if][/#list]
@@ -196,7 +196,7 @@
           <tr>
             [#if !displayLabel]<td rowspan="${usualCnt}">课程目标${co.code}</td>[#assign displayLabel=true/][/#if]
             <td>${a.component}</td>
-            <td>${((usualAssess.scorePercent * (a.objectivePercentMap[co.code]!0))*1.0/coTotal)?string.percent}</td>
+            <td>${((usualAssess.weight * (a.objectivePercentMap[co.code]!0))*1.0/coTotal)?string.percent}</td>
             <td>${(a.objectivePercentMap[co.code]!0)}</td>
             <td>--</td>
             <td>--</td>

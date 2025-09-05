@@ -106,11 +106,20 @@
         <td class="content" colspan="3">${profile.majors!}</td>
       </tr>
       [/#if]
-      [#if profile.textbooks??]
+      [#if profile.textbooks?? && profile.textbooks!='--']
       <tr>
         <td class="title">默认教材:</td>
         <td class="content" colspan="3">
           <div style="white-space: break-spaces;">${profile.textbooks}</div>
+        </td>
+      </tr>
+      [#else]
+      <tr>
+        <td class="title">默认教材:</td>
+        <td class="content" colspan="3">
+          <div style="white-space: break-spaces;">[#t/]
+            <ul style="margin: 0px;padding-left: 0px;list-style: none;">[#list profile.books as book]<li>${book.name} ${book.author!} ${(book.press.name)!} ${book.isbn!} ${book.edition!}</li>[/#list]</ul>[#t/]
+          </div>[#t/]
         </td>
       </tr>
       [/#if]

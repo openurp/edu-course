@@ -36,17 +36,17 @@ class SyllabusPropertyExtractor(semester: Semester) extends DefaultPropertyExtra
       if (p == "usual_percent") {
         syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
           case None => ""
-          case Some(a) => s"${a.scorePercent}%"
+          case Some(a) => s"${a.weight}%"
       } else if (p == "end_percent") {
         syllabus.getAssessment(new GradeType(GradeType.End), null) match
           case None => ""
-          case Some(a) => s"${a.scorePercent}%"
+          case Some(a) => s"${a.weight}%"
       } else if (p == "usual_percents") {
         syllabus.getAssessment(new GradeType(GradeType.Usual), null) match
           case None => ""
           case Some(a) =>
             val components = syllabus.assessments.filter(x => x.gradeType.id == GradeType.Usual && x.component.nonEmpty).sortBy(_.idx)
-            components.map(x => x.component.get + " " + x.scorePercent + "%").mkString(",")
+            components.map(x => x.component.get + " " + x.weight + "%").mkString(",")
       } else {
         ""
       }

@@ -46,7 +46,7 @@ class SyllabusAction extends ActionSupport, EntityAction[Syllabus], ProjectSuppo
     put("semester", semester)
     val q = OqlBuilder.from(classOf[Semester], "s")
     q.where("s.calendar=:calendar", project.calendar)
-    q.where("s.archived=false")
+    q.where("s.year.archived=false")
     q.orderBy("s.endOn desc")
     put("semesters", entityDao.search(q))
 

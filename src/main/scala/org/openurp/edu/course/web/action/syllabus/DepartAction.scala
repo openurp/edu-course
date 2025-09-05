@@ -78,6 +78,10 @@ class DepartAction extends RestfulAction[Syllabus], ProjectSupport, ExportSuppor
       if hasTopics then query.where("size(syllabus.topics)>0")
       else query.where("size(syllabus.topics)=0")
     }
+    getBoolean("reuse") foreach { reuse =>
+      if (reuse) query.where("syllabus.beginOn < :thisSemesterBeginOn", semester.beginOn)
+      else query.where("syllabus.semester = :thisSemester ", semester)
+    }
     queryByDepart(query, "syllabus.department")
   }
 

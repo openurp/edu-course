@@ -5,6 +5,7 @@
     [@b.field label="学年学期"]${courseTask.semester.schoolYear}学年${courseTask.semester.name}学期[/@]
     [@b.field label="课程"]${courseTask.course.name}(${courseTask.course.code})[/@]
     [@b.field label="开课学院"]${courseTask.department.name}[/@]
+    [@b.number label="顺序号" name="courseTask.idx" value=courseTask.idx required="true"/]
     [@b.select style="width:100px" name="courseTask.office.id" label="教研室" items=offices value=courseTask.office! option="id,name" empty="..." /]
     [@b.field label="任课教师"]
       [#list courseTask.teachers?sort_by("name") as teacher]${teacher.name}[#if teacher_has_next]&nbsp;[/#if][/#list]

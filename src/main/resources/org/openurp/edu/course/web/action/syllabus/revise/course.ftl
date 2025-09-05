@@ -70,13 +70,13 @@
       [/#if]
     </nav>
     <div class="card-body" style="padding-top: 0px;">
-     <table class="table table-hover table-sm table-striped">
+     <table class="table table-sm">
        [#if syllabuses?size==0]
        <tr><td style="text-align:center;">本学期无大纲</td></tr>
        [/#if]
          [#list syllabuses as syllabus]
        <tr>
-         <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期[#if syllabus.semester!=semester]<sup>沿用</sup>[/#if]</td>
+         <td style="width: 24%;">${syllabus.beginOn?string("yyyy-MM-dd")}生效[#if syllabus.semester!=semester]<sup>沿用至该学期</sup>[/#if]</td>
          <td style="width: 7%;">${locales.get(syllabus.docLocale)}</td>
          <td style="width: 10%;">${syllabus.writer.name}</td>
          <td style="width: 13%;">${syllabus.status}</td>
@@ -100,7 +100,7 @@
      </table>
      [#if histories?size>0]
      <h6 class="panel-header"><span class="panel_title text-muted">其他学期大纲</span></h6>
-     <table class="table table-hover table-sm table-striped">
+     <table class="table table-sm">
          [#list histories as syllabus]
        <tr>
          <td style="width: 24%;">${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期 [#if syllabus.course!=course]<span class="text-muted">${syllabus.course.code}</span>[/#if]</td>

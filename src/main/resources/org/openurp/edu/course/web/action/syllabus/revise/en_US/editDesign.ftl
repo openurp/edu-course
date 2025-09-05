@@ -12,8 +12,8 @@
         [#assign cases=cases+{'${c.idx}':c}/]
       [/#list]
       <ul style="margin-left: 6.25rem;padding-left: 1rem;">
-      [#list 0..14 as i]
-        <ol><label>${i+1}：</label><input type="text" placeholder="Case No.${i+1}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
+      [#list 1..15 as i]
+        <ol><label>${i}：</label><input type="text" placeholder="Case No.${i}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
       [/#list]
       </ul>
     [/@]
@@ -21,29 +21,20 @@
     [@b.field label="Experiments" id="hasExperiment_field" style=expStyle]
       [#assign exps = {}/]
       [#list syllabus.experiments?sort_by("idx") as c]
-        [#assign exps=exps+{'${c.idx}':c}/]
+        [#assign exps=exps+{'${c.idx}':c.experiment}/]
       [/#list]
-      <ul style="margin-left: 6.25rem;padding-left: 1rem;">
-      [#list 0..9 as i]
-        <ol>
-        <label>${i+1}：</label><input type="text" placeholder="Experiment ${i+1}'s name" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
-        <input type="text" name="experiment${i}.creditHours" style="width:60px" value="${(exps[i?string].creditHours)!}" placeholder="Hours"/>
-        <select name="experiment${i}.experimentType.id" >
-          [#list experimentTypes as et]
-          <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]selected="selected"[/#if]>${et.name}</option>
-          [/#list]
-        </select>
-        <div class="btn-group btn-group-toggle" data-toggle="buttons" style="height: 1.5625rem;">
-            <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if !((exps[i?string].online)!false)]active[/#if]">
-            <input type="radio" name="experiment${i}.online" id="exp${i}_online_0" empty="..." value="0" [#if !((exps[i?string].online)!false)]checked=""[/#if]>线下课堂教学实验
-          </label>
-            <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if ((exps[i?string].online)!false)]active[/#if]">
-            <input type="radio" name="experiment${i}.online" id="exp${i}_online_1" empty="..." value="1" [#if ((exps[i?string].online)!false)]checked=""[/#if]>线上虚拟仿真实验
-          </label>
-        </div>
-        </ol>
-      [/#list]
-      </ul>
+      <div style="display: inline-block;">
+        修改和新增项目可以从<a href='${b.url("!experiments?syllabus.id=" + syllabus.id)}'
+           data-toggle="modal" data-target="#experimentDialog">课程项目库</a>进行维护,然后添加到此处。
+        <ul style="padding-left: 1rem;">
+        [#list 1..15 as i]
+          <ol style="padding-left:0rem;">
+          <label>${i}：</label>
+          [@b.select name="experiment${i}.id" style="width:400px" href="!experimentData.json?q={term}&course.id="+syllabus.course.id option="id,description" value=(exps[i?string])! theme="html" chosenMin="10"/]
+          </ol>
+        [/#list]
+        </ul>
+      </div>
     [/@]
     [@b.formfoot]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
@@ -51,3 +42,5 @@
       [@b.submit value="Save" /]
     [/@]
   [/@]
+
+[@b.foot/]

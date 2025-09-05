@@ -149,15 +149,15 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     q1.where("p.writer.code=:me", Securities.user)
     q1.where("p.semester.beginOn < :beginOn", semester.beginOn)
     val myHistoryPlans = entityDao.search(q1)
-    //自己编写的计划中，每个课程、每个学期的只保留版本
+    //自己编写的计划中，每个课程、每个学期的只保留一个版本
     val myPlans = myHistoryPlans.groupBy(x => s"${x.writer.id}_${x.semester.beginOn}").map(x => x._2.head)
 
     val q = OqlBuilder.from(classOf[ClazzPlan], "p")
     q.where("p.clazz.course=:course", clazz.course)
     q.where("p.semester.beginOn <=:beginOn", semester.beginOn)
-
     if (plan.persisted) q.where("p.id != :pId", plan.id)
     val historyPlans = entityDao.search(q)
+
     if (historyPlans.nonEmpty) {
       //同课程的历史计划中，每个人每个学期保留一个版本
       val otherHistoryPlans = historyPlans.groupBy(x => s"${x.writer.id}_${x.semester.beginOn}").map(x => x._2.head)
@@ -292,6 +292,7 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
         val copyFrom = entityDao.get(classOf[ClazzPlan], id)
         if (reuses.contains(copyFrom.status)) {
           copyFrom.copyTo(plan)
+          plan.approver = copyFrom.approver
           plan.status = copyFrom.status
           entityDao.saveOrUpdate(plan)
           businessLogger.info(s"沿用了课程授课计划:${clazz.course.name}", plan.id, Map("course" -> clazz.course.id.toString))

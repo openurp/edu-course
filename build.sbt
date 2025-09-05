@@ -3,7 +3,7 @@ import org.openurp.parent.Settings.*
 import sbt.Keys.libraryDependencies
 
 ThisBuild / organization := "org.openurp.edu.course"
-ThisBuild / version := "0.0.5-SNAPSHOT"
+ThisBuild / version := "0.0.5"
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -25,11 +25,10 @@ ThisBuild / description := "The OpenURP Edu Course"
 ThisBuild / homepage := Some(url("http://openurp.github.io/edu-course/index.html"))
 ThisBuild / resolvers += Resolver.mavenLocal
 
-
-val apiVer = "0.44.1"
-val starterVer = "0.3.59"
-val baseVer = "0.4.52"
-val eduCoreVer = "0.3.13-SNAPSHOT"
+val apiVer = "0.46.0"
+val starterVer = "0.4.0"
+val baseVer = "0.4.55"
+val eduCoreVer = "0.3.17"
 
 val openurp_base_api = "org.openurp.base" % "openurp-base-api" % apiVer
 val openurp_edu_api = "org.openurp.edu" % "openurp-edu-api" % apiVer
@@ -37,6 +36,7 @@ val openurp_lab_api = "org.openurp.lab" % "openurp-lab-api" % apiVer
 val openurp_edu_core = "org.openurp.edu" % "openurp-edu-core" % eduCoreVer
 val openurp_stater_web = "org.openurp.starter" % "openurp-starter-web" % starterVer
 val openurp_base_tag = "org.openurp.base" % "openurp-base-tag" % baseVer
+
 lazy val root = (project in file("."))
   .enablePlugins(WarPlugin, UndertowPlugin, TomcatPlugin)
   .settings(

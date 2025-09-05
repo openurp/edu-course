@@ -31,37 +31,28 @@
               [#assign cases=cases+{'${c.idx}':c}/]
             [/#list]
             <ul style="margin-left: 10rem;padding-left: 0.5rem;">
-            [#list 0..14 as i]
-              <ol><label>${i+1}：</label><input type="text" placeholder="Case No.${i+1}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
+            [#list 1..15 as i]
+              <ol><label>${i+1}：</label><input type="text" placeholder="Case No.${i}'s name" name="case${i}.name" value="${(cases[i?string].name)!}" style="width:400px"/></ol>
             [/#list]
             </ul>
           [/@]
           [@b.field label="Experiments" id="hasExperiment_field"  style="display:none"]
             [#assign exps = {}/]
             [#list syllabus.experiments?sort_by("idx") as c]
-              [#assign exps=exps+{'${c.idx}':c}/]
+              [#assign exps=exps+{'${c.idx}':c.experiment}/]
             [/#list]
-            <ul style="margin-left: 10rem;padding-left: 0.5rem;">
-            [#list 0..9 as i]
-              <ol>
-              <label>${i+1}：</label><input type="text" placeholder="Experiment ${i+1}'s name" name="experiment${i}.name" value="${(exps[i?string].name)!}" style="width:300px"/>
-              <input type="text" name="experiment${i}.creditHours" style="width:60px"  value="${(exps[i?string].creditHours)!}" placeholder="学时"/>
-              <select name="experiment${i}.experimentType.id">
-                [#list experimentTypes as et]
-                <option value="${et.id}" [#if ((exps[i?string].experimentType.id)!0)==et.id]selected="selected"[/#if]>${et.name}</option>
-                [/#list]
-              </select>
-              <div class="btn-group btn-group-toggle" data-toggle="buttons" style="height: 1.5625rem;">
-                  <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if !((exps[i?string].online)!false)]active[/#if]">
-                  <input type="radio" name="experiment${i}.online" id="exp${i}_online_0" empty="..." value="0" [#if !((exps[i?string].online)!false)]checked=""[/#if]>线下课堂教学实验
-                </label>
-                  <label style="font-size:0.8125rem !important;padding:2px 8px 0px 8px;" class="btn btn-outline-secondary btn-sm [#if ((exps[i?string].online)!false)]active[/#if]">
-                  <input type="radio" name="experiment${i}.online" id="exp${i}_online_1" empty="..." value="1" [#if ((exps[i?string].online)!false)]checked=""[/#if]>线上虚拟仿真实验
-                </label>
-              </div>
-              </ol>
-            [/#list]
-            </ul>
+            <div style="display: inline-block;">
+              修改和新增项目可以从<a href='${b.url("!experiments?syllabus.id=" + syllabus.id)}'
+                 data-toggle="modal" data-target="#experimentDialog">课程项目库</a>进行维护,然后添加到此处。
+              <ul style="padding-left: 1rem;">
+              [#list 1..15 as i]
+                <ol style="padding-left:0rem;">
+                <label>${i}：</label>
+                [@b.select name="experiment${i}.id" style="width:400px" href="!experimentData.json?q={term}&course.id="+syllabus.course.id option="id,description" value=(exps[i?string])! theme="html" chosenMin="10"/]
+                </ol>
+              [/#list]
+              </ul>
+            </div>
           [/@]
           [@b.formfoot]
             <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
@@ -87,7 +78,7 @@
        }
        if(hasCase){
          var caseCnt =0;
-         for(var i=0; i<=9;i++){
+         for(var i=1; i<=15;i++){
            if(form["case"+i+".name"].value){
              caseCnt +=1;
            }
@@ -98,29 +89,24 @@
          }
        }
        if(hasExperiment){
-         var totalHours = 0;
-         var experimentCnt = 0;
-         var missingHoursExperiments = [];
-         for(var i=0; i<=9;i++){
-           if(form["experiment"+i+".name"].value){
-             var hours = parseFloat(form["experiment"+i+".creditHours"].value||"0");
-             if(hours<=0){
-               missingHoursExperiments.push(i+1);
-             }
-             experimentCnt += 1;
-             totalHours += hours;
+         var experimentIds=[];
+         for(var i=1; i<=15;i++){
+           if(form["experiment"+i+".id"].value){
+             experimentIds.push(form["experiment"+i+".id"].value);
            }
          }
-         if(experimentCnt==0){
+         if(experimentIds.length==0){
            alert("请至少填写一个实验项目");
            return false;
          }
-         if(missingHoursExperiments.length>0){
-           alert("实验项目"+missingHoursExperiments.join(',')+"缺少实验学时");
-           return false;
-         }
+         var totalHours = 0;
          [#assign practicalHours = 0/]
          [#list syllabus.hours as h][#if h.nature.id=9][#assign practicalHours = practicalHours + h.creditHours/][/#if][/#list]
+         $.ajaxSettings.async = false;
+         $.get("${b.url('!experimentCreditHours')}?experiment.ids="+experimentIds.join(","), function(response) {
+           totalHours = Number.parseFloat(response);
+         });
+         $.ajaxSettings.async = true;
          if(totalHours > ${practicalHours}){
             alert("实验项目总学时为"+totalHours+",不应超过课程实践${practicalHours}学时");
             return false;
@@ -136,15 +122,17 @@
       }
     }
   </script>
-[@b.form name="dummy" action="!nextStep" theme="list"]
-  [@b.formfoot]
-    <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
-    <input type="hidden" name="step" value="assess"/>
-    [@b.a href="!edit?syllabus.id=${syllabus.id}&step=topics" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
-    [#if syllabus.designs?size>0]
-    [@b.a href="!assesses?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-right fa-sm"></i>Next step[/@]
-    [/#if]
+  [@b.form name="dummy" action="!nextStep" theme="list"]
+    [@b.formfoot]
+      <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>
+      <input type="hidden" name="step" value="assess"/>
+      [@b.a href="!edit?syllabus.id=${syllabus.id}&step=topics" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-left fa-sm"></i>Previous step[/@]
+      [#if syllabus.designs?size>0]
+      [@b.a href="!assesses?syllabus.id=${syllabus.id}" class="btn btn-outline-primary btn-sm" ]<i class="fa fa-arrow-circle-right fa-sm"></i>Next step[/@]
+      [/#if]
+    [/@]
   [/@]
-[/@]
+
+  [@b.dialog title="课程项目库"  id="experimentDialog"/]
 </div>
 [@b.foot/]
