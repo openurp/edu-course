@@ -31,10 +31,10 @@
     [/@]
     [@b.col width="6%" property="syllabus.rank.name" title="必修选修"/]
     [@b.col width="7%" property="syllabus.nature.name" title="课程性质"/]
-    [@b.col property="name" title="实验项目"/]
-    [@b.col width="8%" property="experimentType.name" title="实验类型"/]
-    [@b.col width="8%" property="online" title="线上教学"]
-      ${experiment.online?string("是","否")}
+    [@b.col property="experiment.name" title="实验项目"/]
+    [@b.col width="8%" property="experiment.experimentType.name" title="实验类型"/]
+    [@b.col width="8%" property="experiment.online" title="线上教学"]
+      ${experiment.experiment.online?string("是","否")}
     [/@]
   [/@]
 [/@]
