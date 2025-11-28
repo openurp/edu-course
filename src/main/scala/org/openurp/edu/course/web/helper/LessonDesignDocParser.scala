@@ -29,20 +29,23 @@ import java.io.{FileInputStream, InputStream}
 import scala.collection.mutable
 import scala.jdk.javaapi.CollectionConverters.asScala
 
+object LessonDesignDocParser {
+  def main(args: Array[String]): Unit = {
+    val parser = new LessonDesignDocParser()
+    val rs = parser.parse(new FileInputStream("C:\\Users\\duantihua\\Desktop\\ja.docx"))
+    println(rs._1)
+    rs._1 foreach { d =>
+      println(d.homework)
+    }
+  }
+}
+
 class LessonDesignDocParser {
   var doc: XWPFDocument = _
   var tables: mutable.Buffer[XWPFTable] = Collections.newBuffer[XWPFTable]
   val tmpDoc = new html.Document
   val parser = new DocParser(tmpDoc)
   var sectionIdx = 1
-
-  def main(args: Array[String]): Unit = {
-    val rs = parse(new FileInputStream("C:\\Users\\duantihua\\Desktop\\ja.docx"))
-    println(rs._1)
-    rs._1 foreach { d =>
-      println(d.homework)
-    }
-  }
 
   def parse(is: InputStream): (Option[LessonDesign], Option[html.Document], String) = {
     doc = new XWPFDocument(is)

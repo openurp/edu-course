@@ -11,8 +11,7 @@
     [@b.field label="课程"]${course.code} ${course.name} ${course.defaultCredits!}学分 ${syllabus.creditHours}学时[/@]
     [@b.radios label="语言" required="true" name="syllabus.docLocale"  style="width:200px;" items=locales value=(syllabus.docLocale)!/]
     [@b.field label="生效学期"]${syllabus.semester.schoolYear}学年${syllabus.semester.name}学期[/@]
-    [@b.select name="syllabus.department.id" label="开课院系" value=syllabus.department! required="true"
-               style="width:200px;" items=departments option="id,name" empty="..."/]
+    [@b.field label="开课院系"]${departments?first.name}[/@]
     [@b.radios name="syllabus.stage.id" label="学期阶段" value=syllabus.stage! required="true" items=calendarStages /]
     [@b.radios name="syllabus.module.id" label="课程模块" value=syllabus.module! items=courseModules empty="..." required="true"/]
     [@b.radios label="必修选修" name="syllabus.rank.id" value=syllabus.rank! items=courseRanks required="true"/]
@@ -41,6 +40,7 @@
     [@b.textarea name="syllabus.subsequents" label="后续课程" value=syllabus.subsequents!  rows="2" cols="80"/]
     [@b.formfoot]
       <input type="hidden" name="course.id" value="${course.id}"/>
+      <input type="hidden" name="syllabus.department.id" value="${departments?first.id}"/>
       <input type="hidden" name="syllabus.semester.id" value="${syllabus.semester.id}"/>
       [#if syllabus.id??]
       <input type="hidden" name="syllabus.id" value="${syllabus.id}"/>

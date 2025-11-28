@@ -4,7 +4,8 @@
 [@base.semester_bar value=semester/]
 <div class="container-fluid">
   <div class="row">
-    <div class="col-3" id="accordion">
+    <div class="col-md-3" id="accordion">
+      <div class="container">
        [#if taskCourses?size>0]
        [#assign firstCourse = taskCourses?first/]
        <div class="card card-primary card-outline">
@@ -86,11 +87,11 @@
          </div>
        </div>
        [/#if]
-
+      </div><!--end container-->
      </div><!--end col-3-->
 
      [#if firstCourse??]
-     [@b.div class="col-9" id="course_list" href="!course?courseId="+firstCourse.id +"&semester.id="+semester.id /]
+     [@b.div class="col-md-9" id="course_list" href="!course?courseId="+firstCourse.id +"&semester.id="+semester.id /]
      [#else]
      <div>你还没有代课</div>
      [/#if]

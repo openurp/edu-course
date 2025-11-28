@@ -1,6 +1,10 @@
 [#ftl]
 [@b.head/]
 [@b.toolbar title="学院课程资料维护"]
+  bar.addItem("教材汇总","textbookStat()");
+  function textbookStat(){
+    bg.form.submit("courseSearchForm","${b.url('!textbook')}","_blank");
+  }
 [/@]
 <div class="search-container">
   <div class="search-panel">

@@ -38,7 +38,7 @@
       </tr>
       <tr>
         <td class="title">开课院系:</td>
-        <td class="content">${(course.department.name)!}</td>
+        <td class="content">[#if task??]${task.department.name}[#else]${(course.department.name)!}[/#if]</td>
         <td class="title">课程类别:</td>
         <td class="content">[#if task??]${(task.courseType.name)!}[#else]${(course.courseType.name)!}[/#if]</td>
         <td class="title">学时:</td>

@@ -28,7 +28,6 @@ import java.time.format.DateTimeFormatter
 class SyllabusPropertyExtractor(semester: Semester) extends DefaultPropertyExtractor {
   val publishDatePattern = DateTimeFormatter.ofPattern("yyyy年MM月")
 
-
   override def get(target: Object, property: String): Any = {
     val syllabus = target.asInstanceOf[Syllabus]
     if (property.startsWith("assessment.")) {

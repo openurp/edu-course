@@ -32,7 +32,7 @@ import org.beangle.webmvc.support.ActionSupport
 import org.beangle.webmvc.support.action.EntityAction
 import org.beangle.webmvc.view.{Stream, View}
 import org.openurp.base.edu.model.*
-import org.openurp.base.model.{AuditStatus, Project, User}
+import org.openurp.base.model.{AuditStatus, Project, Semester, User}
 import org.openurp.code.edu.model.{CourseCategory, CourseNature, CourseType}
 import org.openurp.edu.course.model.{CourseTask, SyllabusDoc}
 import org.openurp.edu.course.service.SyllabusService
@@ -228,5 +228,26 @@ class DepartAction extends ActionSupport, EntityAction[CourseTask], ProjectSuppo
     finally {
       IOs.close(input, output)
     }
+  }
+
+  /** 教材汇总
+   *
+   * @return
+   */
+  def textbook(): View = {
+    val project = getProject
+    val semester = entityDao.get(classOf[Semester], getIntId("task.semester"))
+    val tasks = entityDao.findBy(classOf[CourseTask], "semester" -> semester, "course.project" -> project)
+    put("tasks", tasks.sortBy(_.course.code))
+    val q = OqlBuilder.from(classOf[CourseProfile], "p")
+    q.where("p.beginOn <= :endOn and (p.endOn is null or :beginOn <= p.endOn)", semester.endOn, semester.endOn)
+    q.where("p.course.project=:project", project)
+    val profiles = entityDao.search(q)
+    val books = profiles.map(x => (x.course, x.books)).toMap
+    put("textbooks", books)
+    put("project", project)
+    put("semester", semester)
+    put("ems_api",Ems.api)
+    forward()
   }
 }

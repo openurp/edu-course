@@ -1,7 +1,17 @@
 [#ftl]
 [@b.head/]
 <div class="container">
-  <div class="card card-info card-primary card-outline">
+<style>
+  @media (max-width:767.98px) {
+    fieldset.listset li > label.title{
+      min-width: 4.5rem;
+    }
+    fieldset.listset > ol > li{
+      padding: 4px 0px 7px;
+    }
+  }
+</style>
+  <div class="card card-primary card-outline">
     <div class="card-header">
       <h4 class="card-title">基本信息</h4>
     </div>
@@ -11,8 +21,8 @@
       [@b.field label="课程类别"]${(course.courseType.name)!'--'}[/@]
       [@b.field label="开课院系"]${(course.department.name)!'--'}[/@]
       [@b.field label="修订学期"]${profile.semester.schoolYear}学年度${profile.semester.name}学期[/@]
-      [@b.textarea label="课程简介" name="profile.description" value=profile.description cols="80" rows="10" required="true" maxlength="500" comment="500字以内" placeholder="简述课程的目标、主要内容、获得的荣誉称号"/]
-      [@b.textarea label="英文简介" name="profile.enDescription" value=profile.enDescription! cols="80" rows="10" maxlength="500" comment="500字以内"/]
+      [@b.textarea label="课程简介" name="profile.description" value=profile.description cols="80" rows="10" required="true" maxlength="800" comment="800字以内" placeholder="简述课程的目标、主要内容、获得的荣誉称号"/]
+      [@b.textarea label="英文简介" name="profile.enDescription" value=profile.enDescription! cols="80" rows="10" maxlength="1500" comment="1500字符以内"/]
       [@b.textfield label="先修课程" name="profile.prerequisites" value=profile.prerequisites! maxlength="500" placeholder="没有可忽略" style="width:400px;"/]
       [@b.field label="已有大纲"]
         [#if syllabusDocs?size>0]

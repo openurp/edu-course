@@ -20,8 +20,8 @@ package org.openurp.edu.course.web.action.admin
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.{Numbers, Strings}
 import org.beangle.data.dao.OqlBuilder
-import org.beangle.webmvc.view.View
 import org.beangle.webmvc.support.action.RestfulAction
+import org.beangle.webmvc.view.View
 import org.openurp.base.edu.model.{Course, CourseJournal}
 import org.openurp.base.model.AuditStatus.{Passed, Rejected}
 import org.openurp.base.model.{AuditStatus, Project}
@@ -127,6 +127,8 @@ class NewCourseAuditAction extends RestfulAction[NewCourseApply], ProjectSupport
       c.department = apply.department
       c.defaultCredits = apply.defaultCredits
       c.creditHours = apply.creditHours
+      c.calgp = true
+      c.hasMakeup = true
       c.weekHours = apply.weekHours
       c.examMode = apply.examMode
       c.gradingMode = apply.gradingMode

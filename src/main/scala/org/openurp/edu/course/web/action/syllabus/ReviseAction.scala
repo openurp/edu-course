@@ -90,7 +90,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     put("syllabus", syllabus)
     syllabus.creditHours = syllabus.course.getJournal(syllabus.semester).creditHours
     entityDao.saveOrUpdate(syllabus)
-    putBasicDatas(syllabus.course)
+    val teacher = getTeacher
+    val task = courseTaskService.getTask(syllabus.semester, syllabus.course, teacher).get
+    putBasicDatas(task)
 
     given project: Project = syllabus.course.project
 
@@ -187,11 +189,11 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     }
   }
 
-  private def putBasicDatas(course: Course): Unit = {
-    given project: Project = course.project
+  private def putBasicDatas(task: CourseTask): Unit = {
+    given project: Project = task.course.project
 
     put("project", project)
-    put("departments", List(course.department))
+    put("departments", List(task.department))
     put("teachingNatures", getCodes(classOf[TeachingNature]))
     put("courseNatures", getCodes(classOf[CourseNature]))
     put("examModes", getCodes(classOf[ExamMode]))
@@ -211,16 +213,14 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
   @mapping(value = "new", view = "new,form")
   def editNew(): View = {
     val course = entityDao.get(classOf[Course], getLongId("course"))
+    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
+    val teacher = getTeacher
+    val task = courseTaskService.getTask(semester, course, teacher).get
 
     given project: Project = course.project
 
-    putBasicDatas(course)
-
-    val teacher = getTeacher
-    val semester = entityDao.get(classOf[Semester], getIntId("semester"))
-    val task = courseTaskService.getTask(semester, course, teacher).get
+    putBasicDatas(task)
     val syllabus = newSyllabus(task)
-
     put("course", course)
     put("syllabus", syllabus)
     val locale = get("locale", classOf[Locale]).getOrElse(Locale.SIMPLIFIED_CHINESE)
@@ -258,7 +258,8 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
       val natures = attribute("courseNatures", classOf[Seq[CourseNature]])
       syllabus.nature = natures.find(_.practical).get
     }
-    syllabus.department = course.department
+    val cj = course.getJournal(semester)
+    syllabus.department = cj.department
     syllabus.examMode = course.examMode
     syllabus.gradingMode = course.gradingMode
     syllabus.creditHours = course.creditHours
