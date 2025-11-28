@@ -104,7 +104,7 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
         val books = clazzes.flatMap(_.books).distinct
         syllabus.textbooks.addAll(books)
       }
-      put("director", courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department))
+      put("director", courseTaskService.getDirector(syllabus.semester, syllabus.course))
       put("me", Securities.user)
       put("warningMessages", SyllabusValidator.validate(syllabus))
     }
@@ -769,9 +769,9 @@ class ReviseAction extends TeacherSupport, EntityAction[Syllabus] {
     syllabus.materials = get("syllabus.materials")
     syllabus.bibliography = get("syllabus.bibliography")
     syllabus.website = get("syllabus.website")
-    syllabus.office = courseTaskService.getOffice(syllabus.semester, syllabus.course, syllabus.department)
+    syllabus.office = courseTaskService.getOffice(syllabus.semester, syllabus.course)
     syllabus.office foreach { o =>
-      syllabus.reviewer = courseTaskService.getOfficeDirector(syllabus.semester, syllabus.course, syllabus.department)
+      syllabus.reviewer = courseTaskService.getDirector(syllabus.semester, syllabus.course)
     }
     updateState(syllabus)
     if (null == syllabus.writer || syllabus.writer.code != Securities.user) {

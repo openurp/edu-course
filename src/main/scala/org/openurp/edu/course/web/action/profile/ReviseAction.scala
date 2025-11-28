@@ -20,6 +20,7 @@ package org.openurp.edu.course.web.action.profile
 import jakarta.servlet.http.Part
 import org.beangle.commons.collection.Collections
 import org.beangle.commons.lang.Strings
+import org.beangle.commons.net.Networks
 import org.beangle.commons.net.http.HttpUtils
 import org.beangle.data.dao.OqlBuilder
 import org.beangle.ems.app.web.WebBusinessLogger
@@ -93,7 +94,7 @@ class ReviseAction extends TeacherSupport, EntityAction[CourseProfile], ServletS
   }
 
   def getTemplateFile(name: String): Option[URL] = {
-    val url = new URL(s"${Ems.api}/platform/config/files/${EmsApp.name}/syllabus/template/$name")
+    val url = Networks.url(s"${Ems.api}/platform/config/files/${EmsApp.name}/syllabus/template/$name")
     val status = HttpUtils.access(url)
     if (status.isOk) {
       Some(url)

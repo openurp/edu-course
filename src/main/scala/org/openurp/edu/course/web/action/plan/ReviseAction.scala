@@ -141,9 +141,9 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     val hours = plan.hours.map(x => (x.name, x.creditHours)).toMap
     put("hours", hours)
     put("schedules", schedules)
-    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course, clazz.teachDepart)
+    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course)
     plan.office foreach { o =>
-      plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
+      plan.reviewer = courseTaskService.getDirector(clazz.semester, clazz.course)
     }
     val q1 = OqlBuilder.from(classOf[ClazzPlan], "p")
     q1.where("p.writer.code=:me", Securities.user)
@@ -264,9 +264,9 @@ class ReviseAction extends TeacherSupport, EntityAction[ClazzPlan] {
     }
     plan.updatedAt = Instant.now
     plan.writer = entityDao.findBy(classOf[User], "school" -> plan.clazz.project.school, "code" -> me.code).head
-    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course, clazz.teachDepart)
+    plan.office = courseTaskService.getOffice(clazz.semester, clazz.course)
     plan.office foreach { o =>
-      plan.reviewer = courseTaskService.getOfficeDirector(clazz.semester, clazz.course, clazz.teachDepart)
+      plan.reviewer = courseTaskService.getDirector(clazz.semester, clazz.course)
     }
     calcHours(plan, syllabus, task)
     entityDao.saveOrUpdate(plan)
