@@ -22,7 +22,7 @@ import org.beangle.data.orm.{IdGenerator, MappingModule}
 class DefaultMapping extends MappingModule {
 
   def binding(): Unit = {
-    defaultCache("openurp.app.course", "read-write")
+    defaultCache("openurp-app-course", "read-write")
 
     bind[ReviseSetting].generator("auto_increment")
   }
